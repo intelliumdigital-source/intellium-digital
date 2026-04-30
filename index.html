@@ -294,7 +294,42 @@
     </div>
   </footer>
 
-  <a href="https://www.facebook.com/IntelliumDigitalPH" target="_blank" rel="noopener" class="floating-chat">💬 Message us</a>
+
+  <!-- Intellium Digital Free Messenger-Style Chatbot -->
+  <div id="intellium-chatbot">
+    <button id="chat-toggle" type="button" aria-label="Open Intellium AI Assistant">💬</button>
+
+    <div id="chat-window" aria-live="polite">
+      <div id="chat-header">
+        <div>
+          <strong>Intellium AI Assistant</strong>
+          <p>Online • Ready to help</p>
+        </div>
+        <button type="button" onclick="toggleChat()" aria-label="Close chat">×</button>
+      </div>
+
+      <div id="chat-body">
+        <div class="bot-message">
+          Hi! 👋 Welcome to Intellium Digital.<br><br>
+          I can help you choose the right digital service for your business.
+          What do you need today?
+        </div>
+
+        <div id="quick-buttons">
+          <button type="button" onclick="replyBot('website')">I need a website</button>
+          <button type="button" onclick="replyBot('maya')">I need a website with Maya payment</button>
+          <button type="button" onclick="replyBot('app')">I need an app</button>
+          <button type="button" onclick="replyBot('branding')">I need branding/logo</button>
+          <button type="button" onclick="replyBot('ads')">I need Facebook ads</button>
+          <button type="button" onclick="replyBot('social')">I need social media marketing</button>
+          <button type="button" onclick="replyBot('pricing')">What are your prices?</button>
+          <button type="button" onclick="replyBot('budget')">I want to discuss my budget</button>
+          <button type="button" onclick="replyBot('start')">Start my project ASAP</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
