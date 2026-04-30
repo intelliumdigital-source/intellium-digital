@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
 
   if (req.method !== "POST") {
@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
     if (typeof body === "string") {
       try {
         body = JSON.parse(body);
-      } catch (parseError) {
+      } catch (error) {
         return res.status(400).json({ error: "Invalid JSON body." });
       }
     }
@@ -38,7 +38,10 @@ module.exports = async function handler(req, res) {
     if (!packageName || !allowedPackages[packageName] || allowedPackages[packageName] !== amount) {
       return res.status(400).json({
         error: "Invalid package or amount.",
-        received: { packageName: packageName, amount: amount }
+        received: {
+          packageName: packageName,
+          amount: amount
+        }
       });
     }
 
@@ -108,4 +111,4 @@ module.exports = async function handler(req, res) {
       details: error && error.message ? error.message : String(error)
     });
   }
-};
+}

@@ -1,26 +1,21 @@
-Intellium Digital Xendit Final CommonJS Fix
+Xendit ES Module API Patch
 
-This fixes the Vercel error:
-ReferenceError: module is not defined in ES module scope
+Upload these files to your repository root and replace existing files:
+- api/create-xendit-invoice.js
+- api/xendit-webhook.js
+- package.json
+- vercel.json
 
-What changed:
-- package.json no longer has "type": "module"
-- api/create-xendit-invoice.js uses module.exports
-- api/xendit-webhook.js uses module.exports
+Important:
+The API files must start with:
+export default async function handler(req, res) {
 
-Upload all files to GitHub/Vercel, especially:
-package.json
-vercel.json
-api/create-xendit-invoice.js
-api/xendit-webhook.js
-
-Vercel Environment Variables:
-XENDIT_SECRET_KEY = xnd_development_your_secret_key_here
-SITE_URL = https://www.intelliumdigital.online
+They must NOT contain:
+module.exports
 
 After uploading:
-1. Redeploy on Vercel.
-2. Open https://www.intelliumdigital.online/api/create-xendit-invoice
-3. Expected result:
-   {"error":"Method not allowed. Use POST from the website payment buttons."}
-4. Test the Pay ₱1,000 button.
+1. Commit changes to GitHub.
+2. Redeploy in Vercel.
+3. Open /api/create-xendit-invoice.
+4. Expected result:
+{"error":"Method not allowed. Use POST from the website payment buttons."}

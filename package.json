@@ -1,5 +1,6 @@
 {
-  "name": "intellium-digital-xendit",
+  "name": "intellium-digital-xendit-esmodule-patch",
   "version": "1.0.0",
-  "private": true
+  "private": true,
+  "type": "module"
 }

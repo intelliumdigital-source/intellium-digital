@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
 
   if (req.method !== "POST") {
@@ -12,4 +12,4 @@ module.exports = async function handler(req, res) {
     console.error("Xendit webhook error:", error);
     return res.status(500).json({ error: "Webhook handler failed." });
   }
-};
+}
