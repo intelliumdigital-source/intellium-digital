@@ -1,6 +1,5 @@
 {
-  "name": "intellium-digital-xendit-fixed-api-v3",
+  "name": "intellium-digital-xendit",
   "version": "1.0.0",
-  "private": true,
-  "type": "module"
+  "private": true
 }
