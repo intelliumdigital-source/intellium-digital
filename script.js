@@ -123,24 +123,34 @@ if ("IntersectionObserver" in window) {
   });
 })();
 
-
 // Xendit hosted checkout redirect
 document.querySelectorAll(".xendit-pay-btn").forEach((button) => {
   button.addEventListener("click", async () => {
     const originalText = button.textContent;
     const packageName = button.dataset.name;
     const amount = Number(button.dataset.amount);
-    if (!packageName || !amount) { alert("Payment details are missing."); return; }
+
+    if (!packageName || !amount) {
+      alert("Payment details are missing.");
+      return;
+    }
+
     button.disabled = true;
     button.textContent = "Creating secure checkout...";
+
     try {
       const response = await fetch("/api/create-xendit-invoice", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ packageName, amount })
       });
+
       const data = await response.json();
-      if (!response.ok || !data.invoice_url) throw new Error(data.error || "Unable to create Xendit checkout.");
+
+      if (!response.ok || !data.invoice_url) {
+        throw new Error(data.error || "Unable to create Xendit checkout.");
+      }
+
       window.location.href = data.invoice_url;
     } catch (error) {
       console.error(error);
