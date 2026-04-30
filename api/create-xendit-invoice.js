@@ -1,4 +1,4 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
 
   if (req.method !== "POST") {
@@ -108,4 +108,4 @@ module.exports = async function handler(req, res) {
       details: error && error.message ? error.message : String(error)
     });
   }
-};
+}
