@@ -293,43 +293,249 @@
       </div>
     </div>
   </footer>
+  <script src="script.js"></script>
 
-
-  <!-- Intellium Digital Free Messenger-Style Chatbot -->
-  <div id="intellium-chatbot">
-    <button id="chat-toggle" type="button" aria-label="Open Intellium AI Assistant">💬</button>
-
-    <div id="chat-window" aria-live="polite">
-      <div id="chat-header">
+  <!-- Intellium Digital Free Messenger-Style Chatbot - Self-contained V2 -->
+  <div id="intellium-chatbot-v2">
+    <button id="id-chat-toggle-v2" type="button" aria-label="Open Intellium AI Assistant">💬</button>
+    <section id="id-chat-window-v2" aria-label="Intellium AI Assistant">
+      <div class="id-chat-header-v2">
         <div>
           <strong>Intellium AI Assistant</strong>
           <p>Online • Ready to help</p>
         </div>
-        <button type="button" onclick="toggleChat()" aria-label="Close chat">×</button>
+        <button id="id-chat-close-v2" type="button" aria-label="Close chat">×</button>
       </div>
-
-      <div id="chat-body">
-        <div class="bot-message">
+      <div id="id-chat-body-v2">
+        <div class="id-bot-message-v2">
           Hi! 👋 Welcome to Intellium Digital.<br><br>
-          I can help you choose the right digital service for your business.
-          What do you need today?
+          I can help you choose the right digital service for your business. What do you need today?
         </div>
-
-        <div id="quick-buttons">
-          <button type="button" onclick="replyBot('website')">I need a website</button>
-          <button type="button" onclick="replyBot('maya')">I need a website with Maya payment</button>
-          <button type="button" onclick="replyBot('app')">I need an app</button>
-          <button type="button" onclick="replyBot('branding')">I need branding/logo</button>
-          <button type="button" onclick="replyBot('ads')">I need Facebook ads</button>
-          <button type="button" onclick="replyBot('social')">I need social media marketing</button>
-          <button type="button" onclick="replyBot('pricing')">What are your prices?</button>
-          <button type="button" onclick="replyBot('budget')">I want to discuss my budget</button>
-          <button type="button" onclick="replyBot('start')">Start my project ASAP</button>
+        <div class="id-quick-buttons-v2">
+          <button type="button" data-chat-option="website">I need a website</button>
+          <button type="button" data-chat-option="maya">I need a website with Maya payment</button>
+          <button type="button" data-chat-option="app">I need an app</button>
+          <button type="button" data-chat-option="branding">I need branding/logo</button>
+          <button type="button" data-chat-option="ads">I need Facebook ads</button>
+          <button type="button" data-chat-option="social">I need social media marketing</button>
+          <button type="button" data-chat-option="pricing">What are your prices?</button>
+          <button type="button" data-chat-option="budget">I want to discuss my budget</button>
+          <button type="button" data-chat-option="start">Start my project ASAP</button>
         </div>
       </div>
-    </div>
+    </section>
   </div>
 
-  <script src="script.js"></script>
+  <style>
+    #intellium-chatbot-v2{
+      position:fixed!important;
+      right:20px!important;
+      bottom:20px!important;
+      z-index:2147483647!important;
+      font-family:Inter,Arial,Helvetica,sans-serif!important;
+    }
+    #id-chat-toggle-v2{
+      display:flex!important;
+      align-items:center!important;
+      justify-content:center!important;
+      width:68px!important;
+      height:68px!important;
+      border-radius:50%!important;
+      border:1px solid rgba(255,255,255,.28)!important;
+      background:linear-gradient(135deg,#16e4ff,#8a35ff,#ff45d4)!important;
+      color:#fff!important;
+      font-size:30px!important;
+      cursor:pointer!important;
+      box-shadow:0 0 30px rgba(138,53,255,.85),0 18px 45px rgba(0,0,0,.42)!important;
+    }
+    #id-chat-window-v2{
+      display:none;
+      width:370px;
+      max-width:calc(100vw - 32px);
+      height:560px;
+      max-height:calc(100vh - 112px);
+      background:rgba(9,0,20,.98);
+      color:#fff;
+      border:1px solid rgba(22,228,255,.42);
+      border-radius:24px;
+      overflow:hidden;
+      box-shadow:0 0 42px rgba(138,53,255,.85),0 24px 64px rgba(0,0,0,.55);
+      margin-bottom:14px;
+    }
+    .id-chat-header-v2{
+      background:linear-gradient(135deg,#001b44,#35006b,#7b2cff);
+      padding:17px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      border-bottom:1px solid rgba(255,255,255,.16);
+    }
+    .id-chat-header-v2 strong{font-size:16px}
+    .id-chat-header-v2 p{margin:4px 0 0;font-size:12px;color:#b7f4ff}
+    #id-chat-close-v2{
+      background:transparent;
+      border:0;
+      color:#fff;
+      font-size:30px;
+      cursor:pointer;
+      line-height:1;
+    }
+    #id-chat-body-v2{
+      padding:16px;
+      height:calc(100% - 75px);
+      overflow-y:auto;
+      background:
+        radial-gradient(circle at top,rgba(123,44,255,.30),transparent 35%),
+        radial-gradient(circle at bottom right,rgba(22,228,255,.12),transparent 36%),
+        #090014;
+    }
+    .id-bot-message-v2,.id-user-message-v2{
+      padding:12px 14px;
+      border-radius:16px;
+      margin-bottom:12px;
+      line-height:1.45;
+      font-size:14px;
+    }
+    .id-bot-message-v2{
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(0,200,255,.35);
+    }
+    .id-user-message-v2{
+      background:linear-gradient(135deg,#00c8ff,#7b2cff);
+      margin-left:42px;
+      text-align:right;
+      font-weight:800;
+    }
+    .id-quick-buttons-v2{
+      display:grid;
+      gap:8px;
+      margin-top:4px;
+    }
+    .id-quick-buttons-v2 button{
+      width:100%;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(123,44,255,.8);
+      background:rgba(123,44,255,.18);
+      color:#fff;
+      cursor:pointer;
+      text-align:left;
+      font-size:14px;
+      font-weight:800;
+    }
+    .id-quick-buttons-v2 button:hover{
+      background:linear-gradient(135deg,#00c8ff,#7b2cff);
+    }
+    .id-chat-cta-v2{
+      display:inline-block;
+      margin-top:10px;
+      padding:10px 14px;
+      background:linear-gradient(135deg,#00c8ff,#7b2cff);
+      color:white!important;
+      text-decoration:none!important;
+      border-radius:12px;
+      font-weight:1000;
+    }
+    @media(max-width:640px){
+      #intellium-chatbot-v2{left:16px!important;right:16px!important;bottom:16px!important}
+      #id-chat-toggle-v2{margin-left:auto!important}
+      #id-chat-window-v2{width:100%;height:76vh}
+    }
+  </style>
+
+  <script>
+    (function () {
+      function ready(fn) {
+        if (document.readyState !== "loading") fn();
+        else document.addEventListener("DOMContentLoaded", fn);
+      }
+
+      ready(function () {
+        var toggle = document.getElementById("id-chat-toggle-v2");
+        var close = document.getElementById("id-chat-close-v2");
+        var chatWindow = document.getElementById("id-chat-window-v2");
+        var chatBody = document.getElementById("id-chat-body-v2");
+        var facebookLink = "https://www.facebook.com/IntelliumDigitalPH";
+
+        if (!toggle || !chatWindow || !chatBody) return;
+
+        function showChat() {
+          chatWindow.style.display = "block";
+        }
+
+        function hideChat() {
+          chatWindow.style.display = "none";
+        }
+
+        function addMessage(type, message) {
+          var div = document.createElement("div");
+          div.className = type === "user" ? "id-user-message-v2" : "id-bot-message-v2";
+          div.innerHTML = message;
+          chatBody.appendChild(div);
+          chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        var replies = {
+          website: {
+            user: "I need a website",
+            bot: "Great choice! 🚀<br><br>We build professional, mobile-friendly websites for startups, SMEs, freelancers, and local business owners.<br><br>Website pricing starts at <strong>₱5,000</strong>.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Message us on Facebook</a>"
+          },
+          maya: {
+            user: "I need a website with Maya payment",
+            bot: "Perfect! 💳<br><br>Our Website + Maya Integration promo is designed for rentals, services, booking businesses, and small businesses that want online payment readiness.<br><br>Launch promo: <strong>₱18,000</strong>.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Claim Website + Maya Promo</a>"
+          },
+          app: {
+            user: "I need an app",
+            bot: "Awesome! 📱<br><br>We can help plan and build business apps for booking, tracking, customer access, loyalty, referrals, and digital service platforms.<br><br>App development starts at <strong>₱35,000+</strong>.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Discuss your app idea</a>"
+          },
+          branding: {
+            user: "I need branding/logo",
+            bot: "Perfect! 🎨<br><br>We help businesses look professional with logo design, cover photos, profile images, brand colors, and social media visuals.<br><br>Branding starts at <strong>₱3,500+</strong>.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Request branding help</a>"
+          },
+          ads: {
+            user: "I need Facebook ads",
+            bot: "Nice! 📣<br><br>We help with Facebook ads setup for engagement, leads, inquiries, and service promotions.<br><br>We can prepare ad creatives, captions, targeting ideas, quick replies, and lead flow.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Start Facebook ads</a>"
+          },
+          social: {
+            user: "I need social media marketing",
+            bot: "Great! 🔥<br><br>We can help with content planning, captions, posters, reels ideas, branding, and launch posts.<br><br>Best for businesses that want to look active and credible online.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Ask for social media help</a>"
+          },
+          pricing: {
+            user: "What are your prices?",
+            bot: "Here are the starting prices: 💼<br><br>• Branding / Logo: <strong>₱3,500+</strong><br>• Starter Website: <strong>₱5,000+</strong><br>• Business Website: <strong>₱10,000+</strong><br>• Website + Maya Promo: <strong>₱18,000</strong><br>• Full Digital Setup: <strong>₱25,000+</strong><br>• Business App: <strong>₱35,000+</strong><br><br>Final quote depends on pages, features, design, content, and integrations.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Get a quote</a>"
+          },
+          budget: {
+            user: "I want to discuss my budget",
+            bot: "No problem! 🤝<br><br>Tell us your budget, business type, and what you want to build. We will recommend the most realistic package for your goal.<br><br>Even if you are starting small, we can suggest a clean starter setup.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Discuss my budget</a>"
+          },
+          start: {
+            user: "Start my project ASAP",
+            bot: "Let's go! 🚀<br><br>Please send us:<br>• Business name<br>• Type of business<br>• Services/products offered<br>• Preferred design style<br>• Target budget<br>• Target launch date<br><br>We will guide you from planning to launch.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Message Intellium Digital</a>"
+          }
+        };
+
+        toggle.addEventListener("click", function () {
+          chatWindow.style.display = chatWindow.style.display === "block" ? "none" : "block";
+        });
+
+        if (close) close.addEventListener("click", hideChat);
+
+        document.querySelectorAll("[data-chat-option]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            var selected = replies[button.getAttribute("data-chat-option")];
+            if (!selected) return;
+            addMessage("user", selected.user);
+            setTimeout(function () {
+              addMessage("bot", selected.bot);
+            }, 350);
+          });
+        });
+
+        // Safety: make sure the floating button is visible after load.
+        toggle.style.display = "flex";
+      });
+    })();
+  </script>
+
 </body>
 </html>
