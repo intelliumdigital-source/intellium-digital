@@ -1,7 +1,6 @@
 {
-  "functions": {
-    "api/*.js": {
-      "runtime": "nodejs22.x"
-    }
-  }
+  "name": "intellium-digital-xendit",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module"
 }
