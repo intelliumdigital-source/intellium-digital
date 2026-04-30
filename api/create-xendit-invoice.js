@@ -17,11 +17,14 @@ export default async function handler(req, res) {
     }
 
     let body = req.body || {};
+
     if (typeof body === "string") {
       try {
         body = JSON.parse(body);
       } catch (parseError) {
-        return res.status(400).json({ error: "Invalid JSON body." });
+        return res.status(400).json({
+          error: "Invalid JSON body."
+        });
       }
     }
 
@@ -35,16 +38,23 @@ export default async function handler(req, res) {
       "Full Digital Business Setup": 25000
     };
 
-    if (!packageName || !allowedPackages[packageName] || allowedPackages[packageName] !== amount) {
+    if (
+      !packageName ||
+      !allowedPackages[packageName] ||
+      allowedPackages[packageName] !== amount
+    ) {
       return res.status(400).json({
         error: "Invalid package or amount.",
-        received: { packageName: packageName, amount: amount }
+        received: {
+          packageName: packageName,
+          amount: amount
+        }
       });
     }
 
     const host = req.headers["x-forwarded-host"] || req.headers.host;
     const protocol = req.headers["x-forwarded-proto"] || "https";
-    const baseUrl = process.env.SITE_URL || (protocol + "://" + host);
+    const baseUrl = process.env.SITE_URL || protocol + "://" + host;
 
     const externalId =
       "intellium-" +
@@ -80,7 +90,7 @@ export default async function handler(req, res) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Basic " + auth
+        Authorization: "Basic " + auth
       },
       body: JSON.stringify(payload)
     });
@@ -89,6 +99,7 @@ export default async function handler(req, res) {
 
     if (!xenditResponse.ok) {
       console.error("Xendit API error:", JSON.stringify(data));
+
       return res.status(xenditResponse.status || 500).json({
         error: data.message || "Xendit rejected the invoice request.",
         xendit_error: data
@@ -103,6 +114,7 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error("Create Xendit invoice function crashed:", error);
+
     return res.status(500).json({
       error: "Server error creating checkout link.",
       details: error && error.message ? error.message : String(error)
