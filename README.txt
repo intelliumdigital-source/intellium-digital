@@ -1,4 +1,4 @@
-Intellium Digital Website - Premium V3
+Intellium Digital Website - Premium V4
 
 Included:
 - index.html
@@ -6,17 +6,16 @@ Included:
 - script.js
 - assets folder
 
-How to deploy:
-1. Upload all files and folders to your GitHub repository.
-2. Make sure index.html, style.css, script.js, and the assets folder are in the root folder.
-3. Deploy the repository using Vercel.
-4. Connect your domain intelliumdigital.online in Vercel.
+Premium V4 updates:
+- More premium SaaS-style UI
+- Stronger hero section and visual dashboard
+- SweldoTrack featured app section
+- Updated chatbot with SweldoTrack option
+- Improved glassmorphism cards, hover effects, spacing, typography, and scroll reveal animation
+- Uses your uploaded Intellium Digital assets and SweldoTrack logo
 
-Main updates:
-- Premium redesigned services and pricing sections
-- Clear package offers with pricing
-- Website + Maya Integration launch promo
-- Client spotlight section
-- Process and FAQ sections
-- Business disclosure: Intellium Digital operated by JSSMMPH Digital Marketing Services
-- Updated lead form with package selection and budget range
+How to deploy:
+1. Extract this ZIP.
+2. Upload index.html, style.css, script.js, and the assets folder to your GitHub repository root.
+3. Deploy or redeploy on Vercel.
+4. Hard refresh the browser with CTRL + SHIFT + R.
