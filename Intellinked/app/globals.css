@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+:root {
+  --background: #070b17;
+  --foreground: #ebf4ff;
+  --surface: rgba(11, 18, 36, 0.82);
+  --surface-strong: rgba(17, 26, 52, 0.94);
+  --border: rgba(113, 188, 255, 0.18);
+  --muted: #94a8c7;
+  --muted-strong: #b4c8e5;
+  --cyan: #5be7ff;
+  --blue: #4f8dff;
+  --purple: #9b6dff;
+  --success: #3ce6b3;
+  --warning: #ffb35c;
+  --danger: #ff7d92;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-strong: var(--muted-strong);
+  --color-cyan: var(--cyan);
+  --color-blue: var(--blue);
+  --color-purple: var(--purple);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-manrope);
+  --font-heading: var(--font-sora);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  background:
+    radial-gradient(circle at top left, rgba(91, 231, 255, 0.14), transparent 24%),
+    radial-gradient(circle at top right, rgba(155, 109, 255, 0.18), transparent 28%),
+    linear-gradient(180deg, #08101f 0%, #070b17 42%, #060911 100%);
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(circle at 15% 20%, rgba(91, 231, 255, 0.08), transparent 18%),
+    radial-gradient(circle at 85% 15%, rgba(79, 141, 255, 0.12), transparent 26%),
+    radial-gradient(circle at 50% 90%, rgba(155, 109, 255, 0.1), transparent 24%),
+    linear-gradient(180deg, rgba(4, 8, 18, 0.78), rgba(4, 8, 18, 0.92));
+  color: var(--foreground);
+  font-family: var(--font-manrope), sans-serif;
+}
+
+a,
+button,
+input,
+textarea,
+select {
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+::selection {
+  background: rgba(91, 231, 255, 0.22);
+  color: #f8fcff;
+}
+
+.premium-card {
+  border: 1px solid rgba(113, 188, 255, 0.16);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 46, 0.94), rgba(8, 14, 29, 0.94)),
+    rgba(11, 18, 36, 0.88);
+  box-shadow:
+    0 0 0 1px rgba(91, 231, 255, 0.03),
+    0 24px 80px rgba(4, 10, 24, 0.45);
+  backdrop-filter: blur(18px);
+}
+
+.premium-card-soft {
+  border: 1px solid rgba(113, 188, 255, 0.12);
+  background: linear-gradient(180deg, rgba(10, 16, 31, 0.82), rgba(8, 12, 24, 0.82));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.premium-grid {
+  background-image:
+    linear-gradient(rgba(113, 188, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(113, 188, 255, 0.06) 1px, transparent 1px);
+  background-position: center;
+  background-size: 28px 28px;
+}
+
+.text-glow {
+  background: linear-gradient(120deg, #f7fbff 0%, #7fe8ff 38%, #8f8cff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.halo-ring {
+  position: relative;
+}
+
+.halo-ring::before {
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(91, 231, 255, 0.28),
+    rgba(79, 141, 255, 0.14),
+    rgba(155, 109, 255, 0.22)
+  );
+  content: "";
+  opacity: 0.9;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
