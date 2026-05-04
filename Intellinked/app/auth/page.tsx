@@ -1,9 +1,22 @@
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { redirect } from "next/navigation";
+import { ShieldCheck, Sparkles, Users } from "lucide-react";
 
+import { AuthShell } from "@/app/auth/auth-shell";
 import { BrandLockup, Pill, Surface } from "@/app/_components/ui";
+import { getSessionUser } from "@/lib/auth/session";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
 
-export default function AuthPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AuthPage() {
+  const isConfigured = hasSupabaseEnv();
+  const user = isConfigured ? await getSessionUser() : null;
+
+  if (user) {
+    redirect("/home");
+  }
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[1320px] items-center px-4 py-8 sm:px-6 lg:px-8">
       <div className="grid w-full gap-6 lg:grid-cols-[0.95fr_1.05fr]">
@@ -14,41 +27,49 @@ export default function AuthPage() {
               <BrandLockup />
             </Link>
             <div className="mt-5">
-              <Pill active>Local-first demo access</Pill>
+              <Pill active>
+                {isConfigured ? "Supabase auth enabled" : "Supabase setup required"}
+              </Pill>
             </div>
             <h1 className="mt-6 font-heading text-4xl font-semibold text-white">
               Enter intellinked
             </h1>
             <p className="mt-4 text-sm leading-8 text-muted-strong">
-              This MVP keeps authentication local and presentation-first. The goal is to demonstrate the product experience before wiring real auth, profile storage, and live messaging.
+              Auth is now wired for Supabase while the product remains mock-data first for feed, discovery, and services. This foundation is ready for real profiles, posts, and protected workspace data next.
             </p>
+
+            {!isConfigured ? (
+              <p className="mt-5 rounded-2xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
+                Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to your local environment before testing login and registration.
+              </p>
+            ) : null}
 
             <div className="mt-8 space-y-4">
               <div className="premium-card-soft rounded-3xl p-5">
                 <div className="flex items-center gap-3">
                   <Sparkles className="h-5 w-5 text-cyan" />
-                  <p className="font-medium text-white">Premium dark social UI</p>
+                  <p className="font-medium text-white">Protected premium workspace</p>
                 </div>
                 <p className="mt-3 text-sm leading-7 text-muted">
-                  Feed, discovery, services, profiles, admin review, and responsive navigation are already staged.
+                  The workspace routes now require a valid Supabase session while preserving the existing premium dark UI.
                 </p>
               </div>
               <div className="premium-card-soft rounded-3xl p-5">
                 <div className="flex items-center gap-3">
                   <ShieldCheck className="h-5 w-5 text-purple" />
-                  <p className="font-medium text-white">Mock data only</p>
+                  <p className="font-medium text-white">Database-ready auth metadata</p>
                 </div>
                 <p className="mt-3 text-sm leading-7 text-muted">
-                  No Supabase, no real messaging, and no live moderation persistence yet.
+                  Registration stores account metadata for future profile and business record creation.
                 </p>
               </div>
               <div className="premium-card-soft rounded-3xl p-5">
                 <div className="flex items-center gap-3">
                   <Users className="h-5 w-5 text-blue" />
-                  <p className="font-medium text-white">Ready for real entities later</p>
+                  <p className="font-medium text-white">Mock content stays intact</p>
                 </div>
                 <p className="mt-3 text-sm leading-7 text-muted">
-                  Current routes and mock entity shapes already line up with future user, business, service, and post records.
+                  Feed, explore, services, profiles, and moderation remain mock-first until real data integration starts.
                 </p>
               </div>
             </div>
@@ -56,70 +77,9 @@ export default function AuthPage() {
         </Surface>
 
         <Surface>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <section className="premium-card-soft rounded-[28px] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan">
-                Login
-              </p>
-              <div className="mt-5 space-y-4">
-                <label className="block text-sm text-muted-strong">
-                  Email
-                  <input
-                    className="input-shell mt-2 w-full rounded-2xl px-4 py-3 text-white outline-none"
-                    placeholder="name@business.ph"
-                  />
-                </label>
-                <label className="block text-sm text-muted-strong">
-                  Password
-                  <input
-                    type="password"
-                    className="input-shell mt-2 w-full rounded-2xl px-4 py-3 text-white outline-none"
-                    placeholder="********"
-                  />
-                </label>
-                <Link
-                  href="/home"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-cyan/30 bg-cyan/12 px-4 py-3 text-sm font-semibold text-cyan hover:bg-cyan/18 hover:text-white"
-                >
-                  Continue to home
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </section>
-
-            <section className="premium-card-soft rounded-[28px] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-purple">
-                Register
-              </p>
-              <div className="mt-5 space-y-4">
-                <label className="block text-sm text-muted-strong">
-                  Full name or business
-                  <input
-                    className="input-shell mt-2 w-full rounded-2xl px-4 py-3 text-white outline-none"
-                    placeholder="Your name or brand"
-                  />
-                </label>
-                <label className="block text-sm text-muted-strong">
-                  Role type
-                  <select className="input-shell mt-2 w-full rounded-2xl px-4 py-3 text-white outline-none">
-                    <option className="bg-slate-950">Professional</option>
-                    <option className="bg-slate-950">Business</option>
-                    <option className="bg-slate-950">Freelancer</option>
-                    <option className="bg-slate-950">Customer</option>
-                  </select>
-                </label>
-                <Link
-                  href="/explore"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border bg-white/4 px-4 py-3 text-sm font-medium text-muted-strong hover:text-white"
-                >
-                  Preview explore page
-                </Link>
-              </div>
-            </section>
-          </div>
-
+          <AuthShell isConfigured={isConfigured} />
           <p className="mt-5 text-sm leading-7 text-muted">
-            For this MVP, both flows route into the local demo workspace. Real auth and account persistence can be connected later without changing the overall product structure.
+            Login, registration, logout, and protected routes are live. The next backend step is swapping mock workspace content onto the Supabase schema without redesigning the interface.
           </p>
         </Surface>
       </div>

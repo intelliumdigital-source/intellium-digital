@@ -8,6 +8,7 @@ import {
   Bell,
   Compass,
   Home,
+  LogOut,
   MessageSquare,
   PlusSquare,
   Search,
@@ -16,6 +17,7 @@ import {
   UserCircle2,
 } from "lucide-react";
 
+import { signOutAction } from "@/app/actions/auth";
 import { BrandLockup, Pill, Surface } from "@/app/_components/ui";
 import { categories, communityPulse } from "@/app/_data/mock-data";
 
@@ -50,8 +52,14 @@ function getPageLabel(pathname: string) {
 
 export function SiteChrome({
   children,
+  user,
 }: Readonly<{
   children: React.ReactNode;
+  user: {
+    id: string;
+    email: string | null;
+    displayName: string;
+  } | null;
 }>) {
   const router = useRouter();
   const pathname = usePathname();
@@ -104,6 +112,23 @@ export function SiteChrome({
                 );
               })}
             </div>
+
+            {user ? (
+              <div className="mt-6 rounded-[24px] border border-border bg-white/4 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-cyan">Signed in</p>
+                <p className="mt-3 font-medium text-white">{user.displayName}</p>
+                <p className="mt-1 text-sm text-muted">{user.email ?? "Supabase account"}</p>
+                <form action={signOutAction} className="mt-4">
+                  <button
+                    type="submit"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border bg-white/4 px-4 py-3 text-sm font-medium text-muted-strong hover:text-white"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign out
+                  </button>
+                </form>
+              </div>
+            ) : null}
           </Surface>
         </aside>
 
@@ -117,7 +142,7 @@ export function SiteChrome({
                 Premium local-first social networking MVP
               </h2>
               <p className="mt-2 text-sm text-muted">
-                Ready for auth and database integration later, but intentionally mock-first right now.
+                Supabase Auth is active. Mock workspace content stays in place until live data integration begins.
               </p>
             </div>
 
@@ -134,7 +159,7 @@ export function SiteChrome({
                   className="w-full bg-transparent text-white outline-none placeholder:text-muted"
                 />
               </form>
-              <Pill active>Mock data mode</Pill>
+              <Pill active>Authenticated workspace</Pill>
             </div>
           </div>
 
@@ -186,6 +211,15 @@ export function SiteChrome({
               </Link>
             );
           })}
+          <form action={signOutAction} className="shrink-0">
+            <button
+              type="submit"
+              className="flex items-center gap-2 rounded-full px-4 py-2 text-sm text-muted-strong"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </button>
+          </form>
         </div>
       </nav>
     </div>
