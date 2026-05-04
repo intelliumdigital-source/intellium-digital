@@ -1,1 +1,0 @@
-Final full site with Xendit ES module API. Upload all root files/folders to GitHub. Do not upload secret CSV or .env. Set Vercel env: XENDIT_SECRET_KEY and SITE_URL.
