@@ -1,22 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 import { Search } from "lucide-react";
 
 import { EmptyState, Pill, ServiceCard, Surface } from "@/app/_components/ui";
 import { categories, services } from "@/app/_data/mock-data";
 
-export function ServicesDirectory() {
-  const [query, setQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+export function ServicesDirectory({
+  initialQuery = "",
+  initialCategory = "All",
+}: {
+  initialQuery?: string;
+  initialCategory?: string;
+}) {
+  const [query, setQuery] = useState(initialQuery);
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
 
-  const normalizedQuery = query.toLowerCase().trim();
+  const deferredQuery = useDeferredValue(query);
+  const normalizedQuery = deferredQuery.toLowerCase().trim();
 
   const filteredServices = services.filter((service) => {
     const matchesQuery =
       !normalizedQuery ||
       service.title.toLowerCase().includes(normalizedQuery) ||
       service.providerName.toLowerCase().includes(normalizedQuery) ||
+      (service.businessName?.toLowerCase().includes(normalizedQuery) ?? false) ||
       service.summary.toLowerCase().includes(normalizedQuery) ||
       service.tags.join(" ").toLowerCase().includes(normalizedQuery);
 
@@ -30,7 +38,7 @@ export function ServicesDirectory() {
     <div className="space-y-6">
       <Surface>
         <div className="flex flex-col gap-4">
-          <label className="flex items-center gap-3 rounded-3xl border border-border bg-white/4 px-4 py-4 text-sm text-muted">
+          <label className="input-shell flex items-center gap-3 rounded-3xl px-4 py-4 text-sm text-muted">
             <Search className="h-4 w-4 text-cyan" />
             <input
               value={query}
@@ -41,7 +49,11 @@ export function ServicesDirectory() {
           </label>
 
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => setSelectedCategory("All")} className="rounded-full" type="button">
+            <button
+              onClick={() => setSelectedCategory("All")}
+              className="rounded-full"
+              type="button"
+            >
               <Pill active={selectedCategory === "All"}>All categories</Pill>
             </button>
             {categories.map((category) => (
@@ -58,8 +70,34 @@ export function ServicesDirectory() {
         </div>
       </Surface>
 
+      <Surface>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-heading text-xl font-semibold text-white">
+              Service marketplace snapshot
+            </h2>
+            <p className="mt-2 text-sm text-muted">
+              {filteredServices.length} visible offers across local-first categories.
+            </p>
+          </div>
+          {(query || selectedCategory !== "All") && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setSelectedCategory("All");
+              }}
+              className="text-sm text-cyan hover:text-white"
+            >
+              Reset filters
+            </button>
+          )}
+        </div>
+      </Surface>
+
       {filteredServices.length === 0 ? (
         <EmptyState
+          eyebrow="Directory"
           title="No service listings matched"
           description="Try a different keyword or switch back to all categories to see the current local-first service set."
         />

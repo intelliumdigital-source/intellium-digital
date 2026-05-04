@@ -1,4 +1,6 @@
 import {
+  EmptyState,
+  ExternalTextLink,
   GhostLink,
   ModerationActions,
   Pill,
@@ -9,22 +11,29 @@ import {
   Surface,
 } from "@/app/_components/ui";
 import type { Business, Person } from "@/app/_data/mock-data";
-import { getPostsByIds, people, services } from "@/app/_data/mock-data";
+import {
+  getPostsByIds,
+  getServicesForBusiness,
+  getServicesForPerson,
+  people,
+} from "@/app/_data/mock-data";
 
 export function PersonProfileView({ person }: { person: Person }) {
   const recentPosts = getPostsByIds(person.recentPostIds);
-  const matchingServices = services.filter(
-    (service) => service.providerSlug === person.slug,
-  );
-  const recommendations = people.filter((candidate) => candidate.slug !== person.slug).slice(0, 3);
+  const matchingServices = getServicesForPerson(person.slug);
+  const recommendations = people
+    .filter((candidate) => candidate.slug !== person.slug)
+    .slice(0, 3);
 
   return (
     <div className="space-y-6">
-      <Surface>
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <Surface className="overflow-hidden">
+        <div className="premium-grid absolute inset-0 opacity-35" />
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <Pill active>{person.authorType}</Pill>
+              <Pill>{person.focusCategory}</Pill>
               <Pill>{person.location}</Pill>
             </div>
             <h1 className="mt-4 font-heading text-4xl font-semibold text-white">
@@ -32,10 +41,13 @@ export function PersonProfileView({ person }: { person: Person }) {
             </h1>
             <p className="mt-2 text-lg text-muted-strong">{person.role}</p>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">{person.bio}</p>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-strong">
+              {person.contactPreference}
+            </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <GhostLink href="/messages">Contact</GhostLink>
-            <PrimaryLink href="/messages">Follow / Connect</PrimaryLink>
+            <GhostLink href={`/messages?with=${person.slug}`}>Contact</GhostLink>
+            <PrimaryLink href={`/messages?with=${person.slug}`}>Follow / Connect</PrimaryLink>
           </div>
         </div>
         <div className="mt-6 flex flex-wrap gap-2">
@@ -77,18 +89,22 @@ export function PersonProfileView({ person }: { person: Person }) {
           <SmallList
             title="Recommended collaborators"
             items={recommendations.map(
-              (candidate) => `${candidate.fullName} • ${candidate.role} • ${candidate.location}`,
+              (candidate) => `${candidate.fullName} | ${candidate.role} | ${candidate.location}`,
             )}
           />
 
-          <SmallList
-            title="Skills and services"
-            items={
-              matchingServices.length > 0
-                ? matchingServices.map((service) => `${service.title} • ${service.price}`)
-                : person.skills
-            }
-          />
+          {matchingServices.length > 0 ? (
+            <SmallList
+              title="Skills and services"
+              items={matchingServices.map((service) => `${service.title} | ${service.price}`)}
+            />
+          ) : (
+            <EmptyState
+              eyebrow="Services"
+              title="No featured service cards yet"
+              description="This profile still highlights expertise through skills and recent posts while the service layer stays intentionally lightweight."
+            />
+          )}
 
           <Surface>
             <h3 className="font-heading text-lg font-semibold text-white">Safety tools</h3>
@@ -107,11 +123,13 @@ export function PersonProfileView({ person }: { person: Person }) {
 
 export function BusinessProfileView({ business }: { business: Business }) {
   const recentPosts = getPostsByIds(business.recentPostIds);
+  const businessServices = getServicesForBusiness(business.slug);
 
   return (
     <div className="space-y-6">
-      <Surface>
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+      <Surface className="overflow-hidden">
+        <div className="premium-grid absolute inset-0 opacity-35" />
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <Pill active>{business.category}</Pill>
@@ -125,8 +143,10 @@ export function BusinessProfileView({ business }: { business: Business }) {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <GhostLink href="/messages">Contact</GhostLink>
-            <PrimaryLink href="/services">View Service</PrimaryLink>
+            <GhostLink href={`/messages?with=${business.slug}`}>Contact</GhostLink>
+            <PrimaryLink href={`/services?q=${encodeURIComponent(business.businessName)}`}>
+              View Service
+            </PrimaryLink>
           </div>
         </div>
       </Surface>
@@ -154,28 +174,21 @@ export function BusinessProfileView({ business }: { business: Business }) {
         </div>
 
         <div className="space-y-4">
-          <SmallList title="Services offered" items={business.servicesOffered} />
+          {businessServices.length > 0 ? (
+            <SmallList
+              title="Services offered"
+              items={businessServices.map((service) => `${service.title} | ${service.price}`)}
+            />
+          ) : (
+            <SmallList title="Services offered" items={business.servicesOffered} />
+          )}
 
           <Surface>
             <h3 className="font-heading text-lg font-semibold text-white">Contact details</h3>
             <div className="mt-4 space-y-3 text-sm text-muted-strong">
               <p>{business.contactDetails}</p>
-              <a
-                href={business.website}
-                target="_blank"
-                rel="noreferrer"
-                className="block text-cyan hover:text-white"
-              >
-                {business.website}
-              </a>
-              <a
-                href={business.facebook}
-                target="_blank"
-                rel="noreferrer"
-                className="block text-cyan hover:text-white"
-              >
-                {business.facebook}
-              </a>
+              <ExternalTextLink href={business.website}>{business.website}</ExternalTextLink>
+              <ExternalTextLink href={business.facebook}>{business.facebook}</ExternalTextLink>
             </div>
           </Surface>
 

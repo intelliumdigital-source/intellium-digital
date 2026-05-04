@@ -22,9 +22,11 @@ export type Person = {
   fullName: string;
   role: string;
   authorType: Exclude<AuthorType, "Business">;
+  focusCategory: Category;
   location: string;
   bio: string;
   skills: string[];
+  contactPreference: string;
   recentPostIds: string[];
   stats: {
     followers: number;
@@ -79,6 +81,7 @@ export type ServiceListing = {
   location: string;
   summary: string;
   price: string;
+  availability: string;
   tags: string[];
 };
 
@@ -127,9 +130,12 @@ export const people: Person[] = [
     fullName: "Mika Reyes",
     role: "Brand Strategist",
     authorType: "Professional",
+    focusCategory: "Digital services",
     location: "Makati City",
-    bio: "Helping founders sharpen positioning, launch faster, and build credible community trust.",
+    bio: "Helping founders sharpen positioning, launch faster, and build credible community trust around premium local brands.",
     skills: ["Brand strategy", "Go-to-market", "Community building"],
+    contactPreference:
+      "Best for launch strategy, positioning audits, and community-led campaigns.",
     recentPostIds: ["post-1", "post-7"],
     stats: {
       followers: 1280,
@@ -142,9 +148,12 @@ export const people: Person[] = [
     fullName: "Carlo Santos",
     role: "Freelance Web Developer",
     authorType: "Freelancer",
+    focusCategory: "Freelancers",
     location: "Cebu City",
-    bio: "Building fast websites and lead funnels for SMEs that want more inbound bookings.",
+    bio: "Building fast websites and lean lead funnels for SMEs that want more inbound bookings without heavy retainers.",
     skills: ["Next.js", "E-commerce", "Automation"],
+    contactPreference:
+      "Open to short discovery calls for websites, automation, and inquiry flow cleanups.",
     recentPostIds: ["post-2", "post-8"],
     stats: {
       followers: 920,
@@ -157,9 +166,12 @@ export const people: Person[] = [
     fullName: "Jam Garcia",
     role: "Community Partnerships Lead",
     authorType: "Professional",
+    focusCategory: "Jobs and gigs",
     location: "Davao City",
     bio: "Connecting local providers, startups, and neighborhood communities to create practical wins.",
     skills: ["Partnerships", "Events", "Lead generation"],
+    contactPreference:
+      "Great fit for workshops, local activations, and community partner introductions.",
     recentPostIds: ["post-4"],
     stats: {
       followers: 760,
@@ -172,14 +184,53 @@ export const people: Person[] = [
     fullName: "Trina Valdez",
     role: "Property Advisor",
     authorType: "Professional",
+    focusCategory: "Real estate",
     location: "Pasig City",
     bio: "Matching families and growing teams with practical real estate options and cleaner decision paths.",
     skills: ["Real estate", "Consultation", "Sales enablement"],
+    contactPreference:
+      "Best for lease shortlist reviews, viewing coordination, and relocation guidance.",
     recentPostIds: ["post-5"],
     stats: {
       followers: 688,
       connections: 167,
       opportunities: 7,
+    },
+  },
+  {
+    slug: "lea-manaloto",
+    fullName: "Lea Manaloto",
+    role: "Online Seller Operations Coach",
+    authorType: "Professional",
+    focusCategory: "Online sellers",
+    location: "Marikina City",
+    bio: "Helping online sellers clean up catalog workflows, fulfillment habits, and repeat-purchase messaging.",
+    skills: ["Catalog strategy", "Fulfillment ops", "Retention"],
+    contactPreference:
+      "Open to seller audits, marketplace cleanup work, and micro-brand systems.",
+    recentPostIds: ["post-11"],
+    stats: {
+      followers: 834,
+      connections: 236,
+      opportunities: 11,
+    },
+  },
+  {
+    slug: "paolo-fernandez",
+    fullName: "Paolo Fernandez",
+    role: "SME Buyer and Project Client",
+    authorType: "Customer",
+    focusCategory: "Small businesses",
+    location: "Iloilo City",
+    bio: "Usually sourcing dependable local creatives, small business suppliers, and short-term operators for branch launches.",
+    skills: ["Vendor sourcing", "Branch setup", "Procurement"],
+    contactPreference:
+      "Useful for founders or freelancers who want to understand how serious buyers shortlist partners.",
+    recentPostIds: ["post-12"],
+    stats: {
+      followers: 512,
+      connections: 141,
+      opportunities: 6,
     },
   },
 ];
@@ -190,7 +241,8 @@ export const businesses: Business[] = [
     businessName: "Intellium Digital",
     category: "Digital services",
     location: "Metro Manila",
-    description: "Growth-focused digital partner behind intellinked, supporting local-first businesses with modern branding, websites, and campaigns.",
+    description:
+      "Growth-focused digital partner behind intellinked, supporting local-first businesses with modern branding, websites, and campaigns.",
     servicesOffered: [
       "Brand identity",
       "Social campaigns",
@@ -212,7 +264,8 @@ export const businesses: Business[] = [
     businessName: "Bayanihan Spaces",
     category: "Rentals",
     location: "Quezon City",
-    description: "Flexible event, meeting, and pop-up spaces for creators, trainers, and community sellers.",
+    description:
+      "Flexible event, meeting, and pop-up spaces for creators, trainers, and community sellers.",
     servicesOffered: ["Studio rentals", "Workshop rooms", "Pop-up booths"],
     contactDetails: "bookings@bayanihanspaces.ph | +63 917 320 1040",
     website: "https://bayanihanspaces.ph",
@@ -229,8 +282,13 @@ export const businesses: Business[] = [
     businessName: "Luntian Realty Partners",
     category: "Real estate",
     location: "Taguig City",
-    description: "Curated commercial and residential options with practical walkthrough support for local buyers and lessors.",
-    servicesOffered: ["Commercial leasing", "Residential brokerage", "Property walkthroughs"],
+    description:
+      "Curated commercial and residential options with practical walkthrough support for local buyers and lessors.",
+    servicesOffered: [
+      "Commercial leasing",
+      "Residential brokerage",
+      "Property walkthroughs",
+    ],
     contactDetails: "team@luntianrealty.ph | +63 917 665 9934",
     website: "https://luntianrealty.ph",
     facebook: "https://facebook.com/LuntianRealtyPH",
@@ -252,8 +310,10 @@ export const services: ServiceListing[] = [
     providerSlug: "carlo-santos",
     category: "Freelancers",
     location: "Cebu City",
-    summary: "A 10-day sprint for service businesses that need a premium website, inquiry flow, and booking CTA.",
+    summary:
+      "A 10-day sprint for service businesses that need a premium website, inquiry flow, and booking CTA.",
     price: "Starts at PHP 28,000",
+    availability: "2 slots this month",
     tags: ["Next.js", "SEO-ready", "Lead forms"],
   },
   {
@@ -265,8 +325,10 @@ export const services: ServiceListing[] = [
     businessName: "Intellium Digital",
     category: "Digital services",
     location: "Metro Manila",
-    summary: "Brand messaging, campaign creatives, and launch execution for local-first offers and communities.",
+    summary:
+      "Brand messaging, campaign creatives, and launch execution for local-first offers and communities.",
     price: "Starts at PHP 45,000",
+    availability: "Booked 2 weeks ahead",
     tags: ["Campaign strategy", "Creative direction", "Reporting"],
   },
   {
@@ -278,8 +340,10 @@ export const services: ServiceListing[] = [
     businessName: "Bayanihan Spaces",
     category: "Rentals",
     location: "Quezon City",
-    summary: "Compact pop-up booth package for sellers, makers, and small brand activations.",
+    summary:
+      "Compact pop-up booth package for sellers, makers, and small brand activations.",
     price: "PHP 6,500 / weekend",
+    availability: "Next open weekend: May 17",
     tags: ["Foot traffic", "Inclusions", "Flexible slots"],
   },
   {
@@ -290,8 +354,10 @@ export const services: ServiceListing[] = [
     providerSlug: "trina-valdez",
     category: "Real estate",
     location: "Pasig City",
-    summary: "Shortlist commercial spaces that fit your foot traffic, lease budget, and operational needs.",
+    summary:
+      "Shortlist commercial spaces that fit your foot traffic, lease budget, and operational needs.",
     price: "Consultation by arrangement",
+    availability: "Viewings available this week",
     tags: ["Broker support", "Lease review", "Area scouting"],
   },
   {
@@ -302,8 +368,10 @@ export const services: ServiceListing[] = [
     providerSlug: "jam-garcia",
     category: "Insurance",
     location: "Davao City",
-    summary: "Review current protection gaps and find more practical coverage options for small teams and founders.",
+    summary:
+      "Review current protection gaps and find more practical coverage options for small teams and founders.",
     price: "Free discovery call",
+    availability: "Call slots open this Friday",
     tags: ["Business insurance", "Risk review", "Comparisons"],
   },
   {
@@ -314,9 +382,40 @@ export const services: ServiceListing[] = [
     providerSlug: "mika-reyes",
     category: "Jobs and gigs",
     location: "Makati City",
-    summary: "Set up calendar, nurture members, and turn activity into leads for growing communities.",
+    summary:
+      "Set up calendar, nurture members, and turn activity into leads for growing communities.",
     price: "Retainer from PHP 18,000",
+    availability: "1 retainer opening",
     tags: ["Engagement", "Content ops", "Lead nurture"],
+  },
+  {
+    id: "service-7",
+    title: "Catalog Cleanup for Online Sellers",
+    providerName: "Lea Manaloto",
+    providerType: "Professional",
+    providerSlug: "lea-manaloto",
+    category: "Online sellers",
+    location: "Marikina City",
+    summary:
+      "Simplify product variants, pricing blocks, and customer decision points across Facebook, TikTok, and marketplace listings.",
+    price: "Starts at PHP 9,500",
+    availability: "3 audit slots left",
+    tags: ["Catalog cleanup", "Seller ops", "Repeat orders"],
+  },
+  {
+    id: "service-8",
+    title: "Loan Readiness Checklist for Microbusinesses",
+    providerName: "Intellium Digital",
+    providerType: "Business",
+    businessSlug: "intellium-digital",
+    businessName: "Intellium Digital",
+    category: "Loans",
+    location: "Metro Manila",
+    summary:
+      "A practical prep session for businesses organizing requirements, messaging, and credibility before applying for growth funding.",
+    price: "PHP 4,500 strategy session",
+    availability: "Rolling schedule",
+    tags: ["Documents", "Positioning", "Readiness"],
   },
 ];
 
@@ -326,7 +425,8 @@ export const feedPosts: FeedPost[] = [
     authorName: "Mika Reyes",
     authorType: "Professional",
     authorSlug: "mika-reyes",
-    content: "Filipino founders do not need more noise. They need clearer offers, stronger proof, and a community that actually converts interest into trust.",
+    content:
+      "Filipino founders do not need more noise. They need clearer offers, stronger proof, and a community that actually converts interest into trust.",
     category: "Digital services",
     timestamp: "12 minutes ago",
     likes: 126,
@@ -339,7 +439,8 @@ export const feedPosts: FeedPost[] = [
     authorName: "Carlo Santos",
     authorType: "Freelancer",
     authorSlug: "carlo-santos",
-    content: "Opening two website sprint slots for local service providers this month. Best fit: clinics, consultants, coaches, and real estate teams that need better lead capture.",
+    content:
+      "Opening two website sprint slots for local service providers this month. Best fit: clinics, consultants, coaches, and real estate teams that need better lead capture.",
     category: "Freelancers",
     timestamp: "48 minutes ago",
     likes: 89,
@@ -353,7 +454,8 @@ export const feedPosts: FeedPost[] = [
     authorType: "Business",
     businessSlug: "intellium-digital",
     businessName: "Intellium Digital",
-    content: "intellinked is being shaped as a local-first platform where business owners, professionals, and customers can promote, collaborate, and find the right opportunities faster.",
+    content:
+      "intellinked is being shaped as a local-first platform where business owners, professionals, and customers can promote, collaborate, and find the right opportunities faster.",
     category: "Small businesses",
     timestamp: "1 hour ago",
     likes: 214,
@@ -366,7 +468,8 @@ export const feedPosts: FeedPost[] = [
     authorName: "Jam Garcia",
     authorType: "Professional",
     authorSlug: "jam-garcia",
-    content: "If you run events or workshops, I can connect you with neighborhood communities looking for practical learning sessions in Davao this quarter.",
+    content:
+      "If you run events or workshops, I can connect you with neighborhood communities looking for practical learning sessions in Davao this quarter.",
     category: "Jobs and gigs",
     timestamp: "3 hours ago",
     likes: 64,
@@ -379,7 +482,8 @@ export const feedPosts: FeedPost[] = [
     authorName: "Trina Valdez",
     authorType: "Professional",
     authorSlug: "trina-valdez",
-    content: "Seeing more SMEs ask for flexible office options instead of long lease lock-ins. If you are scouting in Pasig or BGC, I can send a tight shortlist.",
+    content:
+      "Seeing more SMEs ask for flexible office options instead of long lease lock-ins. If you are scouting in Pasig or BGC, I can send a tight shortlist.",
     category: "Real estate",
     timestamp: "5 hours ago",
     likes: 58,
@@ -393,7 +497,8 @@ export const feedPosts: FeedPost[] = [
     authorType: "Business",
     businessSlug: "intellium-digital",
     businessName: "Intellium Digital",
-    content: "Building with mock data first keeps the product fast to iterate. We are focusing on cleaner networking flows before wiring live infrastructure.",
+    content:
+      "Building with mock data first keeps the product fast to iterate. We are focusing on cleaner networking flows before wiring live infrastructure.",
     category: "Digital services",
     timestamp: "Yesterday",
     likes: 141,
@@ -406,7 +511,8 @@ export const feedPosts: FeedPost[] = [
     authorName: "Mika Reyes",
     authorType: "Professional",
     authorSlug: "mika-reyes",
-    content: "Community-led growth works best when the first reply is fast, the first win is obvious, and the follow-up does not disappear after the sale.",
+    content:
+      "Community-led growth works best when the first reply is fast, the first win is obvious, and the follow-up does not disappear after the sale.",
     category: "Small businesses",
     timestamp: "Yesterday",
     likes: 77,
@@ -419,7 +525,8 @@ export const feedPosts: FeedPost[] = [
     authorName: "Carlo Santos",
     authorType: "Freelancer",
     authorSlug: "carlo-santos",
-    content: "Any online sellers here who want a cleaner product catalog page and inquiry flow? Happy to swap notes and share what is working right now.",
+    content:
+      "Any online sellers here who want a cleaner product catalog page and inquiry flow? Happy to swap notes and share what is working right now.",
     category: "Online sellers",
     timestamp: "2 days ago",
     likes: 92,
@@ -433,7 +540,8 @@ export const feedPosts: FeedPost[] = [
     authorType: "Business",
     businessSlug: "bayanihan-spaces",
     businessName: "Bayanihan Spaces",
-    content: "Weekend booth schedule is almost full. We still have two high-footfall slots for small food, crafts, and lifestyle sellers.",
+    content:
+      "Weekend booth schedule is almost full. We still have two high-footfall slots for small food, crafts, and lifestyle sellers.",
     category: "Rentals",
     timestamp: "2 days ago",
     likes: 112,
@@ -447,13 +555,42 @@ export const feedPosts: FeedPost[] = [
     authorType: "Business",
     businessSlug: "luntian-realty-partners",
     businessName: "Luntian Realty Partners",
-    content: "Newly listed compact commercial units for clinics, salons, and service brands wanting a more visible address in Taguig.",
+    content:
+      "Newly listed compact commercial units for clinics, salons, and service brands wanting a more visible address in Taguig.",
     category: "Real estate",
     timestamp: "3 days ago",
     likes: 84,
     comments: 6,
     shares: 7,
     cta: "View Service",
+  },
+  {
+    id: "post-11",
+    authorName: "Lea Manaloto",
+    authorType: "Professional",
+    authorSlug: "lea-manaloto",
+    content:
+      "A lot of online sellers do not have a traffic problem. They have a catalog clarity problem. Cleaner offers usually beat louder promos.",
+    category: "Online sellers",
+    timestamp: "4 days ago",
+    likes: 73,
+    comments: 12,
+    shares: 5,
+    cta: "View Service",
+  },
+  {
+    id: "post-12",
+    authorName: "Paolo Fernandez",
+    authorType: "Customer",
+    authorSlug: "paolo-fernandez",
+    content:
+      "As a buyer, I shortlist faster when a freelancer or small business explains scope clearly, shows proof, and responds with practical timelines.",
+    category: "Small businesses",
+    timestamp: "5 days ago",
+    likes: 68,
+    comments: 14,
+    shares: 6,
+    cta: "Connect",
   },
 ];
 
@@ -486,6 +623,13 @@ export const notifications: NotificationItem[] = [
     time: "4h ago",
     type: "Moderation",
   },
+  {
+    id: "notification-5",
+    title: "Bayanihan Spaces updated a rental slot",
+    detail: "A weekend activation booth reopened after a cancellation in Quezon City.",
+    time: "Today",
+    type: "Lead",
+  },
 ];
 
 export const conversations: ConversationPreview[] = [
@@ -493,7 +637,8 @@ export const conversations: ConversationPreview[] = [
     id: "conversation-1",
     name: "Mika Reyes",
     role: "Brand Strategist",
-    snippet: "If you want, I can send a simple launch checklist for the campaign page.",
+    snippet:
+      "If you want, I can send a simple launch checklist for the campaign page.",
     time: "10:18 AM",
     unread: 2,
   },
@@ -501,7 +646,8 @@ export const conversations: ConversationPreview[] = [
     id: "conversation-2",
     name: "Bayanihan Spaces",
     role: "Rentals",
-    snippet: "We still have a Saturday afternoon slot if your pop-up needs a faster date.",
+    snippet:
+      "We still have a Saturday afternoon slot if your pop-up needs a faster date.",
     time: "Yesterday",
     unread: 0,
   },
@@ -509,9 +655,19 @@ export const conversations: ConversationPreview[] = [
     id: "conversation-3",
     name: "Jam Garcia",
     role: "Community Partnerships",
-    snippet: "Can we align the workshop topic with freelance pricing and client acquisition?",
+    snippet:
+      "Can we align the workshop topic with freelance pricing and client acquisition?",
     time: "Yesterday",
     unread: 1,
+  },
+  {
+    id: "conversation-4",
+    name: "Lea Manaloto",
+    role: "Online Seller Operations",
+    snippet:
+      "Send me the current catalog screenshots and I can point out the fastest fixes.",
+    time: "Friday",
+    unread: 0,
   },
 ];
 
@@ -532,7 +688,8 @@ export const reports: ModerationReport[] = [
     reason: "Suspected misleading loan promotion",
     submittedBy: "R. Delos Reyes",
     time: "1h ago",
-    notes: "High urgency because the post promises guaranteed approval with no checks.",
+    notes:
+      "High urgency because the post promises guaranteed approval with no checks.",
   },
   {
     id: "report-3",
@@ -543,13 +700,38 @@ export const reports: ModerationReport[] = [
     time: "Yesterday",
     notes: "Link fixed and re-reviewed.",
   },
+  {
+    id: "report-4",
+    status: "Pending",
+    target: "Post: Guaranteed 10x sales in 24 hours",
+    reason: "Likely exaggerated claim without proof",
+    submittedBy: "M. Cabanting",
+    time: "Yesterday",
+    notes: "Needs manual review for misleading marketing language.",
+  },
 ];
 
 export const platformStats = [
-  { label: "Active members", value: "3,400+" },
-  { label: "Service listings", value: "260+" },
-  { label: "Local opportunities", value: "94 this week" },
-  { label: "Response health", value: "97% monitored" },
+  {
+    label: "Active members",
+    value: "3,400+",
+    note: "Mostly Metro Manila, Cebu, Davao, and Iloilo",
+  },
+  {
+    label: "Service listings",
+    value: "260+",
+    note: "From founders, freelancers, and local SMEs",
+  },
+  {
+    label: "Local opportunities",
+    value: "94 this week",
+    note: "Across gigs, rentals, and business intros",
+  },
+  {
+    label: "Response health",
+    value: "97% monitored",
+    note: "Community trust and moderation surfaced early",
+  },
 ];
 
 export const communityPulse = [
@@ -568,4 +750,12 @@ export function getBusinessBySlug(slug: string) {
 
 export function getPostsByIds(postIds: string[]) {
   return feedPosts.filter((post) => postIds.includes(post.id));
+}
+
+export function getServicesForBusiness(slug: string) {
+  return services.filter((service) => service.businessSlug === slug);
+}
+
+export function getServicesForPerson(slug: string) {
+  return services.filter((service) => service.providerSlug === slug);
 }

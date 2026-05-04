@@ -2,6 +2,7 @@ import clsx from "clsx";
 import Link from "next/link";
 import {
   ArrowRight,
+  ArrowUpRight,
   Ban,
   BriefcaseBusiness,
   Building2,
@@ -15,7 +16,12 @@ import {
   Users,
 } from "lucide-react";
 
-import type { Business, FeedPost, Person, ServiceListing } from "@/app/_data/mock-data";
+import type {
+  Business,
+  FeedPost,
+  Person,
+  ServiceListing,
+} from "@/app/_data/mock-data";
 
 function formatCompact(value: number) {
   return new Intl.NumberFormat("en", {
@@ -59,7 +65,12 @@ export function Surface({
   children: React.ReactNode;
 }>) {
   return (
-    <div className={clsx("premium-card relative rounded-[28px] p-5 sm:p-6", className)}>
+    <div
+      className={clsx(
+        "premium-card premium-card-glow relative rounded-[28px] p-5 sm:p-6",
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -81,7 +92,7 @@ export function PageIntro({
       <div className="premium-grid absolute inset-0 opacity-40" />
       <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
-          <p className="mb-3 text-xs font-semibold tracking-[0.24em] text-cyan uppercase">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-cyan">
             {eyebrow}
           </p>
           <h1 className="font-heading text-3xl font-semibold tracking-tight text-white sm:text-4xl">
@@ -107,7 +118,7 @@ export function Pill({
   return (
     <span
       className={clsx(
-        "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium",
+        "inline-flex items-center whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium",
         active
           ? "border-cyan/40 bg-cyan/12 text-cyan"
           : "border-border bg-white/4 text-muted-strong",
@@ -128,7 +139,7 @@ export function PrimaryLink({
   return (
     <Link
       href={href}
-      className="inline-flex items-center justify-center gap-2 rounded-full border border-cyan/30 bg-cyan/12 px-4 py-2 text-sm font-semibold text-cyan hover:bg-cyan/18"
+      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-cyan/30 bg-cyan/12 px-4 py-2 text-sm font-semibold text-cyan hover:-translate-y-0.5 hover:bg-cyan/18 hover:text-white"
     >
       {children}
     </Link>
@@ -145,7 +156,7 @@ export function GhostLink({
   return (
     <Link
       href={href}
-      className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-white/4 px-4 py-2 text-sm font-medium text-muted-strong hover:border-cyan/25 hover:text-white"
+      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border bg-white/4 px-4 py-2 text-sm font-medium text-muted-strong hover:-translate-y-0.5 hover:border-cyan/25 hover:text-white"
     >
       {children}
     </Link>
@@ -167,18 +178,34 @@ export function StatCard({
         {label}
       </p>
       <p className="mt-3 font-heading text-3xl font-semibold text-white">{value}</p>
-      {note ? <p className="mt-2 text-sm text-muted">{note}</p> : null}
+      {note ? <p className="mt-2 text-sm leading-6 text-muted">{note}</p> : null}
     </div>
   );
 }
 
 export function PostCard({ post }: { post: FeedPost }) {
-  const href =
+  const profileHref =
     post.authorType === "Business" && post.businessSlug
       ? `/businesses/${post.businessSlug}`
       : post.authorSlug
         ? `/people/${post.authorSlug}`
         : "/profile";
+  const messageHref =
+    post.authorType === "Business" && post.businessSlug
+      ? `/messages?with=${post.businessSlug}`
+      : post.authorSlug
+        ? `/messages?with=${post.authorSlug}`
+        : "/messages";
+  const serviceHref =
+    post.businessName || post.authorName
+      ? `/services?q=${encodeURIComponent(post.businessName ?? post.authorName)}`
+      : "/services";
+  const ctaHref =
+    post.cta === "Message"
+      ? messageHref
+      : post.cta === "View Service"
+        ? serviceHref
+        : profileHref;
 
   return (
     <Surface className="flex flex-col gap-5">
@@ -189,19 +216,19 @@ export function PostCard({ post }: { post: FeedPost }) {
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <Link href={href} className="font-semibold text-white hover:text-cyan">
+              <Link href={profileHref} className="font-semibold text-white hover:text-cyan">
                 {post.authorName}
               </Link>
               <Pill>{post.authorType}</Pill>
               <Pill>{post.category}</Pill>
             </div>
             <p className="mt-2 text-sm text-muted">
-              {post.businessName ? `${post.businessName} • ` : ""}
+              {post.businessName ? `${post.businessName} | ` : ""}
               {post.timestamp}
             </p>
           </div>
         </div>
-        <div className="hidden gap-2 sm:flex">
+        <div className="flex flex-wrap gap-2">
           <button className="rounded-full border border-border bg-white/4 px-3 py-2 text-xs text-muted-strong hover:text-white">
             Report
           </button>
@@ -242,8 +269,8 @@ export function PostCard({ post }: { post: FeedPost }) {
           Share
         </button>
         <Link
-          href={href}
-          className="ml-auto inline-flex items-center gap-2 rounded-full border border-cyan/30 bg-cyan/12 px-4 py-2 text-sm font-semibold text-cyan hover:bg-cyan/18"
+          href={ctaHref}
+          className="ml-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-cyan/30 bg-cyan/12 px-4 py-2 text-sm font-semibold text-cyan hover:-translate-y-0.5 hover:bg-cyan/18 hover:text-white"
         >
           {post.cta}
           <ArrowRight className="h-4 w-4" />
@@ -269,6 +296,7 @@ export function ProfileCard({ person }: { person: Person }) {
               {person.fullName}
             </Link>
             <Pill>{person.authorType}</Pill>
+            <Pill>{person.focusCategory}</Pill>
           </div>
           <p className="mt-1 text-sm text-muted-strong">{person.role}</p>
           <p className="mt-2 inline-flex items-center gap-2 text-sm text-muted">
@@ -304,7 +332,7 @@ export function ProfileCard({ person }: { person: Person }) {
         </div>
       </div>
       <div className="mt-auto flex flex-wrap gap-2">
-        <GhostLink href={`/people/${person.slug}`}>Contact</GhostLink>
+        <GhostLink href={`/messages?with=${person.slug}`}>Contact</GhostLink>
         <PrimaryLink href={`/people/${person.slug}`}>
           <UserPlus className="h-4 w-4" />
           Connect
@@ -362,9 +390,9 @@ export function BusinessCard({ business }: { business: Business }) {
         </div>
       </div>
       <div className="mt-auto flex flex-wrap gap-2">
-        <GhostLink href={`/businesses/${business.slug}`}>
+        <GhostLink href={`/messages?with=${business.slug}`}>
           <Globe className="h-4 w-4" />
-          Profile
+          Contact
         </GhostLink>
         <PrimaryLink href={`/businesses/${business.slug}`}>
           <BriefcaseBusiness className="h-4 w-4" />
@@ -376,11 +404,16 @@ export function BusinessCard({ business }: { business: Business }) {
 }
 
 export function ServiceCard({ service }: { service: ServiceListing }) {
-  const href = service.businessSlug
+  const profileHref = service.businessSlug
     ? `/businesses/${service.businessSlug}`
     : service.providerSlug
       ? `/people/${service.providerSlug}`
       : "/services";
+  const messageHref = service.businessSlug
+    ? `/messages?with=${service.businessSlug}`
+    : service.providerSlug
+      ? `/messages?with=${service.providerSlug}`
+      : "/messages";
 
   return (
     <Surface className="flex h-full flex-col gap-4">
@@ -395,11 +428,12 @@ export function ServiceCard({ service }: { service: ServiceListing }) {
           </h3>
           <p className="mt-2 text-sm text-muted">
             {service.providerName}
-            {service.businessName ? ` • ${service.businessName}` : ""}
+            {service.businessName ? ` | ${service.businessName}` : ""}
           </p>
         </div>
-        <div className="rounded-2xl border border-cyan/20 bg-cyan/10 px-3 py-2 text-sm font-semibold text-cyan">
-          {service.price}
+        <div className="shrink-0 rounded-2xl border border-cyan/20 bg-cyan/10 px-3 py-2 text-right text-sm font-semibold text-cyan">
+          <p>{service.price}</p>
+          <p className="mt-1 text-xs font-medium text-muted">{service.availability}</p>
         </div>
       </div>
       <p className="text-sm leading-7 text-muted-strong">{service.summary}</p>
@@ -409,27 +443,40 @@ export function ServiceCard({ service }: { service: ServiceListing }) {
         ))}
       </div>
       <div className="mt-auto flex flex-wrap gap-2">
-        <GhostLink href={href}>Message</GhostLink>
-        <PrimaryLink href={href}>View Service</PrimaryLink>
+        <GhostLink href={messageHref}>Message</GhostLink>
+        <PrimaryLink href={profileHref}>View Service</PrimaryLink>
       </div>
     </Surface>
   );
 }
 
 export function EmptyState({
+  eyebrow,
   title,
   description,
+  action,
 }: {
+  eyebrow?: string;
   title: string;
   description: string;
+  action?: React.ReactNode;
 }) {
   return (
-    <Surface className="text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-cyan">
-        <CircleAlert className="h-6 w-6" />
+    <Surface className="overflow-hidden text-center">
+      <div className="premium-grid absolute inset-0 opacity-35" />
+      <div className="relative">
+        {eyebrow ? (
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan">
+            {eyebrow}
+          </p>
+        ) : null}
+        <div className="mx-auto mt-1 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-cyan">
+          <CircleAlert className="h-6 w-6" />
+        </div>
+        <h3 className="mt-4 font-heading text-xl font-semibold text-white">{title}</h3>
+        <p className="mt-3 text-sm leading-7 text-muted">{description}</p>
+        {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
       </div>
-      <h3 className="mt-4 font-heading text-xl font-semibold text-white">{title}</h3>
-      <p className="mt-3 text-sm leading-7 text-muted">{description}</p>
     </Surface>
   );
 }
@@ -471,5 +518,43 @@ export function SmallList({
         ))}
       </div>
     </Surface>
+  );
+}
+
+export function LoadingPanel({
+  title = "Loading preview",
+}: {
+  title?: string;
+}) {
+  return (
+    <Surface>
+      <p className="font-heading text-lg font-semibold text-white">{title}</p>
+      <div className="mt-5 space-y-3">
+        <div className="skeleton-bar h-4 w-3/5 rounded-full" />
+        <div className="skeleton-bar h-4 w-full rounded-full" />
+        <div className="skeleton-bar h-4 w-5/6 rounded-full" />
+        <div className="skeleton-bar h-24 w-full rounded-[24px]" />
+      </div>
+    </Surface>
+  );
+}
+
+export function ExternalTextLink({
+  href,
+  children,
+}: Readonly<{
+  href: string;
+  children: React.ReactNode;
+}>) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-2 text-cyan hover:text-white"
+    >
+      {children}
+      <ArrowUpRight className="h-4 w-4" />
+    </a>
   );
 }

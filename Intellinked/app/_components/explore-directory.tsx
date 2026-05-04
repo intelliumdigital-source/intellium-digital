@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 import { Search } from "lucide-react";
 
 import {
@@ -15,25 +15,30 @@ import { businesses, categories, people, services } from "@/app/_data/mock-data"
 
 type Focus = "All" | "People" | "Businesses" | "Services";
 
-export function ExploreDirectory() {
-  const [query, setQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+export function ExploreDirectory({
+  initialQuery = "",
+  initialCategory = "All",
+}: {
+  initialQuery?: string;
+  initialCategory?: string;
+}) {
+  const [query, setQuery] = useState(initialQuery);
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
   const [focus, setFocus] = useState<Focus>("All");
 
-  const normalizedQuery = query.toLowerCase().trim();
+  const deferredQuery = useDeferredValue(query);
+  const normalizedQuery = deferredQuery.toLowerCase().trim();
 
   const filteredPeople = people.filter((person) => {
     const matchesQuery =
       !normalizedQuery ||
       person.fullName.toLowerCase().includes(normalizedQuery) ||
       person.role.toLowerCase().includes(normalizedQuery) ||
-      person.skills.join(" ").toLowerCase().includes(normalizedQuery);
+      person.skills.join(" ").toLowerCase().includes(normalizedQuery) ||
+      person.bio.toLowerCase().includes(normalizedQuery);
 
     const matchesCategory =
-      selectedCategory === "All" ||
-      person.skills.some((skill) =>
-        skill.toLowerCase().includes(selectedCategory.toLowerCase().slice(0, 8)),
-      );
+      selectedCategory === "All" || person.focusCategory === selectedCategory;
 
     return matchesQuery && matchesCategory;
   });
@@ -75,7 +80,7 @@ export function ExploreDirectory() {
     <div className="space-y-6">
       <Surface>
         <div className="flex flex-col gap-4">
-          <label className="flex items-center gap-3 rounded-3xl border border-border bg-white/4 px-4 py-4 text-sm text-muted">
+          <label className="input-shell flex items-center gap-3 rounded-3xl px-4 py-4 text-sm text-muted">
             <Search className="h-4 w-4 text-cyan" />
             <input
               value={query}
@@ -99,7 +104,11 @@ export function ExploreDirectory() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => setSelectedCategory("All")} className="rounded-full" type="button">
+            <button
+              onClick={() => setSelectedCategory("All")}
+              className="rounded-full"
+              type="button"
+            >
               <Pill active={selectedCategory === "All"}>All categories</Pill>
             </button>
             {categories.map((category) => (
@@ -117,13 +126,24 @@ export function ExploreDirectory() {
       </Surface>
 
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted">
-          {totalResults} matches in the local demo network
-        </p>
+        <p className="text-sm text-muted">{totalResults} matches in the local demo network</p>
+        {(query || selectedCategory !== "All") && (
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              setSelectedCategory("All");
+            }}
+            className="text-sm text-cyan hover:text-white"
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
       {totalResults === 0 ? (
         <EmptyState
+          eyebrow="Discovery"
           title="No results matched this filter set"
           description="Try a broader category or remove a keyword to reopen the discovery pool."
         />

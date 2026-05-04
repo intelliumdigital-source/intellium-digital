@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, ShieldCheck, Sparkles, Users } from "lucide-react";
 
 import { BrandLockup, Pill, Surface } from "@/app/_components/ui";
 
@@ -10,13 +10,17 @@ export default function AuthPage() {
         <Surface className="overflow-hidden">
           <div className="premium-grid absolute inset-0 opacity-40" />
           <div className="relative">
-            <BrandLockup />
-            <Pill active>Local-first demo access</Pill>
+            <Link href="/">
+              <BrandLockup />
+            </Link>
+            <div className="mt-5">
+              <Pill active>Local-first demo access</Pill>
+            </div>
             <h1 className="mt-6 font-heading text-4xl font-semibold text-white">
               Enter intellinked
             </h1>
             <p className="mt-4 text-sm leading-8 text-muted-strong">
-              This MVP keeps authentication local and presentation-first. The goal is to demonstrate the product experience before wiring real auth and backend services.
+              This MVP keeps authentication local and presentation-first. The goal is to demonstrate the product experience before wiring real auth, profile storage, and live messaging.
             </p>
 
             <div className="mt-8 space-y-4">
@@ -38,6 +42,15 @@ export default function AuthPage() {
                   No Supabase, no real messaging, and no live moderation persistence yet.
                 </p>
               </div>
+              <div className="premium-card-soft rounded-3xl p-5">
+                <div className="flex items-center gap-3">
+                  <Users className="h-5 w-5 text-blue" />
+                  <p className="font-medium text-white">Ready for real entities later</p>
+                </div>
+                <p className="mt-3 text-sm leading-7 text-muted">
+                  Current routes and mock entity shapes already line up with future user, business, service, and post records.
+                </p>
+              </div>
             </div>
           </div>
         </Surface>
@@ -52,7 +65,7 @@ export default function AuthPage() {
                 <label className="block text-sm text-muted-strong">
                   Email
                   <input
-                    className="mt-2 w-full rounded-2xl border border-border bg-white/4 px-4 py-3 text-white outline-none"
+                    className="input-shell mt-2 w-full rounded-2xl px-4 py-3 text-white outline-none"
                     placeholder="name@business.ph"
                   />
                 </label>
@@ -60,13 +73,13 @@ export default function AuthPage() {
                   Password
                   <input
                     type="password"
-                    className="mt-2 w-full rounded-2xl border border-border bg-white/4 px-4 py-3 text-white outline-none"
-                    placeholder="••••••••"
+                    className="input-shell mt-2 w-full rounded-2xl px-4 py-3 text-white outline-none"
+                    placeholder="********"
                   />
                 </label>
                 <Link
                   href="/home"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-cyan/30 bg-cyan/12 px-4 py-3 text-sm font-semibold text-cyan hover:bg-cyan/18"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-cyan/30 bg-cyan/12 px-4 py-3 text-sm font-semibold text-cyan hover:bg-cyan/18 hover:text-white"
                 >
                   Continue to home
                   <ArrowRight className="h-4 w-4" />
@@ -82,13 +95,13 @@ export default function AuthPage() {
                 <label className="block text-sm text-muted-strong">
                   Full name or business
                   <input
-                    className="mt-2 w-full rounded-2xl border border-border bg-white/4 px-4 py-3 text-white outline-none"
+                    className="input-shell mt-2 w-full rounded-2xl px-4 py-3 text-white outline-none"
                     placeholder="Your name or brand"
                   />
                 </label>
                 <label className="block text-sm text-muted-strong">
                   Role type
-                  <select className="mt-2 w-full rounded-2xl border border-border bg-white/4 px-4 py-3 text-white outline-none">
+                  <select className="input-shell mt-2 w-full rounded-2xl px-4 py-3 text-white outline-none">
                     <option className="bg-slate-950">Professional</option>
                     <option className="bg-slate-950">Business</option>
                     <option className="bg-slate-950">Freelancer</option>

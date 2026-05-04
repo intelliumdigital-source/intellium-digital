@@ -2,7 +2,8 @@
 
 import clsx from "clsx";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { startTransition, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Bell,
   Compass,
@@ -52,15 +53,28 @@ export function SiteChrome({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const router = useRouter();
   const pathname = usePathname();
+  const [query, setQuery] = useState("");
   const pageLabel = getPageLabel(pathname);
+
+  function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = query.trim();
+
+    startTransition(() => {
+      router.push(trimmed ? `/explore?q=${encodeURIComponent(trimmed)}` : "/explore");
+    });
+  }
 
   return (
     <div className="min-h-screen">
       <div className="mx-auto flex w-full max-w-[1600px] gap-6 px-4 pb-24 pt-5 sm:px-6 lg:px-8">
         <aside className="hidden w-72 shrink-0 flex-col gap-4 lg:flex">
           <Surface className="sticky top-5">
-            <BrandLockup />
+            <Link href="/">
+              <BrandLockup />
+            </Link>
             <p className="mt-4 text-sm leading-7 text-muted">
               Connect. Promote. Grow. A local-first network built for Filipino business communities.
             </p>
@@ -102,13 +116,24 @@ export function SiteChrome({
               <h2 className="mt-2 font-heading text-2xl font-semibold text-white">
                 Premium local-first social networking MVP
               </h2>
+              <p className="mt-2 text-sm text-muted">
+                Ready for auth and database integration later, but intentionally mock-first right now.
+              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex min-w-[210px] items-center gap-3 rounded-full border border-border bg-white/4 px-4 py-3 text-sm text-muted">
-                <Search className="h-4 w-4 text-cyan" />
-                Search users, businesses, or services
-              </div>
+              <form
+                onSubmit={handleSearchSubmit}
+                className="input-shell flex min-w-[220px] items-center gap-3 rounded-full px-4 py-3 text-sm text-muted"
+              >
+                <Search className="h-4 w-4 shrink-0 text-cyan" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search the network"
+                  className="w-full bg-transparent text-white outline-none placeholder:text-muted"
+                />
+              </form>
               <Pill active>Mock data mode</Pill>
             </div>
           </div>
@@ -144,7 +169,7 @@ export function SiteChrome({
 
       <nav className="fixed inset-x-3 bottom-3 z-50 lg:hidden">
         <div className="premium-card hide-scrollbar flex items-center gap-2 overflow-x-auto rounded-[28px] px-3 py-3">
-          {navItems.slice(0, 6).map((item) => {
+          {navItems.map((item) => {
             const isActive = pathname === item.href;
 
             return (

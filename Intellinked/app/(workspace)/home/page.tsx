@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import {
   BusinessCard,
+  EmptyState,
   GhostLink,
   PageIntro,
   Pill,
@@ -37,12 +38,39 @@ export default function HomePage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {platformStats.map((stat) => (
-          <StatCard key={stat.label} label={stat.label} value={stat.value} />
+          <StatCard
+            key={stat.label}
+            label={stat.label}
+            value={stat.value}
+            note={stat.note}
+          />
         ))}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-4">
+          <Surface>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="font-heading text-2xl font-semibold text-white">
+                  Start a new conversation
+                </h2>
+                <p className="mt-2 text-sm text-muted">
+                  Share an opportunity, promote a service, or ask the community for help.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Pill active>Connect</Pill>
+                <Pill>Promote</Pill>
+                <Pill>Grow</Pill>
+              </div>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <PrimaryLink href="/create">Write a post</PrimaryLink>
+              <GhostLink href="/services">Browse service demand</GhostLink>
+            </div>
+          </Surface>
+
           <Surface>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -85,6 +113,12 @@ export default function HomePage() {
 
           <BusinessCard business={businesses[0]} />
           <ServiceCard service={services[0]} />
+          <EmptyState
+            eyebrow="Growth hint"
+            title="Need more leads in the feed?"
+            description="Mix practical insight posts with a direct service CTA. The best demo profiles here do both."
+            action={<GhostLink href="/create">Open composer</GhostLink>}
+          />
         </div>
       </div>
     </div>

@@ -12,6 +12,7 @@ import {
 import {
   BrandLockup,
   BusinessCard,
+  EmptyState,
   GhostLink,
   Pill,
   PostCard,
@@ -35,18 +36,21 @@ export default function LandingPage() {
         <div className="premium-grid absolute inset-0 opacity-50" />
         <div className="relative">
           <div className="flex flex-col gap-6 border-b border-border/70 pb-8 lg:flex-row lg:items-center lg:justify-between">
-            <BrandLockup />
+            <Link href="/">
+              <BrandLockup />
+            </Link>
             <div className="flex flex-wrap gap-3">
               <GhostLink href="/auth">Login / Register</GhostLink>
               <PrimaryLink href="/home">Enter MVP</PrimaryLink>
             </div>
           </div>
 
-          <div className="grid gap-10 py-10 lg:grid-cols-[1.1fr_0.9fr] lg:py-14">
+          <div className="grid gap-10 py-10 lg:grid-cols-[1.05fr_0.95fr] lg:py-14">
             <div>
               <Pill active>Connect. Promote. Grow.</Pill>
               <h1 className="mt-6 max-w-3xl font-heading text-5xl font-semibold tracking-tight text-white sm:text-6xl">
-                Premium local-first networking for Filipino business communities.
+                <span className="text-glow">intellinked</span> brings Filipino founders,
+                freelancers, and customers into one premium local-first network.
               </h1>
               <p className="mt-6 max-w-2xl text-base leading-8 text-muted-strong sm:text-lg">
                 intellinked by Intellium Digital helps business owners, freelancers,
@@ -63,6 +67,31 @@ export default function LandingPage() {
                   <Compass className="h-4 w-4" />
                   Browse services
                 </GhostLink>
+              </div>
+
+              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                <div className="premium-card-soft rounded-[24px] p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-cyan">For founders</p>
+                  <p className="mt-3 text-sm leading-6 text-muted-strong">
+                    Promote offers, source reliable talent, and grow trust faster.
+                  </p>
+                </div>
+                <div className="premium-card-soft rounded-[24px] p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-blue">
+                    For freelancers
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-muted-strong">
+                    Show proof, package services, and find local business buyers.
+                  </p>
+                </div>
+                <div className="premium-card-soft rounded-[24px] p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-purple">
+                    For customers
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-muted-strong">
+                    Discover practical providers and compare credible local options.
+                  </p>
+                </div>
               </div>
 
               <div className="mt-8 flex flex-wrap gap-3 text-sm text-muted">
@@ -88,10 +117,16 @@ export default function LandingPage() {
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 {platformStats.map((stat) => (
-                  <StatCard key={stat.label} label={stat.label} value={stat.value} />
+                  <StatCard
+                    key={stat.label}
+                    label={stat.label}
+                    value={stat.value}
+                    note={stat.note}
+                  />
                 ))}
               </div>
               <PostCard post={feedPosts[0]} />
+              <ServiceCard service={services[0]} />
             </div>
           </div>
         </div>
@@ -185,6 +220,31 @@ export default function LandingPage() {
         </Surface>
       </div>
 
+      <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+        <EmptyState
+          eyebrow="Integration ready"
+          title="Built to plug into auth and database next"
+          description="The route structure, page surfaces, and entity shapes are already aligned for real login, profiles, posts, and directory data later."
+          action={<PrimaryLink href="/auth">Preview auth flow</PrimaryLink>}
+        />
+        <Surface>
+          <h2 className="font-heading text-2xl font-semibold text-white">
+            What this MVP already proves
+          </h2>
+          <div className="mt-5 space-y-3">
+            <div className="premium-card-soft rounded-[24px] p-4 text-sm leading-7 text-muted-strong">
+              Realistic people, businesses, services, and moderation scenarios tailored to Filipino local commerce.
+            </div>
+            <div className="premium-card-soft rounded-[24px] p-4 text-sm leading-7 text-muted-strong">
+              Consistent navigation across feed, discovery, profiles, services, and admin review.
+            </div>
+            <div className="premium-card-soft rounded-[24px] p-4 text-sm leading-7 text-muted-strong">
+              Premium dark presentation that is easier to pitch before live backend work begins.
+            </div>
+          </div>
+        </Surface>
+      </div>
+
       <Surface className="text-center">
         <h2 className="font-heading text-3xl font-semibold text-white">
           Ready to step into the intellinked demo?
@@ -201,7 +261,7 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/home"
-            className="inline-flex items-center gap-2 rounded-full border border-cyan/30 bg-cyan/12 px-5 py-3 text-sm font-semibold text-cyan hover:bg-cyan/18"
+            className="inline-flex items-center gap-2 rounded-full border border-cyan/30 bg-cyan/12 px-5 py-3 text-sm font-semibold text-cyan hover:bg-cyan/18 hover:text-white"
           >
             Launch MVP
             <ArrowRight className="h-4 w-4" />

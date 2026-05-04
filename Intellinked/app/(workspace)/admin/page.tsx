@@ -4,6 +4,12 @@ import { reports } from "@/app/_data/mock-data";
 const moderationSteps = ["Review", "Hide or warn", "Escalate", "Resolve"];
 
 export default function AdminPage() {
+  const pendingCount = reports.filter((report) => report.status === "Pending").length;
+  const escalatedCount = reports.filter(
+    (report) => report.status === "Escalated",
+  ).length;
+  const resolvedCount = reports.filter((report) => report.status === "Resolved").length;
+
   return (
     <div className="space-y-6">
       <PageIntro
@@ -11,6 +17,23 @@ export default function AdminPage() {
         title="Review reported users, posts, and listings."
         description="This admin page proves moderation is part of the MVP. Everything remains local and presentational, but the workflow is already visible and pitchable."
       />
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Surface>
+          <p className="text-xs uppercase tracking-[0.18em] text-warning">Pending</p>
+          <p className="mt-3 font-heading text-3xl font-semibold text-white">{pendingCount}</p>
+        </Surface>
+        <Surface>
+          <p className="text-xs uppercase tracking-[0.18em] text-purple">Escalated</p>
+          <p className="mt-3 font-heading text-3xl font-semibold text-white">
+            {escalatedCount}
+          </p>
+        </Surface>
+        <Surface>
+          <p className="text-xs uppercase tracking-[0.18em] text-cyan">Resolved</p>
+          <p className="mt-3 font-heading text-3xl font-semibold text-white">{resolvedCount}</p>
+        </Surface>
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-4">

@@ -1,7 +1,13 @@
 import { ServicesDirectory } from "@/app/_components/services-directory";
 import { GhostLink, PageIntro, PrimaryLink } from "@/app/_components/ui";
 
-export default function ServicesPage() {
+export default async function ServicesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; category?: string }>;
+}) {
+  const params = await searchParams;
+
   return (
     <div className="space-y-6">
       <PageIntro
@@ -15,7 +21,10 @@ export default function ServicesPage() {
           </>
         }
       />
-      <ServicesDirectory />
+      <ServicesDirectory
+        initialQuery={params.q ?? ""}
+        initialCategory={params.category ?? "All"}
+      />
     </div>
   );
 }

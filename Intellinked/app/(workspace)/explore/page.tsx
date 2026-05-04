@@ -1,7 +1,13 @@
 import { ExploreDirectory } from "@/app/_components/explore-directory";
 import { GhostLink, PageIntro, PrimaryLink } from "@/app/_components/ui";
 
-export default function ExplorePage() {
+export default async function ExplorePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; category?: string }>;
+}) {
+  const params = await searchParams;
+
   return (
     <div className="space-y-6">
       <PageIntro
@@ -15,7 +21,10 @@ export default function ExplorePage() {
           </>
         }
       />
-      <ExploreDirectory />
+      <ExploreDirectory
+        initialQuery={params.q ?? ""}
+        initialCategory={params.category ?? "All"}
+      />
     </div>
   );
 }

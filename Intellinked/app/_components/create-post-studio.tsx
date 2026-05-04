@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 
-import { PostCard, Pill, Surface } from "@/app/_components/ui";
-import type { AuthorType, Category, FeedPost, PostCallToAction } from "@/app/_data/mock-data";
-import { categories } from "@/app/_data/mock-data";
+import { GhostLink, Pill, PostCard, Surface } from "@/app/_components/ui";
+import type {
+  AuthorType,
+  Category,
+  FeedPost,
+  PostCallToAction,
+} from "@/app/_data/mock-data";
+import { businesses, categories, people } from "@/app/_data/mock-data";
 
 const authorTypes: AuthorType[] = [
   "Professional",
@@ -23,10 +28,18 @@ export function CreatePostStudio() {
     "I am looking to connect with Filipino founders, freelancers, and community builders who want faster collaboration and clearer local opportunities.",
   );
 
+  const previewPerson = people.find((person) => person.authorType === authorType) ?? people[0];
+  const previewBusiness = businesses[0];
+  const previewName =
+    authorType === "Business" ? previewBusiness.businessName : previewPerson.fullName;
+
   const previewPost: FeedPost = {
     id: "preview-post",
-    authorName: "Demo Creator",
+    authorName: previewName,
     authorType,
+    authorSlug: authorType === "Business" ? undefined : previewPerson.slug,
+    businessSlug: authorType === "Business" ? previewBusiness.slug : undefined,
+    businessName: authorType === "Business" ? previewBusiness.businessName : undefined,
     content,
     category,
     timestamp: "Preview",
@@ -55,7 +68,7 @@ export function CreatePostStudio() {
             <select
               value={authorType}
               onChange={(event) => setAuthorType(event.target.value as AuthorType)}
-              className="w-full rounded-2xl border border-border bg-white/4 px-4 py-3 text-white outline-none"
+              className="input-shell w-full rounded-2xl px-4 py-3 text-white outline-none"
             >
               {authorTypes.map((option) => (
                 <option key={option} value={option} className="bg-slate-950">
@@ -70,7 +83,7 @@ export function CreatePostStudio() {
             <select
               value={category}
               onChange={(event) => setCategory(event.target.value as Category)}
-              className="w-full rounded-2xl border border-border bg-white/4 px-4 py-3 text-white outline-none"
+              className="input-shell w-full rounded-2xl px-4 py-3 text-white outline-none"
             >
               {categories.map((option) => (
                 <option key={option} value={option} className="bg-slate-950">
@@ -87,10 +100,33 @@ export function CreatePostStudio() {
             rows={7}
             value={content}
             onChange={(event) => setContent(event.target.value)}
-            className="w-full rounded-[24px] border border-border bg-white/4 px-4 py-4 text-white outline-none placeholder:text-muted"
+            className="input-shell w-full rounded-[24px] px-4 py-4 text-white outline-none placeholder:text-muted"
             placeholder="Share what you offer, what you need, or what local opportunity you spotted."
           />
         </label>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="premium-card-soft rounded-[24px] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan">
+              Preview author
+            </p>
+            <p className="mt-3 font-medium text-white">{previewName}</p>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              {authorType === "Business"
+                ? "Business post flow for announcements, offers, and service promotions."
+                : previewPerson.contactPreference}
+            </p>
+          </div>
+          <div className="premium-card-soft rounded-[24px] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-purple">
+              Posting tip
+            </p>
+            <p className="mt-3 text-sm leading-6 text-muted-strong">
+              Strong local posts usually explain who the offer is for, where it applies, and the clearest next action.
+            </p>
+            <p className="mt-3 text-xs text-muted">{content.length} characters</p>
+          </div>
+        </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
           {ctaOptions.map((option) => (
@@ -118,6 +154,7 @@ export function CreatePostStudio() {
           >
             Publish later
           </button>
+          <GhostLink href="/home">Back to feed</GhostLink>
         </div>
       </Surface>
 
