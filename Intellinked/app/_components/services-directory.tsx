@@ -4,12 +4,15 @@ import { useDeferredValue, useState } from "react";
 import { Search } from "lucide-react";
 
 import { EmptyState, Pill, ServiceCard, Surface } from "@/app/_components/ui";
-import { categories, services } from "@/app/_data/mock-data";
+import { categories } from "@/app/_data/mock-data";
+import type { ServiceListingView } from "@/lib/social/types";
 
 export function ServicesDirectory({
+  services,
   initialQuery = "",
   initialCategory = "All",
 }: {
+  services: ServiceListingView[];
   initialQuery?: string;
   initialCategory?: string;
 }) {

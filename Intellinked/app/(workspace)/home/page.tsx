@@ -6,28 +6,26 @@ import {
   GhostLink,
   PageIntro,
   Pill,
-  PostCard,
   PrimaryLink,
   ProfileCard,
   ServiceCard,
   StatCard,
   Surface,
 } from "@/app/_components/ui";
-import {
-  businesses,
-  feedPosts,
-  people,
-  platformStats,
-  services,
-} from "@/app/_data/mock-data";
+import { FeedPostCard } from "@/app/_components/feed-post-card";
+import { requireSessionUser } from "@/lib/auth/session";
+import { getHomePageData } from "@/lib/social/queries";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const user = await requireSessionUser();
+  const data = await getHomePageData(user.id);
+
   return (
     <div className="space-y-6">
       <PageIntro
         eyebrow="Home feed"
         title="A community feed built for practical local opportunities."
-        description="The home experience combines social momentum with business intent: discover posts, featured professionals, and active services without relying on live infrastructure yet."
+        description="The home feed is now backed by Supabase profiles, posts, likes, comments, services, and business pages while keeping the premium intellinked layout intact."
         actions={
           <>
             <PrimaryLink href="/create">Create post</PrimaryLink>
@@ -37,7 +35,7 @@ export default function HomePage() {
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {platformStats.map((stat) => (
+        {data.stats.map((stat) => (
           <StatCard
             key={stat.label}
             label={stat.label}
@@ -78,16 +76,23 @@ export default function HomePage() {
                   Feed activity
                 </h2>
                 <p className="mt-2 text-sm text-muted">
-                  Mock posts with like, comment, share, connect, and moderation UI.
+                  Live posts with Supabase-backed like, comment, delete, report, and block actions.
                 </p>
               </div>
               <Pill active>Local-first signal</Pill>
             </div>
           </Surface>
 
-          {feedPosts.slice(0, 6).map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
+          {data.posts.length > 0 ? (
+            data.posts.slice(0, 8).map((post) => <FeedPostCard key={post.id} post={post} />)
+          ) : (
+            <EmptyState
+              eyebrow="Feed"
+              title="No posts are live yet"
+              description="Create the first Supabase-backed post to populate the feed."
+              action={<GhostLink href="/create">Open composer</GhostLink>}
+            />
+          )}
         </div>
 
         <div className="space-y-4">
@@ -102,21 +107,21 @@ export default function HomePage() {
                 </p>
               </div>
               <Link href="/profile" className="text-sm text-cyan hover:text-white">
-                View profile
+                View your profile
               </Link>
             </div>
           </Surface>
 
-          {people.slice(0, 2).map((person) => (
+          {data.people.slice(0, 2).map((person) => (
             <ProfileCard key={person.slug} person={person} />
           ))}
 
-          <BusinessCard business={businesses[0]} />
-          <ServiceCard service={services[0]} />
+          {data.businesses[0] ? <BusinessCard business={data.businesses[0]} /> : null}
+          {data.services[0] ? <ServiceCard service={data.services[0]} /> : null}
           <EmptyState
             eyebrow="Growth hint"
             title="Need more leads in the feed?"
-            description="Mix practical insight posts with a direct service CTA. The best demo profiles here do both."
+            description="Mix practical insight posts with a direct service CTA. Profiles with live services and recent posts now stand out fastest."
             action={<GhostLink href="/create">Open composer</GhostLink>}
           />
         </div>

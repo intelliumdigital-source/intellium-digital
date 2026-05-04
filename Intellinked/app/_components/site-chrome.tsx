@@ -30,13 +30,16 @@ const navItems = [
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/profile", label: "Profile", icon: UserCircle2 },
   { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/admin", label: "Admin", icon: ShieldCheck },
 ];
 
 function getPageLabel(pathname: string) {
   const match = navItems.find((item) => item.href === pathname);
   if (match) {
     return match.label;
+  }
+
+  if (pathname === "/admin") {
+    return "Admin";
   }
 
   if (pathname.startsWith("/people/")) {
@@ -59,12 +62,16 @@ export function SiteChrome({
     id: string;
     email: string | null;
     displayName: string;
+    isAdmin: boolean;
   } | null;
 }>) {
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState("");
   const pageLabel = getPageLabel(pathname);
+  const visibleNavItems = user?.isAdmin
+    ? [...navItems, { href: "/admin", label: "Admin", icon: ShieldCheck }]
+    : navItems;
 
   function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -87,7 +94,7 @@ export function SiteChrome({
               Connect. Promote. Grow. A local-first network built for Filipino business communities.
             </p>
             <div className="mt-6 space-y-2">
-              {navItems.map((item) => {
+              {visibleNavItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
                   (item.href !== "/home" && pathname.startsWith(`${item.href}/`));
@@ -142,7 +149,7 @@ export function SiteChrome({
                 Premium local-first social networking MVP
               </h2>
               <p className="mt-2 text-sm text-muted">
-                Supabase Auth is active. Mock workspace content stays in place until live data integration begins.
+                Supabase Auth and workspace data are active. Messaging remains placeholder-only by design.
               </p>
             </div>
 
@@ -194,7 +201,7 @@ export function SiteChrome({
 
       <nav className="fixed inset-x-3 bottom-3 z-50 lg:hidden">
         <div className="premium-card hide-scrollbar flex items-center gap-2 overflow-x-auto rounded-[28px] px-3 py-3">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = pathname === item.href;
 
             return (

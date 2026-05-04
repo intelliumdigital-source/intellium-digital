@@ -1,21 +1,30 @@
+import { redirect } from "next/navigation";
+
+import { updateReportStatusAction } from "@/app/actions/workspace";
 import { PageIntro, Pill, Surface } from "@/app/_components/ui";
-import { reports } from "@/app/_data/mock-data";
+import { requireSessionUser } from "@/lib/auth/session";
+import { getAdminPageData } from "@/lib/social/queries";
 
 const moderationSteps = ["Review", "Hide or warn", "Escalate", "Resolve"];
 
-export default function AdminPage() {
-  const pendingCount = reports.filter((report) => report.status === "Pending").length;
-  const escalatedCount = reports.filter(
-    (report) => report.status === "Escalated",
-  ).length;
-  const resolvedCount = reports.filter((report) => report.status === "Resolved").length;
+export default async function AdminPage() {
+  const user = await requireSessionUser();
+  const data = await getAdminPageData(user.id);
+
+  if (!data.isAdmin) {
+    redirect("/home");
+  }
+
+  const pendingCount = data.reports.filter((report) => report.rawStatus === "pending").length;
+  const reviewCount = data.reports.filter((report) => report.rawStatus === "in_review").length;
+  const resolvedCount = data.reports.filter((report) => report.rawStatus === "resolved").length;
 
   return (
     <div className="space-y-6">
       <PageIntro
         eyebrow="Admin moderation"
         title="Review reported users, posts, and listings."
-        description="This admin page proves moderation is part of the MVP. Everything remains local and presentational, but the workflow is already visible and pitchable."
+        description="This page is now gated by `profiles.is_admin` and loads the live reports queue from Supabase."
       />
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -24,10 +33,8 @@ export default function AdminPage() {
           <p className="mt-3 font-heading text-3xl font-semibold text-white">{pendingCount}</p>
         </Surface>
         <Surface>
-          <p className="text-xs uppercase tracking-[0.18em] text-purple">Escalated</p>
-          <p className="mt-3 font-heading text-3xl font-semibold text-white">
-            {escalatedCount}
-          </p>
+          <p className="text-xs uppercase tracking-[0.18em] text-purple">In review</p>
+          <p className="mt-3 font-heading text-3xl font-semibold text-white">{reviewCount}</p>
         </Surface>
         <Surface>
           <p className="text-xs uppercase tracking-[0.18em] text-cyan">Resolved</p>
@@ -37,12 +44,12 @@ export default function AdminPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-4">
-          {reports.map((report) => (
+          {data.reports.map((report) => (
             <Surface key={report.id}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <Pill active={report.status !== "Resolved"}>{report.status}</Pill>
+                    <Pill active={report.rawStatus !== "resolved"}>{report.status}</Pill>
                     <p className="text-xs text-muted">{report.time}</p>
                   </div>
                   <h2 className="mt-3 font-heading text-xl font-semibold text-white">
@@ -57,12 +64,27 @@ export default function AdminPage() {
                   <p className="mt-2 text-sm leading-7 text-muted">{report.notes}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button className="rounded-full border border-warning/30 bg-warning/10 px-4 py-2 text-sm font-medium text-warning">
-                    Escalate
-                  </button>
-                  <button className="rounded-full border border-cyan/30 bg-cyan/12 px-4 py-2 text-sm font-medium text-cyan">
-                    Resolve
-                  </button>
+                  <form action={updateReportStatusAction}>
+                    <input type="hidden" name="report_id" value={report.id} />
+                    <input type="hidden" name="status" value="in_review" />
+                    <button className="rounded-full border border-warning/30 bg-warning/10 px-4 py-2 text-sm font-medium text-warning">
+                      Review
+                    </button>
+                  </form>
+                  <form action={updateReportStatusAction}>
+                    <input type="hidden" name="report_id" value={report.id} />
+                    <input type="hidden" name="status" value="resolved" />
+                    <button className="rounded-full border border-cyan/30 bg-cyan/12 px-4 py-2 text-sm font-medium text-cyan">
+                      Resolve
+                    </button>
+                  </form>
+                  <form action={updateReportStatusAction}>
+                    <input type="hidden" name="report_id" value={report.id} />
+                    <input type="hidden" name="status" value="dismissed" />
+                    <button className="rounded-full border border-border bg-white/4 px-4 py-2 text-sm font-medium text-muted-strong hover:text-white">
+                      Dismiss
+                    </button>
+                  </form>
                 </div>
               </div>
             </Surface>
@@ -86,7 +108,7 @@ export default function AdminPage() {
                   <div>
                     <p className="font-medium text-white">{step}</p>
                     <p className="mt-1 text-sm text-muted">
-                      Moderator-facing action placeholder for the MVP.
+                      Stored against the live reports queue in Supabase.
                     </p>
                   </div>
                 </div>

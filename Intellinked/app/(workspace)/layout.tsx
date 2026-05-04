@@ -1,6 +1,6 @@
 import { SiteChrome } from "@/app/_components/site-chrome";
 import { requireSessionUser } from "@/lib/auth/session";
-import { hasSupabaseEnv } from "@/lib/supabase/env";
+import { getViewerWorkspace } from "@/lib/social/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -9,20 +9,17 @@ export default async function WorkspaceLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = hasSupabaseEnv() ? await requireSessionUser() : null;
+  const user = await requireSessionUser();
+  const data = await getViewerWorkspace(user.id);
 
   return (
     <SiteChrome
-      user={
-        user
-          ? {
-              id: user.id,
-              email: user.email ?? null,
-              displayName:
-                user.user_metadata.display_name?.toString() ?? user.email ?? "Member",
-            }
-          : null
-      }
+      user={{
+        id: user.id,
+        email: user.email ?? null,
+        displayName: data.viewer.displayName,
+        isAdmin: data.viewer.isAdmin,
+      }}
     >
       {children}
     </SiteChrome>

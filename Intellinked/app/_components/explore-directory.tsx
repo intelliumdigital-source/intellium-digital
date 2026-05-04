@@ -11,14 +11,25 @@ import {
   ServiceCard,
   Surface,
 } from "@/app/_components/ui";
-import { businesses, categories, people, services } from "@/app/_data/mock-data";
+import { categories } from "@/app/_data/mock-data";
+import type {
+  BusinessView,
+  ProfileView,
+  ServiceListingView,
+} from "@/lib/social/types";
 
 type Focus = "All" | "People" | "Businesses" | "Services";
 
 export function ExploreDirectory({
+  people,
+  businesses,
+  services,
   initialQuery = "",
   initialCategory = "All",
 }: {
+  people: ProfileView[];
+  businesses: BusinessView[];
+  services: ServiceListingView[];
   initialQuery?: string;
   initialCategory?: string;
 }) {

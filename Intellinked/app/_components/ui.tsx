@@ -16,12 +16,69 @@ import {
   Users,
 } from "lucide-react";
 
-import type {
-  Business,
-  FeedPost,
-  Person,
-  ServiceListing,
-} from "@/app/_data/mock-data";
+type PostCardData = {
+  id: string;
+  authorName: string;
+  authorType: string;
+  authorSlug?: string;
+  businessSlug?: string;
+  businessName?: string;
+  content: string;
+  category: string;
+  timestamp: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  cta: string;
+};
+
+type ProfileCardData = {
+  slug: string;
+  fullName: string;
+  authorType: string;
+  focusCategory: string;
+  role: string;
+  location: string;
+  bio: string;
+  skills: string[];
+  stats: {
+    followers: number;
+    posts?: number;
+    services?: number;
+    connections?: number;
+    opportunities?: number;
+  };
+};
+
+type BusinessCardData = {
+  slug: string;
+  businessName: string;
+  category: string;
+  location: string;
+  description: string;
+  servicesOffered: string[];
+  stats: {
+    followers: number;
+    services?: number;
+    posts?: number;
+    leads?: number;
+  };
+};
+
+type ServiceCardData = {
+  id: string;
+  title: string;
+  providerName: string;
+  businessName?: string;
+  businessSlug?: string;
+  providerSlug?: string;
+  category: string;
+  location: string;
+  summary: string;
+  price: string;
+  availability: string;
+  tags: string[];
+};
 
 function formatCompact(value: number) {
   return new Intl.NumberFormat("en", {
@@ -183,7 +240,7 @@ export function StatCard({
   );
 }
 
-export function PostCard({ post }: { post: FeedPost }) {
+export function PostCard({ post }: { post: PostCardData }) {
   const profileHref =
     post.authorType === "Business" && post.businessSlug
       ? `/businesses/${post.businessSlug}`
@@ -280,7 +337,10 @@ export function PostCard({ post }: { post: FeedPost }) {
   );
 }
 
-export function ProfileCard({ person }: { person: Person }) {
+export function ProfileCard({ person }: { person: ProfileCardData }) {
+  const postsValue = person.stats.posts ?? person.stats.connections ?? 0;
+  const servicesValue = person.stats.services ?? person.stats.opportunities ?? 0;
+
   return (
     <Surface className="flex h-full flex-col gap-4">
       <div className="flex items-start gap-4">
@@ -319,15 +379,15 @@ export function ProfileCard({ person }: { person: Person }) {
           </p>
         </div>
         <div className="premium-card-soft rounded-2xl p-3">
-          <p className="text-xs text-muted">Connects</p>
+          <p className="text-xs text-muted">Posts</p>
           <p className="mt-1 font-semibold text-white">
-            {formatCompact(person.stats.connections)}
+            {formatCompact(postsValue)}
           </p>
         </div>
         <div className="premium-card-soft rounded-2xl p-3">
-          <p className="text-xs text-muted">Wins</p>
+          <p className="text-xs text-muted">Services</p>
           <p className="mt-1 font-semibold text-white">
-            {formatCompact(person.stats.opportunities)}
+            {formatCompact(servicesValue)}
           </p>
         </div>
       </div>
@@ -342,7 +402,10 @@ export function ProfileCard({ person }: { person: Person }) {
   );
 }
 
-export function BusinessCard({ business }: { business: Business }) {
+export function BusinessCard({ business }: { business: BusinessCardData }) {
+  const servicesValue = business.stats.services ?? business.stats.leads ?? 0;
+  const postsValue = business.stats.posts ?? business.stats.leads ?? 0;
+
   return (
     <Surface className="flex h-full flex-col gap-4">
       <div className="flex items-start gap-4">
@@ -379,14 +442,16 @@ export function BusinessCard({ business }: { business: Business }) {
           </p>
         </div>
         <div className="premium-card-soft rounded-2xl p-3">
-          <p className="text-xs text-muted">Leads</p>
+          <p className="text-xs text-muted">Services</p>
           <p className="mt-1 font-semibold text-white">
-            {formatCompact(business.stats.leads)}
+            {formatCompact(servicesValue)}
           </p>
         </div>
         <div className="premium-card-soft rounded-2xl p-3">
-          <p className="text-xs text-muted">Response</p>
-          <p className="mt-1 font-semibold text-white">{business.stats.responseRate}</p>
+          <p className="text-xs text-muted">Posts</p>
+          <p className="mt-1 font-semibold text-white">
+            {formatCompact(postsValue)}
+          </p>
         </div>
       </div>
       <div className="mt-auto flex flex-wrap gap-2">
@@ -403,7 +468,7 @@ export function BusinessCard({ business }: { business: Business }) {
   );
 }
 
-export function ServiceCard({ service }: { service: ServiceListing }) {
+export function ServiceCard({ service }: { service: ServiceCardData }) {
   const profileHref = service.businessSlug
     ? `/businesses/${service.businessSlug}`
     : service.providerSlug

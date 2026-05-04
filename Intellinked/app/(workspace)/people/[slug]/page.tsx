@@ -1,19 +1,27 @@
 import { notFound } from "next/navigation";
 
 import { PersonProfileView } from "@/app/_components/profile-pages";
-import { getPersonBySlug } from "@/app/_data/mock-data";
+import { requireSessionUser } from "@/lib/auth/session";
+import { getProfileBySlug } from "@/lib/social/queries";
 
 export default async function PersonPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const user = await requireSessionUser();
   const { slug } = await params;
-  const person = getPersonBySlug(slug);
+  const data = await getProfileBySlug(user.id, slug);
 
-  if (!person) {
+  if (!data) {
     notFound();
   }
 
-  return <PersonProfileView person={person} />;
+  return (
+    <PersonProfileView
+      person={data.profile}
+      recentPosts={data.posts}
+      matchingServices={data.services}
+    />
+  );
 }
