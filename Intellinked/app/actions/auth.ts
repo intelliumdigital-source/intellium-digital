@@ -4,13 +4,7 @@ import { redirect } from "next/navigation";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
-
-export type AuthActionState = {
-  errorMessage?: string;
-  successMessage?: string;
-};
-
-export const INITIAL_AUTH_ACTION_STATE: AuthActionState = {};
+import type { AuthActionState } from "@/app/auth/auth-state";
 
 function getField(formData: FormData, field: string) {
   return formData.get(field)?.toString().trim() ?? "";

@@ -4,12 +4,11 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { ArrowRight } from "lucide-react";
 
+import { signInAction, signUpAction } from "@/app/actions/auth";
 import {
   INITIAL_AUTH_ACTION_STATE,
-  signInAction,
-  signUpAction,
   type AuthActionState,
-} from "@/app/actions/auth";
+} from "@/app/auth/auth-state";
 
 function AuthSubmitButton({
   label,
