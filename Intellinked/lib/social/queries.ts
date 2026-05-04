@@ -503,6 +503,7 @@ export async function getViewerWorkspace(userId: string): Promise<ViewerWorkspac
   const feedPosts = await mapFeedPosts({
     viewerUserId: userId,
     posts: ownPosts,
+    blockedUserIds,
   });
 
   const blockedUsers = blockedUserIds.size
@@ -536,10 +537,13 @@ export async function getViewerWorkspace(userId: string): Promise<ViewerWorkspac
 async function mapFeedPosts({
   viewerUserId,
   posts,
+  blockedUserIds,
 }: {
   viewerUserId: string;
   posts: PostRow[];
+  blockedUserIds?: Set<string>;
 }) {
+  const hiddenUserIds = blockedUserIds ?? new Set<string>();
   const filteredPosts = posts;
   const postIds = filteredPosts.map((post) => post.id);
   const userIds = [...new Set(filteredPosts.map((post) => post.user_id))];
@@ -572,8 +576,12 @@ async function mapFeedPosts({
       : Promise.resolve({ data: [] as CommentRow[] | null }),
   ]);
 
-  const likes = ensureArray(likesData) as LikeRow[];
-  const comments = ensureArray(commentsData) as CommentRow[];
+  const likes = (ensureArray(likesData) as LikeRow[]).filter(
+    (like) => !hiddenUserIds.has(like.user_id),
+  );
+  const comments = (ensureArray(commentsData) as CommentRow[]).filter(
+    (comment) => !hiddenUserIds.has(comment.user_id),
+  );
   const commentProfiles = await getProfilesByUserIds([
     ...new Set(comments.map((comment) => comment.user_id)),
   ]);
@@ -690,7 +698,7 @@ export async function getHomePageData(userId: string) {
   );
 
   const [feedPosts, people, businessProfiles, serviceListings] = await Promise.all([
-    mapFeedPosts({ viewerUserId: userId, posts }),
+    mapFeedPosts({ viewerUserId: userId, posts, blockedUserIds }),
     mapProfileList({
       viewerUserId: userId,
       profiles: profiles.filter((profile) => profile.user_id !== userId),
@@ -1033,7 +1041,7 @@ export async function getProfileBySlug(userId: string, slug: string) {
       userId,
       isFollowing,
     ),
-    posts: await mapFeedPosts({ viewerUserId: userId, posts }),
+    posts: await mapFeedPosts({ viewerUserId: userId, posts, blockedUserIds }),
     services: await mapServiceList({ viewerUserId: userId, services }),
   };
 }
@@ -1087,7 +1095,11 @@ export async function getBusinessBySlug(userId: string, slug: string) {
       userId,
       isFollowing,
     ),
-    posts: await mapFeedPosts({ viewerUserId: userId, posts: businessPosts }),
+    posts: await mapFeedPosts({
+      viewerUserId: userId,
+      posts: businessPosts,
+      blockedUserIds,
+    }),
     services: await mapServiceList({ viewerUserId: userId, services: businessServices }),
   };
 }

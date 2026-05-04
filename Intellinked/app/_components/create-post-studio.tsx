@@ -28,7 +28,11 @@ export function CreatePostStudio({
   viewer: ViewerWorkspace;
   businessProfileId: string | null;
 }) {
-  const [authorType, setAuthorType] = useState<AccountTypeLabel>(viewer.accountType);
+  const initialAuthorType =
+    viewer.accountType === "Business" && !businessProfileId
+      ? "Professional"
+      : viewer.accountType;
+  const [authorType, setAuthorType] = useState<AccountTypeLabel>(initialAuthorType);
   const [category, setCategory] = useState<string>("Digital services");
   const [cta, setCta] = useState<PostCallToAction>("Connect");
   const [visibility, setVisibility] = useState<"public" | "followers" | "private">("public");

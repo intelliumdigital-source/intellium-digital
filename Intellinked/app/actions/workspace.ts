@@ -101,6 +101,44 @@ function revalidateBusinessPath(slugOrId: string | null | undefined) {
   }
 }
 
+async function getOwnedBusinessProfile(
+  userId: string,
+  businessProfileId: string | null,
+) {
+  if (!businessProfileId) {
+    return null;
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("business_profiles")
+    .select("id, user_id, slug")
+    .eq("id", businessProfileId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data as { id: string; user_id: string; slug: string | null } | null;
+}
+
+async function getBusinessProfileById(businessProfileId: string) {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("business_profiles")
+    .select("id, user_id, slug")
+    .eq("id", businessProfileId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data as { id: string; user_id: string; slug: string | null } | null;
+}
+
 async function createReportNotification(
   targetUserId: string | null,
   title: string,
@@ -211,10 +249,16 @@ export async function createPostAction(formData: FormData) {
     throw new Error("Post content is required.");
   }
 
-  const businessProfileId = getField(formData, "business_profile_id") || null;
+  const requestedBusinessProfileId = getField(formData, "business_profile_id") || null;
   const authorType = normalizeAccountType(getField(formData, "author_type"));
   const cta = getField(formData, "cta") as "Connect" | "Message" | "View Service";
   const visibility = getField(formData, "visibility") || "public";
+  const ownedBusinessProfile = await getOwnedBusinessProfile(
+    user.id,
+    requestedBusinessProfileId,
+  );
+  const businessProfileId =
+    authorType === "business" ? ownedBusinessProfile?.id ?? null : null;
 
   const { error } = await supabase.from("posts").insert({
     user_id: user.id,
@@ -334,9 +378,14 @@ export async function upsertServiceAction(formData: FormData) {
   }
 
   const serviceId = getField(formData, "service_id");
+  const requestedBusinessProfileId = getField(formData, "business_profile_id") || null;
+  const ownedBusinessProfile = await getOwnedBusinessProfile(
+    user.id,
+    requestedBusinessProfileId,
+  );
   const payload = {
     user_id: user.id,
-    business_profile_id: getField(formData, "business_profile_id") || null,
+    business_profile_id: ownedBusinessProfile?.id ?? null,
     title,
     category: getField(formData, "category") || null,
     location: getField(formData, "location") || null,
@@ -419,9 +468,14 @@ export async function toggleFollowBusinessAction(formData: FormData) {
   const user = await requireSessionUser();
   const supabase = await createServerSupabaseClient();
   const businessProfileId = getField(formData, "business_profile_id");
-  const businessUserId = getField(formData, "business_user_id") || null;
 
   if (!businessProfileId) {
+    return;
+  }
+
+  const businessProfile = await getBusinessProfileById(businessProfileId);
+
+  if (!businessProfile || businessProfile.user_id === user.id) {
     return;
   }
 
@@ -440,7 +494,7 @@ export async function toggleFollowBusinessAction(formData: FormData) {
       following_business_profile_id: businessProfileId,
     });
     await createReportNotification(
-      businessUserId,
+      businessProfile.user_id,
       "New business follower",
       "started following your business profile.",
     );
