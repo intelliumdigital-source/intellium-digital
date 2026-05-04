@@ -2,9 +2,16 @@ const menuBtn = document.getElementById("menuBtn");
 const navMenu = document.getElementById("navMenu");
 
 if (menuBtn && navMenu) {
-  menuBtn.addEventListener("click", () => navMenu.classList.toggle("active"));
+  menuBtn.addEventListener("click", () => {
+    const isOpen = navMenu.classList.toggle("active");
+    menuBtn.setAttribute("aria-expanded", String(isOpen));
+  });
+
   navMenu.querySelectorAll("a").forEach((link) => {
-    link.addEventListener("click", () => navMenu.classList.remove("active"));
+    link.addEventListener("click", () => {
+      navMenu.classList.remove("active");
+      menuBtn.setAttribute("aria-expanded", "false");
+    });
   });
 }
 
@@ -23,7 +30,15 @@ if (leadForm) {
 
     const subject = encodeURIComponent(`New Intellium Digital Inquiry - ${business}`);
     const body = encodeURIComponent(
-      `Hello Intellium Digital,\n\nI would like to inquire about your services.\n\nName: ${name}\nBusiness Name: ${business}\nContact: ${contactInfo}\nService Needed: ${service}\nEstimated Budget: ${budgetRange}\n\nMessage:\n${message}\n\nThank you.`
+      `Hello Intellium Digital,\n\n` +
+      `I would like to inquire about your services.\n\n` +
+      `Name: ${name}\n` +
+      `Business Name: ${business}\n` +
+      `Contact: ${contactInfo}\n` +
+      `Service Needed: ${service}\n` +
+      `Estimated Budget: ${budgetRange || "Not specified"}\n\n` +
+      `Project Details:\n${message || "No additional message provided."}\n\n` +
+      `Thank you.`
     );
 
     window.location.href = `mailto:intelliumdigital@gmail.com?subject=${subject}&body=${body}`;
@@ -31,35 +46,54 @@ if (leadForm) {
 }
 
 const revealItems = document.querySelectorAll(".reveal");
-if ("IntersectionObserver" in window) {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+if (prefersReducedMotion) {
+  revealItems.forEach((item) => item.classList.add("visible"));
+} else {
+  revealItems.forEach((item, index) => {
+    const delay = Math.min(index * 45, 270);
+    item.style.setProperty("--delay", `${delay}ms`);
+  });
+
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) {
+          return;
+        }
+
         entry.target.classList.add("visible");
         observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.12 });
+      });
+    }, { threshold: 0.16 });
 
-  revealItems.forEach((item) => observer.observe(item));
-} else {
-  revealItems.forEach((item) => item.classList.add("visible"));
+    revealItems.forEach((item) => observer.observe(item));
+  } else {
+    revealItems.forEach((item) => item.classList.add("visible"));
+  }
 }
 
 (function () {
   function ready(fn) {
-    if (document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
+    if (document.readyState !== "loading") {
+      fn();
+      return;
+    }
+
+    document.addEventListener("DOMContentLoaded", fn);
   }
 
-  ready(function () {
+  ready(() => {
     const toggle = document.getElementById("id-chat-toggle-v2");
     const close = document.getElementById("id-chat-close-v2");
     const chatWindow = document.getElementById("id-chat-window-v2");
     const chatBody = document.getElementById("id-chat-body-v2");
     const facebookLink = "https://www.facebook.com/IntelliumDigitalPH";
 
-    if (!toggle || !chatWindow || !chatBody) return;
+    if (!toggle || !chatWindow || !chatBody) {
+      return;
+    }
 
     function addMessage(type, message) {
       const div = document.createElement("div");
@@ -72,35 +106,35 @@ if ("IntersectionObserver" in window) {
     const replies = {
       website: {
         user: "I need a website",
-        bot: "Great choice! 🚀<br><br>We build premium, mobile-friendly websites for startups, SMEs, freelancers, and local business owners.<br><br>Website pricing starts at <strong>₱5,000</strong>.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Message us on Facebook</a>"
+        bot: "Intellium Digital creates premium business websites designed to strengthen trust, clarify your offer, and turn more visitors into qualified inquiries.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Discuss your website</a>"
       },
       maya: {
-        user: "I need a website with Maya payment",
-        bot: "Perfect! 💳<br><br>Our Website + Maya Integration promo is designed for rentals, services, booking businesses, and small businesses that want online payment readiness.<br><br>Launch promo: <strong>₱18,000</strong>.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Claim Website + Maya Promo</a>"
+        user: "I need website + Maya",
+        bot: "The Website + Maya package is ideal for service businesses that want a more seamless path from inquiry to payment. Final approval still depends on Maya or the payment provider's requirements.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Ask about the Maya promo</a>"
       },
       app: {
         user: "I need an app",
-        bot: "Awesome! 📱<br><br>We can help plan and build business apps for booking, tracking, customer access, loyalty, referrals, and digital service platforms.<br><br>App development starts at <strong>₱35,000+</strong>.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Discuss your app idea</a>"
+        bot: "Intellium Digital designs and builds business apps for bookings, tracking, operations, and customer access. Custom app projects usually start at PHP 35,000.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Discuss your app idea</a>"
       },
       sweldotrack: {
-        user: "I want SweldoTrack",
-        bot: "Nice! 💸<br><br>SweldoTrack is our Filipino-friendly salary and expense tracker for sweldo, bills, savings, utang, daily spending limits, analytics, and invite-to-earn.<br><br>You can message us to join Android testing or ask how we can build a similar app for your business.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Ask about SweldoTrack</a>"
+        user: "Tell me about SweldoTrack",
+        bot: "SweldoTrack is Intellium Digital's featured budgeting product focused on salary, bills, savings, utang, and everyday expense management for Filipino users.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Ask about SweldoTrack</a>"
       },
       branding: {
-        user: "I need branding/logo",
-        bot: "Perfect! 🎨<br><br>We help businesses look professional with logo design, cover photos, profile images, brand colors, and social media visuals.<br><br>Branding starts at <strong>₱3,500+</strong>.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Request branding help</a>"
+        user: "I need branding",
+        bot: "Branding support includes logo direction, profile visuals, cover graphics, color systems, and social assets that make your business look more established.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Request branding help</a>"
       },
       pricing: {
-        user: "What are your prices?",
-        bot: "Here are the starting prices: 💼<br><br>• Branding / Logo: <strong>₱3,500+</strong><br>• Starter Website: <strong>₱5,000+</strong><br>• Business Website: <strong>₱10,000+</strong><br>• Website + Maya Promo: <strong>₱18,000</strong><br>• Full Digital Setup: <strong>₱25,000+</strong><br>• Business App: <strong>₱35,000+</strong><br><br>Final quote depends on pages, features, design, content, and integrations.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Get a quote</a>"
+        user: "Show pricing",
+        bot: "Public starting prices currently include Branding from PHP 3,500, Starter Websites from PHP 5,000, Business Websites from PHP 10,000, Website + Maya at PHP 18,000, Full Digital Setup from PHP 25,000, and Business Apps from PHP 35,000.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Request a quote</a>"
       },
       budget: {
-        user: "I want to discuss my budget",
-        bot: "No problem! 🤝<br><br>Tell us your budget, business type, and what you want to build. We will recommend the most realistic package for your goal.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Discuss my budget</a>"
+        user: "I have a budget in mind",
+        bot: "Send your budget, business type, and goals, and Intellium Digital will recommend the strongest scope for that range.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Discuss your budget</a>"
       },
       start: {
-        user: "Start my project ASAP",
-        bot: "Let's go! 🚀<br><br>Please send us:<br>• Business name<br>• Type of business<br>• Services/products offered<br>• Preferred design style<br>• Target budget<br>• Target launch date<br><br>We will guide you from planning to launch.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Message Intellium Digital</a>"
+        user: "Start my project",
+        bot: "To get started, prepare your business name, business type, preferred style, budget range, target launch date, and priority deliverables.<br><a class='id-chat-cta-v2' href='" + facebookLink + "' target='_blank' rel='noopener'>Start your project</a>"
       }
     };
 
@@ -108,18 +142,23 @@ if ("IntersectionObserver" in window) {
       chatWindow.style.display = chatWindow.style.display === "block" ? "none" : "block";
     });
 
-    if (close) close.addEventListener("click", () => chatWindow.style.display = "none");
+    if (close) {
+      close.addEventListener("click", () => {
+        chatWindow.style.display = "none";
+      });
+    }
 
     document.querySelectorAll("[data-chat-option]").forEach((button) => {
       button.addEventListener("click", () => {
         const selected = replies[button.getAttribute("data-chat-option")];
-        if (!selected) return;
+        if (!selected) {
+          return;
+        }
+
         addMessage("user", selected.user);
-        setTimeout(() => addMessage("bot", selected.bot), 350);
+        window.setTimeout(() => addMessage("bot", selected.bot), 250);
       });
     });
-
-    toggle.style.display = "flex";
   });
 })();
 
@@ -128,16 +167,23 @@ document.querySelectorAll(".xendit-pay-btn").forEach((button) => {
     const originalText = button.textContent;
     const packageName = button.dataset.name;
     const amount = Number(button.dataset.amount);
+
     button.disabled = true;
     button.textContent = "Creating secure checkout...";
+
     try {
       const response = await fetch("/api/create-xendit-invoice", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ packageName, amount })
       });
+
       const data = await response.json();
-      if (!response.ok || !data.invoice_url) throw new Error(data.error || "Unable to create Xendit checkout.");
+
+      if (!response.ok || !data.invoice_url) {
+        throw new Error(data.error || "Unable to create Xendit checkout.");
+      }
+
       window.location.href = data.invoice_url;
     } catch (error) {
       console.error(error);
