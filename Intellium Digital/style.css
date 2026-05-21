@@ -748,6 +748,7 @@ h1{
   min-height:520px;
   padding:0;
   z-index:1;
+  overflow:visible;
 }
 
 .service-index,
@@ -804,6 +805,10 @@ h1{
   align-items:center;
   justify-content:center;
   margin-right:min(-4vw,-36px);
+  background:transparent;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
 }
 
 .hero-image-stage::before{
@@ -835,12 +840,23 @@ h1{
   height:auto;
   object-fit:contain;
   display:block;
+  margin:0;
   border:0;
   border-radius:0;
   background:transparent;
   box-shadow:none;
   filter:drop-shadow(0 42px 80px rgba(0,0,0,.68)) drop-shadow(0 0 44px rgba(84,214,255,.24));
   transform:perspective(1200px) rotateY(-3deg) rotateX(1deg);
+}
+
+.hero-visual .glass-3d,
+.hero-visual .glow-card,
+.hero-visual .visual-frame,
+.hero-visual .hero-showcase,
+.hero-visual .hero-frame,
+.hero-visual .hero-kicker,
+.hero-visual .hero-points{
+  display:none!important;
 }
 
 .service-visual,
