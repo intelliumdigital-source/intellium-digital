@@ -286,7 +286,7 @@ function renderCatalog() {
       : `data-add-id="${product.id}"`;
 
     return `
-      <article class="product-card glass-3d ${product.type === "featured" ? "featured glow-card" : ""} reveal">
+      <article class="product-card glass-3d depth-card premium-surface neon-edge ${product.type === "featured" ? "featured glow-card" : ""} reveal">
         <span class="category-badge">${product.category}</span>
         <h3>${product.name}</h3>
         <strong>${product.displayPrice}</strong>
