@@ -18,7 +18,6 @@ export '../app/legacy_app.dart'
         smartExpenseSupportedApps,
         smartExpenseSupportedAppLabels,
         premiumLaunchEnabled,
-        premiumTemporarilyUnavailableLabel,
         premiumPurchasesUnavailableMessage,
         premiumRestoreUnavailableMessage,
         referralPaidRewardAmount;

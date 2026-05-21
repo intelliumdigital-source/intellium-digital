@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="com.android.vending.BILLING" />
     <uses-feature
         android:name="android.hardware.touchscreen"
         android:required="false" />
@@ -34,7 +35,7 @@
              Android Notification Access settings and can still be enabled. -->
         <service
             android:name=".SmartExpenseNotificationListenerService"
-            android:exported="false"
+            android:exported="true"
             android:label="SweldoTrack Smart Expense Detection"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>

@@ -1,7 +1,8 @@
-import Link from "next/link";
-import { ArrowRight, BarChart3, CheckCircle2, ChevronRight, Layers3, ShieldCheck, Zap } from "lucide-react";
+import { ArrowRight, BarChart3, CheckCircle2, ChevronRight, Layers3, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { ButtonLink, buttonStyles } from "@/components/button";
 import { Logo } from "@/components/logo";
 import { dashboardStats, monthlyPerformance } from "@/lib/mock-data";
+import { routes } from "@/lib/routes";
 import { formatCurrency } from "@/lib/utils";
 
 const features = [
@@ -23,8 +24,8 @@ const features = [
 ];
 
 const pricing = [
-  { name: "Starter", price: "₱1,490", desc: "For solo founders and lean sales teams." },
-  { name: "Growth", price: "₱3,990", desc: "For growing businesses managing more leads and quotations." },
+  { name: "Starter", price: "PHP 1,490", desc: "For solo founders and lean sales teams." },
+  { name: "Growth", price: "PHP 3,990", desc: "For growing businesses managing more leads and quotations." },
   { name: "Scale", price: "Custom", desc: "For teams needing deeper CRM workflows and reporting." }
 ];
 
@@ -42,19 +43,17 @@ export default function LandingPage() {
           <a href="#contact">Contact</a>
         </nav>
         <div className="flex items-center gap-3">
-          <Link className="rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200" href="/login">
+          <ButtonLink href={routes.login} variant="secondary">
             Login
-          </Link>
-          <Link className="rounded-full bg-gradient-to-r from-cyan via-blue to-violet px-4 py-2 text-sm font-semibold text-slate-950" href="/dashboard">
-            Open Demo
-          </Link>
+          </ButtonLink>
+          <ButtonLink href={routes.dashboard}>Open Demo</ButtonLink>
         </div>
       </header>
 
       <main className="relative">
         <section className="mx-auto grid max-w-7xl gap-12 px-6 pb-24 pt-10 lg:grid-cols-[1.1fr_0.9fr] lg:px-10 lg:pb-28 lg:pt-16">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan/20 bg-cyan/10 px-4 py-2 text-sm text-cyan">
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-cyan/20 bg-cyan/10 px-4 py-2 text-sm text-cyan">
               <span className="h-2 w-2 rounded-full bg-cyan shadow-neon" />
               Smart lead tracking for growing businesses.
             </div>
@@ -66,28 +65,25 @@ export default function LandingPage() {
               sellable CRM experience.
             </p>
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <Link
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan via-blue to-violet px-6 py-3 font-semibold text-slate-950"
-                href="/dashboard"
-              >
+              <ButtonLink className="px-6" href={routes.dashboard}>
                 View CRM Demo
                 <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 px-6 py-3 text-slate-200" href="/login">
+              </ButtonLink>
+              <ButtonLink className="px-6" href={routes.login} variant="secondary">
                 Start Selling IntelliLead
                 <ChevronRight className="h-4 w-4" />
-              </Link>
+              </ButtonLink>
             </div>
             <div className="mt-10 grid max-w-2xl gap-4 sm:grid-cols-3">
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+              <div className="rounded-[28px] border border-white/10 bg-white/5 p-4 backdrop-blur">
                 <p className="text-sm text-slate-400">Total Leads</p>
                 <p className="mt-2 text-3xl font-semibold text-white">{dashboardStats.totalLeads}</p>
               </div>
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+              <div className="rounded-[28px] border border-white/10 bg-white/5 p-4 backdrop-blur">
                 <p className="text-sm text-slate-400">Won Deals</p>
                 <p className="mt-2 text-3xl font-semibold text-white">{dashboardStats.wonDeals}</p>
               </div>
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+              <div className="rounded-[28px] border border-white/10 bg-white/5 p-4 backdrop-blur">
                 <p className="text-sm text-slate-400">Estimated Revenue</p>
                 <p className="mt-2 text-3xl font-semibold text-white">{formatCurrency(dashboardStats.estimatedRevenue)}</p>
               </div>
@@ -104,6 +100,10 @@ export default function LandingPage() {
                 <div className="rounded-2xl border border-cyan/20 bg-cyan/10 p-3 text-cyan">
                   <BarChart3 className="h-5 w-5" />
                 </div>
+              </div>
+              <div className="mt-6 inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-slate-300">
+                <Sparkles className="h-4 w-4 text-cyan" />
+                Local-first CRM MVP with no live auth or database connection yet
               </div>
               <div className="mt-8 space-y-5">
                 {monthlyPerformance.map((item) => (
@@ -122,11 +122,11 @@ export default function LandingPage() {
                 ))}
               </div>
               <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
+                <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-4">
                   <p className="text-sm text-slate-400">This Month</p>
                   <p className="mt-2 text-2xl font-semibold text-white">{formatCurrency(232000)}</p>
                 </div>
-                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
+                <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-4">
                   <p className="text-sm text-slate-400">Average Win Rate</p>
                   <p className="mt-2 text-2xl font-semibold text-white">26%</p>
                 </div>
@@ -199,20 +199,10 @@ export default function LandingPage() {
               Website: intelliumdigital.online. Facebook: facebook.com/IntelliumDigitalPH.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <a
-                className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 font-semibold text-slate-950"
-                href="https://intelliumdigital.online"
-                rel="noreferrer"
-                target="_blank"
-              >
+              <a className={buttonStyles("primary")} href="https://intelliumdigital.online" rel="noreferrer" target="_blank">
                 Visit Website
               </a>
-              <a
-                className="inline-flex items-center justify-center rounded-full border border-white/20 px-6 py-3 text-white"
-                href="https://facebook.com/IntelliumDigitalPH"
-                rel="noreferrer"
-                target="_blank"
-              >
+              <a className={buttonStyles("secondary")} href="https://facebook.com/IntelliumDigitalPH" rel="noreferrer" target="_blank">
                 Message on Facebook
               </a>
             </div>

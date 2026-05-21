@@ -15,7 +15,7 @@ internal object SmartExpenseDetectionConfigStore {
     // native allowlisting and Dart-side parsing support the same packages.
     private val supportedPackagesByLabel = mapOf(
         "GCash" to setOf("com.globe.gcash.android"),
-        "Maya" to setOf("com.paymaya", "com.maya.ph", "com.maya.wallet"),
+        "Maya" to setOf("com.paymaya", "com.maya.ph"),
         "Shopee" to setOf("com.shopee.ph"),
         "Lazada" to setOf("com.lazada.android"),
         "Foodpanda" to setOf(

@@ -8,5 +8,4 @@ export '../../app/legacy_app.dart'
         HomeOverviewCard,
         HomeToolCard,
         IntelliumFinancialHealthCard,
-        UpcomingBillsCard,
-        RecentActivityCard;
+        UpcomingBillsCard;

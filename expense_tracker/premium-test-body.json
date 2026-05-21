@@ -1,0 +1,8 @@
+{
+  "packageName": "com.intelliumdigital.sweldotrack",
+  "productId": "sweldotrack_premium_monthly",
+  "purchaseToken": "TEST_EMPTY_TOKEN",
+  "purchaseStatus": "purchased",
+  "platform": "android",
+  "verificationMode": "google_play"
+}

@@ -1,4 +1,5 @@
-    import java.util.Properties
+import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
     plugins {
         id("com.android.application")
@@ -14,7 +15,7 @@
         keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
     }
 
-    android {
+android {
         namespace = "com.intelliumdigital.sweldotrack"
         compileSdk = 36
         ndkVersion = flutter.ndkVersion
@@ -24,14 +25,10 @@
             targetCompatibility = JavaVersion.VERSION_17
         }
 
-        kotlinOptions {
-            jvmTarget = JavaVersion.VERSION_17.toString()
-        }
-
-        defaultConfig {
-            applicationId = "com.intelliumdigital.sweldotrack"
-            // You can update the following values to match your application needs.
-            // For more information, see: https://flutter.dev/to/review-gradle-config.
+    defaultConfig {
+        applicationId = "com.intelliumdigital.sweldotrack"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
             minSdk = flutter.minSdkVersion
             targetSdk = 35
             versionCode = flutter.versionCode
@@ -55,9 +52,19 @@
                     signingConfig = signingConfigs.getByName("release")
                 }
             }
-        }
     }
+}
 
-    flutter {
-        source = "../.."
+dependencies {
+    implementation("androidx.activity:activity-ktx:1.9.3")
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
     }
+}
+
+flutter {
+    source = "../.."
+}

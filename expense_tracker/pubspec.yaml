@@ -3,7 +3,7 @@ description: SweldoTrack by Intellium Digital
 
 publish_to: 'none'
 
-version: 10.0.0+10
+version: 3.0.0+36
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -33,11 +33,5 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/onboarding_bills.png
-    - assets/images/onboarding_budget.png
-    - assets/images/onboarding_expenses.png
-    - assets/images/onboarding_premium.png
-    - assets/images/onboarding_income.png
-    - assets/images/onboarding_dashboard.png
-    - assets/images/setup_profile.png
+    - assets/images/
     - assets/icon/sweldotrack_icon.png

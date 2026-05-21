@@ -10,11 +10,11 @@ export const leads: Lead[] = [
     phone: "+63 917 812 3401",
     email: "mikaela@santosevents.ph",
     facebook: "facebook.com/santoseventsph",
-    source: "Facebook Inquiry",
-    service: "CRM Setup + Lead Nurturing",
-    budget: "₱35,000 - ₱50,000",
-    notes: "Needs cleaner lead follow-up before Q3 wedding season.",
-    nextFollowUp: "May 06, 2026",
+    source: "Facebook Page Inquiry",
+    service: "CRM Setup and Lead Nurturing",
+    budget: "PHP 35,000 to PHP 50,000",
+    notes: "Needs cleaner lead follow-up before Q3 wedding season in Metro Manila.",
+    nextFollowUp: "May 6, 2026",
     status: "Follow-up",
     value: 48000
   },
@@ -25,11 +25,11 @@ export const leads: Lead[] = [
     phone: "+63 998 411 9221",
     email: "paolo@northbrew.cafe",
     facebook: "facebook.com/northbrewcafe",
-    source: "Website Form",
+    source: "Website Demo Form",
     service: "Sales Pipeline Tracking",
-    budget: "₱20,000 - ₱35,000",
-    notes: "Wants visibility across branches and franchising leads.",
-    nextFollowUp: "May 05, 2026",
+    budget: "PHP 20,000 to PHP 35,000",
+    notes: "Wants visibility across branch inquiries and franchising prospects.",
+    nextFollowUp: "May 5, 2026",
     status: "Contacted",
     value: 32000
   },
@@ -40,11 +40,11 @@ export const leads: Lead[] = [
     phone: "+63 917 602 5318",
     email: "ariane@dcrg.ph",
     facebook: "facebook.com/dcrgrealty",
-    source: "Referral",
+    source: "Partner Referral",
     service: "Quotation Workflow",
-    budget: "₱55,000 - ₱80,000",
-    notes: "Team of 9 agents; proposal requested with onboarding support.",
-    nextFollowUp: "May 04, 2026",
+    budget: "PHP 55,000 to PHP 80,000",
+    notes: "Team of 9 agents. Proposal requested with onboarding support for Quezon City sales team.",
+    nextFollowUp: "May 4, 2026",
     status: "Quoted",
     value: 76000
   },
@@ -57,9 +57,9 @@ export const leads: Lead[] = [
     facebook: "facebook.com/velascoautosupply",
     source: "Cold Outreach",
     service: "Lead Database Cleanup",
-    budget: "₱15,000 - ₱25,000",
-    notes: "Interested if SMS reminders can be included later.",
-    nextFollowUp: "May 08, 2026",
+    budget: "PHP 15,000 to PHP 25,000",
+    notes: "Interested if SMS reminders can be connected after MVP phase.",
+    nextFollowUp: "May 8, 2026",
     status: "New",
     value: 18000
   },
@@ -72,23 +72,23 @@ export const leads: Lead[] = [
     facebook: "facebook.com/bloomskinstudio",
     source: "Instagram DM",
     service: "Client Follow-up Automation",
-    budget: "₱45,000 - ₱65,000",
-    notes: "Needs repeat-visit reminders and sales tracking by branch.",
-    nextFollowUp: "May 07, 2026",
+    budget: "PHP 45,000 to PHP 65,000",
+    notes: "Needs repeat-visit reminders and branch-level sales tracking for Pasig and Alabang.",
+    nextFollowUp: "May 7, 2026",
     status: "Won",
     value: 62000
   },
   {
     id: "LD-1006",
     fullName: "Cedric Ong",
-    businessName: "Harbor Freight Movers",
+    businessName: "Harborline Movers PH",
     phone: "+63 917 500 2819",
-    email: "cedric@harbormovers.ph",
-    facebook: "facebook.com/harbormoversph",
+    email: "cedric@harborline.ph",
+    facebook: "facebook.com/harborlinemoversph",
     source: "Google Search",
     service: "Lead Qualification Workflow",
-    budget: "₱25,000 - ₱40,000",
-    notes: "Disqualified due to internal system migration delay.",
+    budget: "PHP 25,000 to PHP 40,000",
+    notes: "Paused due to internal operations upgrade and will revisit after warehouse rollout.",
     nextFollowUp: "May 15, 2026",
     status: "Lost",
     value: 28000
@@ -100,11 +100,11 @@ export const leads: Lead[] = [
     phone: "+63 917 884 7610",
     email: "katrina@aquapure.ph",
     facebook: "facebook.com/aquapurewaterph",
-    source: "Facebook Ad",
+    source: "Facebook Ad Campaign",
     service: "Lead-to-Client Tracking",
-    budget: "₱18,000 - ₱30,000",
-    notes: "Comparing two providers, decision expected this week.",
-    nextFollowUp: "May 04, 2026",
+    budget: "PHP 18,000 to PHP 30,000",
+    notes: "Comparing two providers. Owner wants a simple dashboard for daily inquiries.",
+    nextFollowUp: "May 4, 2026",
     status: "Follow-up",
     value: 24000
   },
@@ -115,11 +115,11 @@ export const leads: Lead[] = [
     phone: "+63 932 115 4308",
     email: "bryan@reyesconstruct.ph",
     facebook: "facebook.com/reyesconstructionservices",
-    source: "Partner Referral",
+    source: "Agency Referral",
     service: "CRM Dashboard Setup",
-    budget: "₱60,000 - ₱90,000",
-    notes: "Owner wants a premium dashboard for project sales visibility.",
-    nextFollowUp: "May 09, 2026",
+    budget: "PHP 60,000 to PHP 90,000",
+    notes: "Owner wants a premium dashboard to track bid requests and commercial accounts.",
+    nextFollowUp: "May 9, 2026",
     status: "Quoted",
     value: 88000
   }
@@ -207,7 +207,7 @@ export const quotations: Quote[] = [
   {
     id: "QT-310",
     client: "Dela Cruz Realty Group",
-    packageName: "CRM + Quotation Workflow",
+    packageName: "CRM and Quotation Workflow",
     amount: 76000,
     status: "Sent",
     validUntil: "May 18, 2026"
@@ -244,31 +244,31 @@ export const pipelineStages: PipelineStage[] = [
     total: 2,
     leads: [
       { id: "LD-1004", company: "Velasco Auto Supply", contact: "Jomar Velasco", amount: 18000, source: "Cold Outreach" },
-      { id: "LD-1009", company: "Casa Verde Bistro", contact: "Tina Ching", amount: 26000, source: "Facebook Ad" }
+      { id: "LD-1009", company: "Casa Verde Bistro", contact: "Tina Ching", amount: 26000, source: "Facebook Ad Campaign" }
     ]
   },
   {
     name: "Contacted",
     total: 2,
     leads: [
-      { id: "LD-1002", company: "Northbrew Cafe", contact: "Paolo Fernandez", amount: 32000, source: "Website Form" },
-      { id: "LD-1010", company: "Rizal Printing Hub", contact: "Jethro Sy", amount: 21000, source: "Referral" }
+      { id: "LD-1002", company: "Northbrew Cafe", contact: "Paolo Fernandez", amount: 32000, source: "Website Demo Form" },
+      { id: "LD-1010", company: "Rizal Printing Hub", contact: "Jethro Sy", amount: 21000, source: "Partner Referral" }
     ]
   },
   {
     name: "Follow-up",
     total: 2,
     leads: [
-      { id: "LD-1001", company: "Santos Events Co.", contact: "Mikaela Santos", amount: 48000, source: "Facebook Inquiry" },
-      { id: "LD-1007", company: "AquaPure Water Refilling", contact: "Katrina Aquino", amount: 24000, source: "Facebook Ad" }
+      { id: "LD-1001", company: "Santos Events Co.", contact: "Mikaela Santos", amount: 48000, source: "Facebook Page Inquiry" },
+      { id: "LD-1007", company: "AquaPure Water Refilling", contact: "Katrina Aquino", amount: 24000, source: "Facebook Ad Campaign" }
     ]
   },
   {
     name: "Quoted",
     total: 2,
     leads: [
-      { id: "LD-1003", company: "Dela Cruz Realty Group", contact: "Ariane Dela Cruz", amount: 76000, source: "Referral" },
-      { id: "LD-1008", company: "Reyes Construction Services", contact: "Bryan Reyes", amount: 88000, source: "Partner Referral" }
+      { id: "LD-1003", company: "Dela Cruz Realty Group", contact: "Ariane Dela Cruz", amount: 76000, source: "Partner Referral" },
+      { id: "LD-1008", company: "Reyes Construction Services", contact: "Bryan Reyes", amount: 88000, source: "Agency Referral" }
     ]
   },
   {
@@ -281,8 +281,8 @@ export const pipelineStages: PipelineStage[] = [
 export const tasks: Task[] = [
   { id: "TS-01", title: "Send revised quotation to Reyes Construction", due: "Today", owner: "Miguel", status: "In Progress" },
   { id: "TS-02", title: "Review new Facebook inquiries", due: "Today", owner: "Jessa", status: "Open" },
-  { id: "TS-03", title: "Clean old duplicate lead entries", due: "Tomorrow", owner: "Carla", status: "Open" },
-  { id: "TS-04", title: "Finalize monthly sales report", due: "Friday", owner: "Miguel", status: "Done" }
+  { id: "TS-03", title: "Clean duplicate lead entries from April imports", due: "Tomorrow", owner: "Carla", status: "Open" },
+  { id: "TS-04", title: "Finalize monthly sales report for management deck", due: "Friday", owner: "Miguel", status: "Done" }
 ];
 
 export const monthlyPerformance = [
@@ -308,4 +308,30 @@ export const dashboardStats = {
   estimatedRevenue: leads
     .filter((lead) => lead.status !== "Lost")
     .reduce((sum, lead) => sum + lead.value, 0)
+};
+
+export const leadStatusSummary = statusOrder.map((status) => ({
+  status,
+  count: leads.filter((lead) => lead.status === status).length
+}));
+
+export const clientHealthSummary = [
+  { label: "Healthy", value: clients.filter((client) => client.health === "Healthy").length },
+  { label: "Expansion", value: clients.filter((client) => client.health === "Expansion").length },
+  { label: "Watchlist", value: clients.filter((client) => client.health === "Watchlist").length }
+];
+
+export const quotationSummary = [
+  { label: "Draft", value: quotations.filter((quote) => quote.status === "Draft").length },
+  { label: "Sent", value: quotations.filter((quote) => quote.status === "Sent").length },
+  { label: "Negotiation", value: quotations.filter((quote) => quote.status === "Negotiation").length },
+  { label: "Approved", value: quotations.filter((quote) => quote.status === "Approved").length }
+];
+
+export const emptyStates = {
+  overdueFollowUps: [],
+  stalledDeals: [],
+  expiredQuotes: [],
+  archivedClients: [],
+  integrations: []
 };

@@ -43,3 +43,17 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local release verifier configuration
+.env
+.env.local
+.env.release
+*.keystore
+*.jks
+key.properties
+android/key.properties
+*service-account*.json
+*service_account*.json
+google-play-*.json
+google_play_*.json
+node_modules

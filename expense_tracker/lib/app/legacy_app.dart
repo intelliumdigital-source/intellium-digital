@@ -19,16 +19,690 @@ void main() {
   runApp(const SweldoTrackApp());
 }
 
+SystemUiOverlayStyle _sweldoSystemUiOverlayStyleFor(SweldoUiMode mode) {
+  final ui = sweldoUiStyleFor(mode);
+  final iconBrightness = ui.isDark ? Brightness.light : Brightness.dark;
+  final statusBarBrightness = ui.isDark ? Brightness.dark : Brightness.light;
+  return SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: iconBrightness,
+    statusBarBrightness: statusBarBrightness,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarDividerColor: Colors.transparent,
+    systemNavigationBarIconBrightness: iconBrightness,
+  );
+}
+
+EdgeInsets _pageContentPadding(
+  BuildContext context, {
+  double horizontal = 20,
+  double top = 16,
+  double bottom = 16,
+}) {
+  final navClearance = bottom >= 96 ? 40.0 : 0.0;
+  return EdgeInsets.fromLTRB(
+    horizontal,
+    top,
+    horizontal,
+    MediaQuery.viewPaddingOf(context).bottom + bottom + navClearance,
+  );
+}
+
+const Color sweldoDangerColor = Color(0xFFFF6B6B);
+const Color sweldoPremiumPurple = Color(0xFF5E17EB);
+const Color sweldoPremiumPurpleLight = Color(0xFF7C3AED);
+const Color sweldoPremiumSoftBackground = Color(0xFFF7F5FF);
+const Color sweldoPremiumSoftSurface = Color(0xFFF3E8FF);
+const Color sweldoPremiumSoftBorder = Color(0xFFE9D8FD);
+
+TextStyle sweldoTitleStyle(
+  SweldoVisualStyle ui, {
+  double size = 26,
+  FontWeight weight = FontWeight.w800,
+  double letterSpacing = -0.4,
+  double height = 1.08,
+  Color? color,
+}) {
+  return TextStyle(
+    color: color ?? ui.textPrimary,
+    fontSize: size,
+    fontWeight: weight,
+    letterSpacing: letterSpacing,
+    height: height,
+  );
+}
+
+TextStyle sweldoAmountStyle(
+  SweldoVisualStyle ui, {
+  double size = 22,
+  FontWeight weight = FontWeight.w800,
+  double letterSpacing = -0.4,
+  double height = 1.0,
+  Color? color,
+}) {
+  return TextStyle(
+    color: color ?? ui.textPrimary,
+    fontSize: size,
+    fontWeight: weight,
+    letterSpacing: letterSpacing,
+    height: height,
+  );
+}
+
+TextStyle sweldoLabelStyle(
+  SweldoVisualStyle ui, {
+  double size = 12.8,
+  FontWeight weight = FontWeight.w700,
+  Color? color,
+}) {
+  return TextStyle(
+    color: color ?? ui.textPrimary,
+    fontSize: size,
+    fontWeight: weight,
+  );
+}
+
+TextStyle sweldoHelperStyle(
+  SweldoVisualStyle ui, {
+  double size = 12.5,
+  FontWeight weight = FontWeight.w500,
+  double height = 1.45,
+  Color? color,
+}) {
+  return TextStyle(
+    color: color ?? ui.textSecondary,
+    fontSize: size,
+    fontWeight: weight,
+    height: height,
+  );
+}
+
+Color sweldoSheetBackgroundColor(SweldoUiStyle uiStyle) {
+  return switch (uiStyle.mode) {
+    SweldoUiMode.light => const Color(0xFFFDFEFF),
+    SweldoUiMode.dark => uiStyle.surface,
+    SweldoUiMode.intelliumDigital => uiStyle.surface,
+    SweldoUiMode.premiumNeon => uiStyle.surface,
+    SweldoUiMode.premiumExecutive => uiStyle.surface,
+  };
+}
+
+Color sweldoInputFillColor(SweldoUiStyle uiStyle) {
+  return switch (uiStyle.mode) {
+    SweldoUiMode.light => const Color(0xFFF8FAFF),
+    SweldoUiMode.dark => const Color(0xFF151D2D),
+    SweldoUiMode.intelliumDigital => const Color(0xFF141B31),
+    SweldoUiMode.premiumNeon => const Color(0xFF111833),
+    SweldoUiMode.premiumExecutive => const Color(0xFF1C1720),
+  };
+}
+
+InputDecoration sweldoInputDecoration(
+  BuildContext context, {
+  required String label,
+  String? hint,
+  IconData? icon,
+  Widget? suffixIcon,
+}) {
+  final ui = SweldoVisualStyle.fromContext(context);
+  final uiStyle = sweldoUiStyleOf(context);
+  final fillColor = sweldoInputFillColor(uiStyle);
+
+  return InputDecoration(
+    labelText: label,
+    hintText: hint,
+    filled: true,
+    fillColor: fillColor,
+    labelStyle: TextStyle(
+      color: ui.textSecondary,
+      fontWeight: FontWeight.w600,
+    ),
+    hintStyle: TextStyle(
+      color: ui.textMuted,
+      fontWeight: FontWeight.w500,
+    ),
+    prefixIcon: icon == null ? null : Icon(icon, color: uiStyle.accent, size: 20),
+    suffixIcon: suffixIcon,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(18),
+      borderSide: BorderSide.none,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(18),
+      borderSide: BorderSide(
+        color: ui.borderColor.withValues(alpha: uiStyle.isDark ? .72 : 1),
+      ),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(18),
+      borderSide: BorderSide(
+        color: uiStyle.accent,
+        width: 1.4,
+      ),
+    ),
+  );
+}
+
+Widget sweldoAppBarBackButton(BuildContext context) {
+  final ui = SweldoVisualStyle.fromContext(context);
+  return Material(
+    color: Colors.transparent,
+    child: InkResponse(
+      radius: 22,
+      onTap: () => Navigator.of(context).maybePop(),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Icon(
+          Icons.arrow_back_ios_new_rounded,
+          color: ui.textPrimary,
+          size: 20,
+        ),
+      ),
+    ),
+  );
+}
+
 // -----------------------------------------------------------------------------
 // Finance pure helpers
 // -----------------------------------------------------------------------------
 
-String formatPhp(num amount, {int decimals = 0}) {
+@immutable
+class SweldoCurrencyOption {
+  final String code;
+  final String symbol;
+  final String locale;
+  final String label;
+
+  const SweldoCurrencyOption({
+    required this.code,
+    required this.symbol,
+    required this.locale,
+    required this.label,
+  });
+
+  String get displayLabel => '$symbol $code';
+}
+
+const SweldoCurrencyOption _defaultSweldoCurrencyOption = SweldoCurrencyOption(
+  code: 'PHP',
+  symbol: '\u20B1',
+  locale: 'en_PH',
+  label: 'Philippine Peso',
+);
+
+const List<SweldoCurrencyOption> sweldoCurrencyOptions = [
+  _defaultSweldoCurrencyOption,
+  SweldoCurrencyOption(
+    code: 'USD',
+    symbol: '\$',
+    locale: 'en_US',
+    label: 'US Dollar',
+  ),
+  SweldoCurrencyOption(
+    code: 'SGD',
+    symbol: 'S\$',
+    locale: 'en_SG',
+    label: 'Singapore Dollar',
+  ),
+  SweldoCurrencyOption(
+    code: 'EUR',
+    symbol: 'EUR ',
+    locale: 'en_IE',
+    label: 'Euro',
+  ),
+  SweldoCurrencyOption(
+    code: 'GBP',
+    symbol: 'GBP ',
+    locale: 'en_GB',
+    label: 'British Pound',
+  ),
+  SweldoCurrencyOption(
+    code: 'JPY',
+    symbol: 'JPY ',
+    locale: 'ja_JP',
+    label: 'Japanese Yen',
+  ),
+];
+
+final ValueNotifier<SweldoCurrencyOption> sweldoCurrencyNotifier =
+    ValueNotifier<SweldoCurrencyOption>(_defaultSweldoCurrencyOption);
+
+SweldoCurrencyOption resolveSweldoCurrencyOption(String? rawCode) {
+  final normalizedCode = (rawCode ?? '').trim().toUpperCase();
+  return sweldoCurrencyOptions.firstWhere(
+    (option) => option.code == normalizedCode,
+    orElse: () => _defaultSweldoCurrencyOption,
+  );
+}
+
+String formatMoney(num amount, {int decimals = 0}) {
+  final currency = sweldoCurrencyNotifier.value;
   return NumberFormat.currency(
-    locale: 'en_PH',
-    symbol: '\u20B1',
+    locale: currency.locale,
+    symbol: currency.symbol,
     decimalDigits: decimals,
   ).format(normalizeMoney(amount));
+}
+
+@Deprecated('Use formatMoney() because SweldoTrack now supports more than PHP.')
+String formatPhp(num amount, {int decimals = 0}) {
+  return formatMoney(amount, decimals: decimals);
+}
+
+@immutable
+class SpendingOptionDefinition {
+  final String name;
+  final IconData icon;
+  final Color color;
+  final bool premium;
+  final bool builtIn;
+
+  const SpendingOptionDefinition({
+    required this.name,
+    required this.icon,
+    required this.color,
+    this.premium = false,
+    this.builtIn = true,
+  });
+}
+
+const int freeCustomCategoryLimit = 3;
+const int freeCustomPaymentMethodLimit = 3;
+
+const List<SpendingOptionDefinition> freeSpendingCategoryDefinitions = [
+  SpendingOptionDefinition(
+    name: 'Food',
+    icon: Icons.restaurant_rounded,
+    color: Color(0xFFFFC857),
+  ),
+  SpendingOptionDefinition(
+    name: 'Transport',
+    icon: Icons.directions_bus_rounded,
+    color: Color(0xFF6C8CFF),
+  ),
+  SpendingOptionDefinition(
+    name: 'Bills',
+    icon: Icons.receipt_long_rounded,
+    color: Color(0xFFB084F5),
+  ),
+  SpendingOptionDefinition(
+    name: 'Groceries',
+    icon: Icons.shopping_basket_rounded,
+    color: Color(0xFF57E9C3),
+  ),
+  SpendingOptionDefinition(
+    name: 'Load / Mobile',
+    icon: Icons.sim_card_rounded,
+    color: Color(0xFF7BDFF2),
+  ),
+  SpendingOptionDefinition(
+    name: 'Shopping',
+    icon: Icons.shopping_bag_rounded,
+    color: Color(0xFFFF8A5B),
+  ),
+  SpendingOptionDefinition(
+    name: 'Health',
+    icon: Icons.health_and_safety_rounded,
+    color: Color(0xFFFF6B8A),
+  ),
+  SpendingOptionDefinition(
+    name: 'Work',
+    icon: Icons.work_rounded,
+    color: Color(0xFF4ECDC4),
+  ),
+  SpendingOptionDefinition(
+    name: 'School',
+    icon: Icons.school_rounded,
+    color: Color(0xFF9B8CFF),
+  ),
+  SpendingOptionDefinition(
+    name: 'Family',
+    icon: Icons.people_alt_rounded,
+    color: Color(0xFFFFB703),
+  ),
+  SpendingOptionDefinition(
+    name: 'Rent',
+    icon: Icons.home_work_rounded,
+    color: Color(0xFF90CAF9),
+  ),
+  SpendingOptionDefinition(
+    name: 'Utilities',
+    icon: Icons.bolt_rounded,
+    color: Color(0xFF8BE9FD),
+  ),
+  SpendingOptionDefinition(
+    name: 'Other',
+    icon: Icons.category_rounded,
+    color: Color(0xFF00C896),
+  ),
+];
+
+const List<SpendingOptionDefinition> premiumSpendingCategoryDefinitions = [
+  SpendingOptionDefinition(
+    name: 'Fuel / Gas',
+    icon: Icons.local_gas_station_rounded,
+    color: Color(0xFFFF9F1C),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Subscriptions',
+    icon: Icons.subscriptions_rounded,
+    color: Color(0xFF7B61FF),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Insurance',
+    icon: Icons.verified_user_rounded,
+    color: Color(0xFF64B5F6),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Loans',
+    icon: Icons.request_quote_rounded,
+    color: Color(0xFFF48FB1),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Debt Payment',
+    icon: Icons.account_balance_rounded,
+    color: Color(0xFFFFA5A5),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Savings Transfer',
+    icon: Icons.savings_rounded,
+    color: Color(0xFF4DD0A9),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Business Expense',
+    icon: Icons.business_center_rounded,
+    color: Color(0xFF5C7CFA),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Client Expense',
+    icon: Icons.handshake_rounded,
+    color: Color(0xFF74C0FC),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Travel',
+    icon: Icons.flight_takeoff_rounded,
+    color: Color(0xFF00B4D8),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Emergency',
+    icon: Icons.warning_amber_rounded,
+    color: Color(0xFFFF6B6B),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Investment',
+    icon: Icons.trending_up_rounded,
+    color: Color(0xFF2EC4B6),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Gifts',
+    icon: Icons.card_giftcard_rounded,
+    color: Color(0xFFE599F7),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Pets',
+    icon: Icons.pets_rounded,
+    color: Color(0xFFFFC078),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Maintenance',
+    icon: Icons.build_circle_rounded,
+    color: Color(0xFFADB5BD),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Personal Care',
+    icon: Icons.spa_rounded,
+    color: Color(0xFFFFAFCC),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Entertainment',
+    icon: Icons.movie_creation_rounded,
+    color: Color(0xFF9775FA),
+    premium: true,
+  ),
+];
+
+const List<SpendingOptionDefinition> freePaymentMethodDefinitions = [
+  SpendingOptionDefinition(
+    name: 'Cash',
+    icon: Icons.payments_rounded,
+    color: Color(0xFF57E9C3),
+  ),
+  SpendingOptionDefinition(
+    name: 'GCash',
+    icon: Icons.account_balance_wallet_rounded,
+    color: Color(0xFF4DABF7),
+  ),
+  SpendingOptionDefinition(
+    name: 'Maya',
+    icon: Icons.wallet_rounded,
+    color: Color(0xFF00C896),
+  ),
+  SpendingOptionDefinition(
+    name: 'Bank',
+    icon: Icons.account_balance_rounded,
+    color: Color(0xFF6C8CFF),
+  ),
+  SpendingOptionDefinition(
+    name: 'Debit Card',
+    icon: Icons.credit_card_rounded,
+    color: Color(0xFFFFC857),
+  ),
+  SpendingOptionDefinition(
+    name: 'Credit Card',
+    icon: Icons.credit_score_rounded,
+    color: Color(0xFFFF8A5B),
+  ),
+  SpendingOptionDefinition(
+    name: 'Online Transfer',
+    icon: Icons.swap_horiz_rounded,
+    color: Color(0xFF7BDFF2),
+  ),
+  SpendingOptionDefinition(
+    name: 'Payroll Account',
+    icon: Icons.badge_rounded,
+    color: Color(0xFF9B8CFF),
+  ),
+  SpendingOptionDefinition(
+    name: 'E-Wallet',
+    icon: Icons.phone_android_rounded,
+    color: Color(0xFFB084F5),
+  ),
+  SpendingOptionDefinition(
+    name: 'Other',
+    icon: Icons.more_horiz_rounded,
+    color: Color(0xFF00C896),
+  ),
+];
+
+const List<SpendingOptionDefinition> premiumPaymentMethodDefinitions = [
+  SpendingOptionDefinition(
+    name: 'BPI',
+    icon: Icons.account_balance_rounded,
+    color: Color(0xFFEF476F),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'BDO',
+    icon: Icons.account_balance_rounded,
+    color: Color(0xFF3A86FF),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Metrobank',
+    icon: Icons.account_balance_rounded,
+    color: Color(0xFF1971C2),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'UnionBank',
+    icon: Icons.account_balance_rounded,
+    color: Color(0xFFFF7F11),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'RCBC',
+    icon: Icons.account_balance_rounded,
+    color: Color(0xFF8D99AE),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Security Bank',
+    icon: Icons.account_balance_rounded,
+    color: Color(0xFF2A9D8F),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Seabank',
+    icon: Icons.account_balance_wallet_rounded,
+    color: Color(0xFFFFB703),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'CIMB',
+    icon: Icons.savings_rounded,
+    color: Color(0xFFFF595E),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'GoTyme',
+    icon: Icons.stars_rounded,
+    color: Color(0xFFFF006E),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'PayPal',
+    icon: Icons.language_rounded,
+    color: Color(0xFF4D96FF),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Wise',
+    icon: Icons.currency_exchange_rounded,
+    color: Color(0xFF00C2A8),
+    premium: true,
+  ),
+  SpendingOptionDefinition(
+    name: 'Business Account',
+    icon: Icons.business_rounded,
+    color: Color(0xFF5E60CE),
+    premium: true,
+  ),
+];
+
+String normalizeNamedOptionValue(String value) {
+  return value.trim().replaceAll(RegExp(r'\s+'), ' ');
+}
+
+String normalizeNamedOptionKey(String value) {
+  return normalizeNamedOptionValue(value).toLowerCase();
+}
+
+List<String> dedupeNamedOptions(Iterable<String> values) {
+  final seen = <String>{};
+  final normalized = <String>[];
+  for (final value in values) {
+    final cleaned = normalizeNamedOptionValue(value);
+    final key = normalizeNamedOptionKey(cleaned);
+    if (cleaned.isEmpty || !seen.add(key)) continue;
+    normalized.add(cleaned);
+  }
+  return normalized;
+}
+
+bool containsNamedOption(
+  Iterable<String> values,
+  String candidate, {
+  String? excluding,
+}) {
+  final candidateKey = normalizeNamedOptionKey(candidate);
+  if (candidateKey.isEmpty) return false;
+  final excludingKey = excluding == null ? null : normalizeNamedOptionKey(excluding);
+  return values.any((value) {
+    final key = normalizeNamedOptionKey(value);
+    if (excludingKey != null && key == excludingKey) return false;
+    return key == candidateKey;
+  });
+}
+
+List<SpendingOptionDefinition> buildSpendingCategoryDefinitions({
+  List<String> customNames = const <String>[],
+}) {
+  return <SpendingOptionDefinition>[
+    ...freeSpendingCategoryDefinitions,
+    ...premiumSpendingCategoryDefinitions,
+    ...dedupeNamedOptions(customNames).map(
+      (name) => SpendingOptionDefinition(
+        name: name,
+        icon: Icons.auto_awesome_rounded,
+        color: const Color(0xFF9AD1FF),
+        builtIn: false,
+      ),
+    ),
+  ];
+}
+
+List<SpendingOptionDefinition> buildPaymentMethodDefinitions({
+  List<String> customNames = const <String>[],
+}) {
+  return <SpendingOptionDefinition>[
+    ...freePaymentMethodDefinitions,
+    ...premiumPaymentMethodDefinitions,
+    ...dedupeNamedOptions(customNames).map(
+      (name) => SpendingOptionDefinition(
+        name: name,
+        icon: Icons.tune_rounded,
+        color: const Color(0xFF8CE99A),
+        builtIn: false,
+      ),
+    ),
+  ];
+}
+
+SpendingOptionDefinition resolveSpendingCategoryDefinition(
+  String rawName, {
+  List<String> customNames = const <String>[],
+}) {
+  final normalizedName = normalizeNamedOptionValue(rawName);
+  return buildSpendingCategoryDefinitions(customNames: customNames).firstWhere(
+    (item) => normalizeNamedOptionKey(item.name) == normalizeNamedOptionKey(normalizedName),
+    orElse: () => SpendingOptionDefinition(
+      name: normalizedName.isEmpty ? 'Other' : normalizedName,
+      icon: Icons.category_rounded,
+      color: const Color(0xFF9AD1FF),
+      builtIn: false,
+    ),
+  );
+}
+
+SpendingOptionDefinition resolvePaymentMethodDefinition(
+  String rawName, {
+  List<String> customNames = const <String>[],
+}) {
+  final normalizedName = normalizeNamedOptionValue(rawName);
+  return buildPaymentMethodDefinitions(customNames: customNames).firstWhere(
+    (item) => normalizeNamedOptionKey(item.name) == normalizeNamedOptionKey(normalizedName),
+    orElse: () => SpendingOptionDefinition(
+      name: normalizedName.isEmpty ? 'Cash' : normalizedName,
+      icon: Icons.account_balance_wallet_rounded,
+      color: const Color(0xFF8CE99A),
+      builtIn: false,
+    ),
+  );
 }
 
 double normalizeMoney(
@@ -59,17 +733,24 @@ double? normalizeOptionalMoney(
   return normalizeMoney(value, allowNegative: allowNegative);
 }
 
+final RegExp _moneyInputCurrencyTokenPattern = RegExp(
+  r'(S\$|PHP|USD|SGD|EUR|GBP|JPY|₱|\$|€|£|¥)',
+  caseSensitive: false,
+);
+
+String _sanitizeMoneyInput(String? rawValue) {
+  final trimmed = (rawValue ?? '').trim();
+  if (trimmed.isEmpty) return '';
+  return trimmed
+      .replaceAll(RegExp(r'[,\s]'), '')
+      .replaceAll(_moneyInputCurrencyTokenPattern, '');
+}
+
 double? parseMoneyInput(
   String? rawValue, {
   bool allowNegative = false,
 }) {
-  final trimmed = (rawValue ?? '').trim();
-  if (trimmed.isEmpty) return null;
-
-  final sanitized = trimmed
-      .replaceAll(RegExp(r'[,\s]'), '')
-      .replaceAll('\u20B1', '')
-      .replaceAll(RegExp(r'php', caseSensitive: false), '');
+  final sanitized = _sanitizeMoneyInput(rawValue);
   if (sanitized.isEmpty) return null;
 
   final parsed = double.tryParse(sanitized);
@@ -103,17 +784,14 @@ String? validatePesoAmountInput(
     return 'Enter $fieldLabel';
   }
 
-  final sanitized = trimmed
-      .replaceAll(RegExp(r'[,\s]'), '')
-      .replaceAll('\u20B1', '')
-      .replaceAll(RegExp(r'php', caseSensitive: false), '');
+  final sanitized = _sanitizeMoneyInput(trimmed);
   if (sanitized.isEmpty) {
     return 'Enter $fieldLabel';
   }
 
   final rawParsed = double.tryParse(sanitized);
   if (rawParsed == null || !rawParsed.isFinite || rawParsed.isNaN) {
-    return 'Enter a valid $fieldLabel in pesos and centavos';
+    return 'Enter a valid $fieldLabel';
   }
   if (!allowNegative && rawParsed < 0) {
     return '$title cannot be negative';
@@ -123,7 +801,7 @@ String? validatePesoAmountInput(
     return '$title must be greater than zero';
   }
   if (parsed.abs() > maxAmount + 0.001) {
-    return '$title is too large. Enter an amount below ${formatPhp(maxAmount, decimals: 2)}.';
+    return '$title is too large. Enter an amount below ${formatMoney(maxAmount, decimals: 2)}.';
   }
   return null;
 }
@@ -440,6 +1118,88 @@ bool isFreeSweldoTheme(SweldoThemePreset preset) {
       preset == SweldoThemePreset.jade;
 }
 
+enum SweldoUiMode {
+  light,
+  dark,
+  intelliumDigital,
+  premiumNeon,
+  premiumExecutive,
+}
+
+SweldoUiMode resolveSweldoUiMode(String? value) {
+  final normalized = (value ?? '').trim();
+  return switch (normalized) {
+    'light' => SweldoUiMode.light,
+    'dark' => SweldoUiMode.dark,
+    'intelliumDigital' => SweldoUiMode.intelliumDigital,
+    'premiumNeon' => SweldoUiMode.premiumNeon,
+    'premiumExecutive' => SweldoUiMode.premiumExecutive,
+    'freeLight' => SweldoUiMode.light,
+    'premiumLight' => SweldoUiMode.premiumExecutive,
+    'premiumDark' => SweldoUiMode.intelliumDigital,
+    'emerald' => SweldoUiMode.light,
+    'jade' => SweldoUiMode.dark,
+    'ocean' || 'sunset' => SweldoUiMode.intelliumDigital,
+    _ => SweldoUiMode.intelliumDigital,
+  };
+}
+
+bool isPremiumSweldoUiMode(SweldoUiMode mode) {
+  return mode == SweldoUiMode.premiumNeon ||
+      mode == SweldoUiMode.premiumExecutive;
+}
+
+bool sweldoUiModeUsesSurfaceAccent(SweldoUiMode mode) {
+  return switch (mode) {
+    SweldoUiMode.light ||
+    SweldoUiMode.dark ||
+    SweldoUiMode.premiumExecutive => true,
+    SweldoUiMode.intelliumDigital || SweldoUiMode.premiumNeon => false,
+  };
+}
+
+String sweldoUiModeLabel(SweldoUiMode mode) {
+  return switch (mode) {
+    SweldoUiMode.light => 'Light',
+    SweldoUiMode.dark => 'Dark',
+    SweldoUiMode.intelliumDigital => 'Intellium Digital',
+    SweldoUiMode.premiumNeon => 'Premium Neon',
+    SweldoUiMode.premiumExecutive => 'Premium Executive',
+  };
+}
+
+String sweldoUiModeDescription(SweldoUiMode mode) {
+  return switch (mode) {
+    SweldoUiMode.light => 'Clean white layout with modern blue accents',
+    SweldoUiMode.dark => 'Minimal dark appearance with calm cyan highlights',
+    SweldoUiMode.intelliumDigital =>
+      'Intellium Digital brand theme with glass fintech styling',
+    SweldoUiMode.premiumNeon =>
+      'Premium cyber-fintech appearance with neon glow',
+    SweldoUiMode.premiumExecutive =>
+      'Premium luxury banking appearance with polished gold accents',
+  };
+}
+
+SweldoUiMode sweldoUiModeForLegacyThemePreset(SweldoThemePreset preset) {
+  return switch (preset) {
+    SweldoThemePreset.emerald => SweldoUiMode.light,
+    SweldoThemePreset.jade => SweldoUiMode.dark,
+    SweldoThemePreset.ocean || SweldoThemePreset.sunset =>
+      SweldoUiMode.intelliumDigital,
+  };
+}
+
+SweldoThemePreset sweldoLegacyThemePresetForUiMode(SweldoUiMode mode) {
+  return switch (mode) {
+    SweldoUiMode.light => SweldoThemePreset.emerald,
+    SweldoUiMode.dark => SweldoThemePreset.jade,
+    SweldoUiMode.intelliumDigital => SweldoThemePreset.ocean,
+    SweldoUiMode.premiumNeon || SweldoUiMode.premiumExecutive =>
+      SweldoThemePreset.sunset,
+  };
+}
+
 @immutable
 class SweldoThemeMarker extends ThemeExtension<SweldoThemeMarker> {
   final SweldoThemePreset preset;
@@ -461,8 +1221,196 @@ class SweldoThemeMarker extends ThemeExtension<SweldoThemeMarker> {
   }
 }
 
+@immutable
+class SweldoUiModeMarker extends ThemeExtension<SweldoUiModeMarker> {
+  final SweldoUiMode mode;
+
+  const SweldoUiModeMarker({required this.mode});
+
+  @override
+  SweldoUiModeMarker copyWith({SweldoUiMode? mode}) {
+    return SweldoUiModeMarker(mode: mode ?? this.mode);
+  }
+
+  @override
+  SweldoUiModeMarker lerp(
+    covariant ThemeExtension<SweldoUiModeMarker>? other,
+    double t,
+  ) {
+    if (other is! SweldoUiModeMarker) return this;
+    return t < 0.5 ? this : other;
+  }
+}
+
+class SweldoUiStyle {
+  final SweldoUiMode mode;
+  final bool isDark;
+  final bool isPremiumStyle;
+  final Color background;
+  final Color surface;
+  final Color card;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color textMuted;
+  final Color accent;
+  final Color border;
+  final LinearGradient heroGradient;
+  final LinearGradient ctaGradient;
+
+  const SweldoUiStyle({
+    required this.mode,
+    required this.isDark,
+    required this.isPremiumStyle,
+    required this.background,
+    required this.surface,
+    required this.card,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.textMuted,
+    required this.accent,
+    required this.border,
+    required this.heroGradient,
+    required this.ctaGradient,
+  });
+}
+
+SweldoUiStyle sweldoUiStyleFor(SweldoUiMode mode) {
+  return switch (mode) {
+    SweldoUiMode.light => const SweldoUiStyle(
+        mode: SweldoUiMode.light,
+        isDark: false,
+        isPremiumStyle: false,
+        background: Color(0xFFF9FBFF),
+        surface: Color(0xFFFFFFFF),
+        card: Color(0xFFFFFFFF),
+        textPrimary: Color(0xFF0F172A),
+        textSecondary: Color(0xFF667085),
+        textMuted: Color(0xFF98A2B3),
+        accent: Color(0xFF2563EB),
+        border: Color(0x162563EB),
+        heroGradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFFFFFF), Color(0xFFF6FAFF), Color(0xFFEAF2FF)],
+        ),
+        ctaGradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2563EB), Color(0xFF0EA5E9)],
+        ),
+      ),
+    SweldoUiMode.dark => const SweldoUiStyle(
+        mode: SweldoUiMode.dark,
+        isDark: true,
+        isPremiumStyle: false,
+        background: Color(0xFF040712),
+        surface: Color(0xFF0D1422),
+        card: Color(0xFF131B2B),
+        textPrimary: Color(0xFFF7FAFF),
+        textSecondary: Color(0xFFA4B1C8),
+        textMuted: Color(0xFF74819A),
+        accent: Color(0xFF67E8F9),
+        border: Color(0x1F67E8F9),
+        heroGradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0A1220), Color(0xFF123A57), Color(0xFF155E75)],
+        ),
+        ctaGradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0F172A), Color(0xFF164E63)],
+        ),
+      ),
+    SweldoUiMode.intelliumDigital => const SweldoUiStyle(
+        mode: SweldoUiMode.intelliumDigital,
+        isDark: true,
+        isPremiumStyle: false,
+        background: intelliumBackground,
+        surface: intelliumSurface,
+        card: intelliumCard,
+        textPrimary: intelliumTextPrimary,
+        textSecondary: intelliumTextSecondary,
+        textMuted: intelliumTextMuted,
+        accent: intelliumCyan,
+        border: Color(0x223E7BFF),
+        heroGradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF10204A), intelliumBlue, intelliumPurple],
+        ),
+        ctaGradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF19377A), Color(0xFF532FA9)],
+        ),
+      ),
+    SweldoUiMode.premiumNeon => const SweldoUiStyle(
+        mode: SweldoUiMode.premiumNeon,
+        isDark: true,
+        isPremiumStyle: true,
+        background: Color(0xFF05030E),
+        surface: Color(0xFF0B1020),
+        card: Color(0xFF10162A),
+        textPrimary: Color(0xFFF7FAFF),
+        textSecondary: Color(0xFFB1B6D6),
+        textMuted: Color(0xFF7F88B6),
+        accent: intelliumCyan,
+        border: Color(0x334A8DFF),
+        heroGradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [intelliumCyan, intelliumBlue, intelliumPink],
+        ),
+        ctaGradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF173063), Color(0xFF6528BE), Color(0xFFD96CFF)],
+        ),
+      ),
+    SweldoUiMode.premiumExecutive => const SweldoUiStyle(
+        mode: SweldoUiMode.premiumExecutive,
+        isDark: true,
+        isPremiumStyle: true,
+        background: Color(0xFF0A0810),
+        surface: Color(0xFF131019),
+        card: Color(0xFF1A1621),
+        textPrimary: Color(0xFFF7F1E6),
+        textSecondary: Color(0xFFC9BDAA),
+        textMuted: Color(0xFF9A9186),
+        accent: Color(0xFFD4A94D),
+        border: Color(0x33D4A94D),
+        heroGradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF19131A), Color(0xFF352745), Color(0xFF6D5731)],
+        ),
+        ctaGradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF171218), Color(0xFF3A2B49), Color(0xFFB78D3E)],
+        ),
+      ),
+  };
+}
+
+SweldoUiStyle sweldoUiStyleOf(BuildContext context) {
+  final uiModeMarker = Theme.of(context).extension<SweldoUiModeMarker>();
+  if (uiModeMarker != null) {
+    return sweldoUiStyleFor(uiModeMarker.mode);
+  }
+  final legacyMarker = Theme.of(context).extension<SweldoThemeMarker>();
+  return sweldoUiStyleFor(
+    sweldoUiModeForLegacyThemePreset(
+      legacyMarker?.preset ?? SweldoThemePreset.ocean,
+    ),
+  );
+}
+
 class SweldoVisualStyle {
   final SweldoThemePreset preset;
+  final SweldoUiMode mode;
+  final bool isDark;
   final Color textPrimary;
   final Color textSecondary;
   final Color textMuted;
@@ -476,6 +1424,8 @@ class SweldoVisualStyle {
 
   const SweldoVisualStyle({
     required this.preset,
+    required this.mode,
+    required this.isDark,
     required this.textPrimary,
     required this.textSecondary,
     required this.textMuted,
@@ -488,158 +1438,305 @@ class SweldoVisualStyle {
     required this.premiumCtaGradient,
   });
 
-  bool get isJade => preset == SweldoThemePreset.jade;
+  bool get isJade => false;
 
   factory SweldoVisualStyle.fromContext(BuildContext context) {
-    final marker = Theme.of(context).extension<SweldoThemeMarker>();
-    final preset = marker?.preset ?? SweldoThemePreset.emerald;
-
-    if (preset == SweldoThemePreset.jade) {
-      return const SweldoVisualStyle(
-        preset: SweldoThemePreset.jade,
-        textPrimary: Color(0xFFF2FFF8),
-        textSecondary: Color(0xFFCBEBDD),
-        textMuted: Color(0xFF87A99A),
-        cardFill: Color(0xCC0C1B15),
-        sectionFill: Color(0xE6091611),
-        borderColor: Color(0x332EE6A6),
-        shadowColor: Color(0x442EE6A6),
-        accentGradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF9DFFE0), Color(0xFF2EE6A6), Color(0xFF0F7D58)],
-        ),
-        analyticsAccentGradient: LinearGradient(
+    final uiStyle = sweldoUiStyleOf(context);
+    final preset = sweldoLegacyThemePresetForUiMode(uiStyle.mode);
+    final analyticsAccentGradient = switch (uiStyle.mode) {
+      SweldoUiMode.light => const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFB7FFE8), Color(0xFF45F5B6), Color(0xFF11855E)],
+          colors: [Color(0xFF92E8FF), Color(0xFF52A7FF), Color(0xFF315CFF)],
         ),
-        premiumCtaGradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF143A2C), Color(0xFF0D241B), Color(0xFF07120E)],
+      SweldoUiMode.dark => const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF22D3EE), Color(0xFF155E75), Color(0xFF0F172A)],
         ),
-      );
-    }
+      SweldoUiMode.intelliumDigital => const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [intelliumCyan, intelliumBlue, intelliumPurple],
+        ),
+      SweldoUiMode.premiumNeon => const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [intelliumCyan, intelliumBlue, intelliumPink],
+        ),
+      SweldoUiMode.premiumExecutive => const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF3E6BF),
+            Color(0xFFD4A94D),
+            Color(0xFF6D5731),
+          ],
+        ),
+    };
 
     return SweldoVisualStyle(
       preset: preset,
-      textPrimary: intelliumTextPrimary,
-      textSecondary: intelliumTextSecondary,
-      textMuted: intelliumTextMuted,
-      cardFill: intelliumCard,
-      sectionFill: intelliumSurface,
-      borderColor: const Color(0x0DFFFFFF),
-      shadowColor: const Color(0x00000000),
-      accentGradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [intelliumCyan, intelliumBlue, intelliumPurple],
-      ),
-      analyticsAccentGradient: const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [intelliumCyan, intelliumBlue, intelliumPurple],
-      ),
-      premiumCtaGradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [Color(0xFFFFC857), intelliumPink],
-      ),
+      mode: uiStyle.mode,
+      isDark: uiStyle.isDark,
+      textPrimary: uiStyle.textPrimary,
+      textSecondary: uiStyle.textSecondary,
+      textMuted: uiStyle.textMuted,
+      cardFill: uiStyle.card,
+      sectionFill: uiStyle.surface,
+      borderColor: uiStyle.border,
+      shadowColor: uiStyle.accent.withValues(alpha: uiStyle.isDark ? .20 : .10),
+      accentGradient: uiStyle.heroGradient,
+      analyticsAccentGradient: analyticsAccentGradient,
+      premiumCtaGradient: uiStyle.ctaGradient,
     );
   }
 
   BoxDecoration cardDecoration({double radius = 24}) {
+    final baseShadow = switch (mode) {
+      SweldoUiMode.light => [
+          const BoxShadow(
+            color: Color(0x120F172A),
+            blurRadius: 22,
+            spreadRadius: -10,
+            offset: Offset(0, 12),
+          ),
+          const BoxShadow(
+            color: Color(0x0D667085),
+            blurRadius: 8,
+            spreadRadius: -4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      SweldoUiMode.dark => [
+          const BoxShadow(
+            color: Color(0x26000000),
+            blurRadius: 22,
+            spreadRadius: -12,
+            offset: Offset(0, 12),
+          ),
+        ],
+      SweldoUiMode.intelliumDigital => [
+          const BoxShadow(
+            color: Color(0x2B020617),
+            blurRadius: 28,
+            spreadRadius: -12,
+            offset: Offset(0, 16),
+          ),
+        ],
+      SweldoUiMode.premiumNeon => [
+          const BoxShadow(
+            color: Color(0x33020617),
+            blurRadius: 30,
+            spreadRadius: -12,
+            offset: Offset(0, 16),
+          ),
+          const BoxShadow(
+            color: Color(0x223A2FA9),
+            blurRadius: 20,
+            spreadRadius: -14,
+            offset: Offset(0, 4),
+          ),
+        ],
+      SweldoUiMode.premiumExecutive => [
+          const BoxShadow(
+            color: Color(0x24000000),
+            blurRadius: 24,
+            spreadRadius: -10,
+            offset: Offset(0, 14),
+          ),
+          const BoxShadow(
+            color: Color(0x1FD4A94D),
+            blurRadius: 14,
+            spreadRadius: -8,
+            offset: Offset(0, 4),
+          ),
+        ],
+    };
+    final gradient = switch (mode) {
+      SweldoUiMode.light => null,
+      SweldoUiMode.dark => LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [cardFill, const Color(0xFF1A2336)],
+        ),
+      SweldoUiMode.intelliumDigital => LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [cardFill, const Color(0xFF10192F)],
+        ),
+      SweldoUiMode.premiumNeon => LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [cardFill, const Color(0xFF15113A)],
+        ),
+      SweldoUiMode.premiumExecutive => LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [cardFill, const Color(0xFF221C27)],
+        ),
+    };
     return BoxDecoration(
-      color: isJade ? null : cardFill,
-      gradient: isJade
-          ? LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [cardFill, const Color(0xB30A1511)],
-            )
-          : null,
+      color: gradient == null ? cardFill : null,
+      gradient: gradient,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(color: borderColor),
-      boxShadow: isJade
-          ? [
-              BoxShadow(
-                color: shadowColor.withValues(alpha: .18),
-                blurRadius: 22,
-                spreadRadius: 1,
-              ),
-            ]
-          : null,
+      boxShadow: baseShadow,
     );
   }
 
   BoxDecoration sectionContainerDecoration({double radius = 28}) {
+    final baseShadow = switch (mode) {
+      SweldoUiMode.light => [
+          const BoxShadow(
+            color: Color(0x120F172A),
+            blurRadius: 28,
+            spreadRadius: -14,
+            offset: Offset(0, 16),
+          ),
+        ],
+      SweldoUiMode.dark => [
+          const BoxShadow(
+            color: Color(0x28000000),
+            blurRadius: 28,
+            spreadRadius: -14,
+            offset: Offset(0, 16),
+          ),
+        ],
+      SweldoUiMode.intelliumDigital => [
+          const BoxShadow(
+            color: Color(0x33020617),
+            blurRadius: 32,
+            spreadRadius: -14,
+            offset: Offset(0, 18),
+          ),
+        ],
+      SweldoUiMode.premiumNeon => [
+          const BoxShadow(
+            color: Color(0x38020617),
+            blurRadius: 34,
+            spreadRadius: -14,
+            offset: Offset(0, 18),
+          ),
+          const BoxShadow(
+            color: Color(0x1F6528BE),
+            blurRadius: 22,
+            spreadRadius: -14,
+            offset: Offset(0, 6),
+          ),
+        ],
+      SweldoUiMode.premiumExecutive => [
+          const BoxShadow(
+            color: Color(0x26000000),
+            blurRadius: 30,
+            spreadRadius: -14,
+            offset: Offset(0, 18),
+          ),
+          const BoxShadow(
+            color: Color(0x1AD4A94D),
+            blurRadius: 16,
+            spreadRadius: -12,
+            offset: Offset(0, 6),
+          ),
+        ],
+    };
+    final gradient = switch (mode) {
+      SweldoUiMode.light => null,
+      SweldoUiMode.dark => LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [sectionFill, const Color(0xFF0C1321)],
+        ),
+      SweldoUiMode.intelliumDigital => LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [sectionFill, const Color(0xFF0D1429)],
+        ),
+      SweldoUiMode.premiumNeon => LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [sectionFill, const Color(0xFF100C2F)],
+        ),
+      SweldoUiMode.premiumExecutive => LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [sectionFill, const Color(0xFF1A1420)],
+        ),
+    };
     return BoxDecoration(
-      color: isJade ? null : sectionFill,
-      gradient: isJade
-          ? LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [sectionFill, const Color(0xD107120E)],
-            )
-          : null,
+      color: gradient == null ? sectionFill : null,
+      gradient: gradient,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(color: borderColor),
-      boxShadow: isJade
-          ? [
-              BoxShadow(
-                color: shadowColor.withValues(alpha: .12),
-                blurRadius: 28,
-                spreadRadius: 1,
-              ),
-            ]
-          : null,
+      boxShadow: baseShadow,
     );
   }
 
   BoxDecoration premiumCtaDecoration({double radius = 28}) {
     return BoxDecoration(
-      gradient: isJade ? premiumCtaGradient : accentGradient,
+      gradient: premiumCtaGradient,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: isJade
-            ? const Color(0x552EE6A6)
-            : Colors.white.withValues(alpha: .05),
+        color: isDark
+            ? Colors.white.withValues(alpha: .08)
+            : Colors.white.withValues(alpha: .22),
       ),
-      boxShadow: isJade
-          ? [
-              const BoxShadow(
-                color: Color(0x662EE6A6),
-                blurRadius: 30,
-                spreadRadius: 1,
-              ),
-            ]
-          : null,
+      boxShadow: [
+        BoxShadow(
+          color: premiumCtaGradient.colors.last.withValues(
+            alpha: isDark ? .18 : .12,
+          ),
+          blurRadius: isDark ? 28 : 24,
+          spreadRadius: -8,
+          offset: const Offset(0, 14),
+        ),
+        BoxShadow(
+          color: Colors.black.withValues(alpha: isDark ? .24 : .10),
+          blurRadius: 24,
+          spreadRadius: -12,
+          offset: const Offset(0, 16),
+        ),
+      ],
     );
   }
 
   BoxDecoration iconChipBackground(Color color, {double radius = 16}) {
+    final gradient = switch (mode) {
+      SweldoUiMode.light => null,
+      SweldoUiMode.dark => LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color.withValues(alpha: .18), color.withValues(alpha: .08)],
+        ),
+      SweldoUiMode.intelliumDigital => LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color.withValues(alpha: .26), color.withValues(alpha: .10)],
+        ),
+      SweldoUiMode.premiumNeon => LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color.withValues(alpha: .28), color.withValues(alpha: .10)],
+        ),
+      SweldoUiMode.premiumExecutive => LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color.withValues(alpha: .22), color.withValues(alpha: .08)],
+        ),
+    };
     return BoxDecoration(
-      color: isJade ? null : color.withValues(alpha: .16),
-      gradient: isJade
-          ? LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                color.withValues(alpha: .28),
-                const Color(0x992EE6A6),
-              ],
-            )
-          : null,
+      color: gradient == null ? color.withValues(alpha: .16) : null,
+      gradient: gradient,
       borderRadius: BorderRadius.circular(radius),
-      boxShadow: isJade
-          ? [
+      boxShadow: mode == SweldoUiMode.light
+          ? null
+          : [
               BoxShadow(
-                color: color.withValues(alpha: .22),
-                blurRadius: 16,
+                color: color.withValues(alpha: mode == SweldoUiMode.premiumNeon ? .24 : .14),
+                blurRadius: mode == SweldoUiMode.premiumNeon ? 18 : 12,
+                spreadRadius: -6,
               ),
-            ]
-          : null,
+            ],
     );
   }
 
@@ -693,6 +1790,83 @@ ThemeData buildSweldoTheme(SweldoThemeDefinition theme) {
     ),
     extensions: <ThemeExtension<dynamic>>[
       SweldoThemeMarker(preset: theme.preset),
+    ],
+  );
+}
+
+ThemeData buildSweldoThemeForUiMode(SweldoUiMode mode) {
+  final ui = sweldoUiStyleFor(mode);
+  final brightness = ui.isDark ? Brightness.dark : Brightness.light;
+  final onPrimary = mode == SweldoUiMode.premiumExecutive
+      ? const Color(0xFF141017)
+      : Colors.white;
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: ui.accent,
+    brightness: brightness,
+  ).copyWith(
+    surface: ui.surface,
+    onSurface: ui.textPrimary,
+    primary: ui.accent,
+    onPrimary: onPrimary,
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    brightness: brightness,
+    scaffoldBackgroundColor: ui.background,
+    colorScheme: colorScheme,
+    appBarTheme: AppBarTheme(
+      backgroundColor: ui.background,
+      foregroundColor: ui.textPrimary,
+      elevation: 0,
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: ui.surface,
+      contentTextStyle: TextStyle(color: ui.textPrimary),
+      behavior: SnackBarBehavior.floating,
+    ),
+    cardColor: ui.card,
+    dividerColor: ui.border,
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: ui.accent,
+        foregroundColor: onPrimary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: ui.accent,
+        foregroundColor: onPrimary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      ),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: ui.accent,
+      foregroundColor: onPrimary,
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: ui.accent),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: ui.card,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide(color: ui.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide(color: ui.accent),
+      ),
+      hintStyle: TextStyle(color: ui.textMuted),
+      labelStyle: TextStyle(color: ui.textSecondary),
+    ),
+    extensions: <ThemeExtension<dynamic>>[
+      SweldoThemeMarker(preset: sweldoLegacyThemePresetForUiMode(mode)),
+      SweldoUiModeMarker(mode: mode),
     ],
   );
 }
@@ -1280,12 +2454,12 @@ BalanceLedgerSnapshot calculateBalanceLedgerSnapshot({
   );
   final settledBillsTotal = normalizeMoney(
     bills
-        .where((item) => item.isPaid)
+        .where(isBillSettledForCurrentCycle)
         .fold<double>(0, (sum, item) => sum + item.amount),
   );
   final upcomingBillsTotal = normalizeMoney(
     bills
-        .where((item) => !item.isPaid)
+        .where(billHasOutstandingBalance)
         .fold<double>(0, (sum, item) => sum + item.amount),
   );
   final totalSpending = normalizeMoney(
@@ -1426,7 +2600,7 @@ String dailyBudgetSummaryText(BudgetSnapshot snapshot, int remainingDays) {
     return '$remainingDays days until next cutoff';
   }
 
-  return 'Falls back to Anticipated Balance';
+  return 'Falls back to Expected Balance';
 }
 
 double calculateFinancialHealthScore({
@@ -1467,8 +2641,19 @@ String financialHealthMessage(String label) {
 }
 
 void showAppMessage(BuildContext context, String message) {
+  final ui = SweldoVisualStyle.fromContext(context);
   ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message)),
+    SnackBar(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: ui.sectionFill,
+      content: Text(
+        message,
+        style: TextStyle(
+          color: ui.textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
   );
 }
 
@@ -1477,26 +2662,31 @@ void showAppMessage(BuildContext context, String message) {
 // -----------------------------------------------------------------------------
 
 Widget buildPageLoadingState(String message) {
-  return Center(
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CircularProgressIndicator(color: intelliumCyan),
-          const SizedBox(height: 14),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: intelliumTextSecondary,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
+  return Builder(
+    builder: (context) {
+      final ui = SweldoVisualStyle.fromContext(context);
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: Theme.of(context).colorScheme.primary),
+              const SizedBox(height: 14),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: ui.textSecondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ),
+        ),
+      );
+    },
   );
 }
 
@@ -1846,23 +3036,36 @@ class _SweldoTrackAppState extends State<SweldoTrackApp> {
       <String, int>{};
   StreamSubscription<SmartExpenseNotificationEvent>? smartExpenseSubscription;
   bool smartExpensePromptOpen = false;
+  bool _appStateReady = false;
 
   @override
   void initState() {
     super.initState();
     premiumService.addListener(_handlePremiumServiceChanged);
+    themeController.addListener(_handleAppViewChanged);
     unawaited(_initializeAppState());
     _startSmartExpenseDetectionListener();
   }
 
   Future<void> _initializeAppState() async {
+    await FinanceRepository.loadSelectedCurrency();
     await themeController.load();
     await premiumService.initialize();
     await _syncSmartExpenseDetectionNativeState();
+    if (!mounted) return;
+    setState(() {
+      _appStateReady = true;
+    });
   }
 
   void _handlePremiumServiceChanged() {
+    _handleAppViewChanged();
     unawaited(_syncSmartExpenseDetectionNativeState());
+  }
+
+  void _handleAppViewChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   Future<void> _syncSmartExpenseDetectionNativeState() async {
@@ -2074,7 +3277,7 @@ class _SweldoTrackAppState extends State<SweldoTrackApp> {
                       Text(
                         draft.amount == null
                             ? 'Amount not detected'
-                            : formatPhp(draft.amount!, decimals: 2),
+                            : formatMoney(draft.amount!, decimals: 2),
                         style: const TextStyle(
                           color: intelliumTextPrimary,
                           fontSize: 18,
@@ -2160,6 +3363,7 @@ class _SweldoTrackAppState extends State<SweldoTrackApp> {
   @override
   void dispose() {
     premiumService.removeListener(_handlePremiumServiceChanged);
+    themeController.removeListener(_handleAppViewChanged);
     smartExpenseSubscription?.cancel();
     premiumService.dispose();
     themeController.dispose();
@@ -2168,29 +3372,90 @@ class _SweldoTrackAppState extends State<SweldoTrackApp> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: Listenable.merge([premiumService, themeController]),
-      builder: (context, _) {
-        final theme = buildSweldoTheme(
-          sweldoThemeFor(
-            themeController.effectivePreset(
-                hasPremium: premiumService.isPremium),
-          ),
-        );
+    final effectiveUiMode = themeController.effectiveUiMode(
+      hasPremium: premiumService.isPremium,
+    );
+    final theme = buildSweldoThemeForUiMode(effectiveUiMode);
 
-        return MaterialApp(
-          navigatorKey: navigatorKey,
-          title: 'SweldoTrack',
-          debugShowCheckedModeBanner: false,
-          themeMode: ThemeMode.dark,
-          darkTheme: theme,
-          theme: theme,
-          home: MainNavigationScreen(
-            premiumService: premiumService,
-            themeController: themeController,
-          ),
-        );
-      },
+    return MaterialApp(
+      navigatorKey: navigatorKey,
+      title: 'SweldoTrack',
+      debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.dark,
+      theme: theme,
+      darkTheme: theme,
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: _sweldoSystemUiOverlayStyleFor(effectiveUiMode),
+        child: child ?? const SizedBox.shrink(),
+      ),
+      home: _SweldoTrackRootHomeShell(
+        appStateReady: _appStateReady,
+        premiumService: premiumService,
+        themeController: themeController,
+      ),
+    );
+  }
+}
+
+class _SweldoTrackRootHomeShell extends StatefulWidget {
+  final bool appStateReady;
+  final PremiumService premiumService;
+  final AppThemeController themeController;
+
+  const _SweldoTrackRootHomeShell({
+    required this.appStateReady,
+    required this.premiumService,
+    required this.themeController,
+  });
+
+  @override
+  State<_SweldoTrackRootHomeShell> createState() =>
+      _SweldoTrackRootHomeShellState();
+}
+
+class _SweldoTrackRootHomeShellState extends State<_SweldoTrackRootHomeShell> {
+  Widget? _mainScreen;
+
+  @override
+  void initState() {
+    super.initState();
+    _maybeCreateMainScreen();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SweldoTrackRootHomeShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _maybeCreateMainScreen();
+  }
+
+  void _maybeCreateMainScreen() {
+    if (_mainScreen != null || !widget.appStateReady) return;
+    _mainScreen = MainNavigationScreen(
+      premiumService: widget.premiumService,
+      themeController: widget.themeController,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_mainScreen == null) {
+      return const _SweldoTrackRootLoadingScreen();
+    }
+
+    return _mainScreen!;
+  }
+}
+
+class _SweldoTrackRootLoadingScreen extends StatelessWidget {
+  const _SweldoTrackRootLoadingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: buildPageLoadingState(
+        'Loading SweldoTrack...',
+      ),
     );
   }
 }
@@ -2203,6 +3468,9 @@ class AppKeys {
   static const installMarker = 'premium_install_marker_v1';
   static const preferredName = 'premium_preferred_name_v1';
   static const onboardingComplete = 'premium_onboarding_complete_v1';
+  static const premiumOnboardingSeen = 'premium_onboarding_promo_seen_v1';
+  static const setupChecklistDismissed =
+      'premium_setup_checklist_dismissed_v1';
   static const smartExpenseDetectionEnabled =
       'premium_smart_expense_detection_enabled_v1';
   static const smartExpenseMonitoredApps =
@@ -2228,6 +3496,7 @@ class AppKeys {
   static const useManualDailyBudget = 'premium_use_manual_daily_budget_v1';
   static const manualDailyBudget = 'premium_manual_daily_budget_v1';
   static const fixedExpenses = 'premium_fixed_expenses_v1';
+  static const sweldoTrackUserId = 'sweldotrack_user_id_v1';
   static const referralCode = 'premium_referral_code_v1';
   static const referralInvites = 'premium_referral_invites_v1';
   static const referralActive = 'premium_referral_active_v1';
@@ -2240,9 +3509,19 @@ class AppKeys {
   static const premiumLastExpiryDate = 'premium_subscription_expiry_at_v1';
   static const premiumLastVerificationMode =
       'premium_subscription_verification_mode_v1';
+  static const premiumLatestOrderId = 'premium_subscription_order_id_v1';
   static const premiumTestOverride = 'premium_subscription_test_override_v1';
   static const toolTodoItems = 'premium_tools_todo_items_v1';
   static const selectedTheme = 'premium_selected_theme_v1';
+  static const selectedSweldoUiMode = 'selected_sweldo_ui_mode_v1';
+  static const customExpenseCategories = 'premium_custom_expense_categories_v1';
+  static const customPaymentMethods = 'premium_custom_payment_methods_v1';
+  static const selectedCurrency = 'premium_selected_currency_v1';
+  static const backupReminderEnabled = 'premium_backup_reminder_enabled_v1';
+  static const lastBackupExportedAt = 'premium_last_backup_exported_at_v1';
+  static const sampleDataSeedVersion = 'premium_sample_data_seed_version_v1';
+  static const sampleDataSetupSnapshot =
+      'premium_sample_data_setup_snapshot_v1';
 }
 
 class ExpenseItem {
@@ -2669,6 +3948,13 @@ extension SavingsTransferTypeX on SavingsTransferType {
 class FinanceRepository {
   static const String _backupAppName = 'SweldoTrack';
   static const int _backupSchemaVersion = 1;
+  static const Duration _backupReminderFreshFor = Duration(days: 30);
+  static const int _sampleDataVersion = 1;
+  static const String _sampleDataIdPrefix = 'sweldodemo_';
+  static const List<String> _sampleCustomPaymentMethods = <String>[
+    'Demo Wallet',
+    'Demo Card',
+  ];
   static const List<String> _financeResetKeys = [
     AppKeys.expenses,
     AppKeys.startingBalance,
@@ -2687,33 +3973,51 @@ class FinanceRepository {
     AppKeys.useManualDailyBudget,
     AppKeys.manualDailyBudget,
     AppKeys.fixedExpenses,
+    AppKeys.customExpenseCategories,
+    AppKeys.customPaymentMethods,
+    AppKeys.selectedCurrency,
+    AppKeys.backupReminderEnabled,
+    AppKeys.lastBackupExportedAt,
+    AppKeys.sampleDataSeedVersion,
+    AppKeys.sampleDataSetupSnapshot,
+  ];
+  static const List<String> _allLocalUserDataResetKeys = [
+    AppKeys.installMarker,
+    AppKeys.preferredName,
+    AppKeys.sweldoTrackUserId,
+    AppKeys.onboardingComplete,
+    AppKeys.premiumOnboardingSeen,
+    AppKeys.setupChecklistDismissed,
+    AppKeys.smartExpenseDetectionEnabled,
+    AppKeys.smartExpenseMonitoredApps,
+    ..._financeResetKeys,
     AppKeys.referralCode,
     AppKeys.referralInvites,
     AppKeys.referralActive,
     AppKeys.referralPaid,
     AppKeys.referralEarnings,
     AppKeys.referralHistory,
-  ];
-  static const List<String> _allLocalUserDataResetKeys = [
-    AppKeys.installMarker,
-    AppKeys.preferredName,
-    AppKeys.onboardingComplete,
-    AppKeys.smartExpenseDetectionEnabled,
-    AppKeys.smartExpenseMonitoredApps,
-    ..._financeResetKeys,
     AppKeys.premiumActive,
     AppKeys.premiumLastProductId,
     AppKeys.premiumLastVerifiedAt,
     AppKeys.premiumLastExpiryDate,
+    AppKeys.premiumLatestOrderId,
     AppKeys.premiumLastVerificationMode,
     AppKeys.premiumTestOverride,
     AppKeys.toolTodoItems,
     AppKeys.selectedTheme,
+    AppKeys.selectedSweldoUiMode,
+    AppKeys.customExpenseCategories,
+    AppKeys.customPaymentMethods,
+    AppKeys.selectedCurrency,
+    AppKeys.sampleDataSeedVersion,
+    AppKeys.sampleDataSetupSnapshot,
   ];
   static const List<String> _backupSafeLocalKeys = [
     AppKeys.installMarker,
     AppKeys.preferredName,
     AppKeys.onboardingComplete,
+    AppKeys.setupChecklistDismissed,
     AppKeys.smartExpenseDetectionEnabled,
     AppKeys.smartExpenseMonitoredApps,
     AppKeys.expenses,
@@ -2733,6 +4037,8 @@ class FinanceRepository {
     AppKeys.useManualDailyBudget,
     AppKeys.manualDailyBudget,
     AppKeys.fixedExpenses,
+    AppKeys.customExpenseCategories,
+    AppKeys.customPaymentMethods,
     AppKeys.referralCode,
     AppKeys.referralInvites,
     AppKeys.referralActive,
@@ -2741,6 +4047,10 @@ class FinanceRepository {
     AppKeys.referralHistory,
     AppKeys.toolTodoItems,
     AppKeys.selectedTheme,
+    AppKeys.selectedSweldoUiMode,
+    AppKeys.selectedCurrency,
+    AppKeys.backupReminderEnabled,
+    AppKeys.lastBackupExportedAt,
   ];
   static const List<String> _backupExpensesOnlyKeys = [AppKeys.expenses];
   static const List<String> _backupBillsOnlyKeys = [AppKeys.bills];
@@ -2752,6 +4062,9 @@ class FinanceRepository {
     AppKeys.nextPaydayDate,
     AppKeys.referralCode,
     AppKeys.selectedTheme,
+    AppKeys.selectedSweldoUiMode,
+    AppKeys.selectedCurrency,
+    AppKeys.lastBackupExportedAt,
   };
   static const Set<String> _backupStringListKeys = {
     AppKeys.smartExpenseMonitoredApps,
@@ -2760,14 +4073,19 @@ class FinanceRepository {
     AppKeys.savingsHistory,
     AppKeys.bills,
     AppKeys.fixedExpenses,
+    AppKeys.customExpenseCategories,
+    AppKeys.customPaymentMethods,
     AppKeys.referralHistory,
     AppKeys.toolTodoItems,
   };
   static const Set<String> _backupBoolKeys = {
     AppKeys.onboardingComplete,
+    AppKeys.premiumOnboardingSeen,
+    AppKeys.setupChecklistDismissed,
     AppKeys.smartExpenseDetectionEnabled,
     AppKeys.legacySalaryMigratedToIncome,
     AppKeys.useManualDailyBudget,
+    AppKeys.backupReminderEnabled,
   };
   static const Set<String> _backupDoubleKeys = {
     AppKeys.startingBalance,
@@ -2919,6 +4237,60 @@ class FinanceRepository {
   static Future<void> setOnboardingComplete(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppKeys.onboardingComplete, value);
+  }
+
+  static Future<bool> hasSeenPremiumOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(AppKeys.premiumOnboardingSeen) ?? false;
+  }
+
+  static Future<void> setPremiumOnboardingSeen(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppKeys.premiumOnboardingSeen, value);
+  }
+
+  static Future<bool> isSetupChecklistDismissed() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(AppKeys.setupChecklistDismissed) ?? false;
+  }
+
+  static Future<void> setSetupChecklistDismissed(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppKeys.setupChecklistDismissed, value);
+  }
+
+  static Future<bool> isBackupReminderEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(AppKeys.backupReminderEnabled) ?? true;
+  }
+
+  static Future<void> setBackupReminderEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppKeys.backupReminderEnabled, value);
+  }
+
+  static Future<DateTime?> getLastBackupExportedAt() async {
+    final prefs = await SharedPreferences.getInstance();
+    return parseStoredIsoDate(prefs.getString(AppKeys.lastBackupExportedAt));
+  }
+
+  static Future<void> markBackupExportedNow() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      AppKeys.lastBackupExportedAt,
+      DateTime.now().toIso8601String(),
+    );
+  }
+
+  static Future<bool> shouldShowBackupReminder() async {
+    if (!await isBackupReminderEnabled()) {
+      return false;
+    }
+    final lastExportedAt = await getLastBackupExportedAt();
+    if (lastExportedAt == null) {
+      return true;
+    }
+    return DateTime.now().difference(lastExportedAt) > _backupReminderFreshFor;
   }
 
   static Future<bool> isSmartExpenseDetectionEnabled() async {
@@ -3541,6 +4913,20 @@ class FinanceRepository {
     return code;
   }
 
+  static Future<String> getOrCreateStableUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = (prefs.getString(AppKeys.sweldoTrackUserId) ?? '').trim();
+    if (existing.isNotEmpty) return existing;
+
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    final random = Random();
+    final suffix =
+        List.generate(20, (_) => chars[random.nextInt(chars.length)]).join();
+    final userId = 'sweldotrack_${DateTime.now().millisecondsSinceEpoch}_$suffix';
+    await prefs.setString(AppKeys.sweldoTrackUserId, userId);
+    return userId;
+  }
+
   static Future<int> getReferralInvites() async {
     final prefs = await SharedPreferences.getInstance();
     return max(0, prefs.getInt(AppKeys.referralInvites) ?? 0);
@@ -3601,27 +4987,64 @@ class FinanceRepository {
     );
   }
 
-  static Future<void> recordSuccessfulPaidReferral({
-    required String referralCode,
-  }) async {
-    final invites = await getReferralInvites();
-    final active = await getReferralActive();
-    final paid = await getReferralPaid();
-    final earnings = await getReferralEarnings();
-    final history = await getReferralHistory();
+  static Future<List<String>> _loadCustomNamedOptions(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    final rawValues = prefs.getStringList(key) ?? const <String>[];
+    final normalized = dedupeNamedOptions(rawValues);
+    final needsRewrite = rawValues.length != normalized.length ||
+        rawValues.asMap().entries.any(
+              (entry) =>
+                  entry.key >= normalized.length ||
+                  normalizeNamedOptionValue(entry.value) != normalized[entry.key],
+            );
+    if (needsRewrite) {
+      await prefs.setStringList(key, normalized);
+    }
+    return normalized;
+  }
 
-    history.insert(
-      0,
-      '+ ${formatPhp(referralPaidRewardAmount)} | Successful paid referral using $referralCode',
-    );
+  static Future<void> _saveCustomNamedOptions(
+    String key,
+    List<String> values,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(key, dedupeNamedOptions(values));
+  }
 
-    await saveReferralData(
-      invites: invites + 1,
-      active: active + 1,
-      paid: paid + 1,
-      earnings: earnings + referralPaidRewardAmount,
-      history: history,
+  static Future<List<String>> getCustomExpenseCategories() async {
+    return _loadCustomNamedOptions(AppKeys.customExpenseCategories);
+  }
+
+  static Future<void> saveCustomExpenseCategories(List<String> values) async {
+    await _saveCustomNamedOptions(AppKeys.customExpenseCategories, values);
+  }
+
+  static Future<List<String>> getCustomPaymentMethods() async {
+    return _loadCustomNamedOptions(AppKeys.customPaymentMethods);
+  }
+
+  static Future<void> saveCustomPaymentMethods(List<String> values) async {
+    await _saveCustomNamedOptions(AppKeys.customPaymentMethods, values);
+  }
+
+  static Future<SweldoCurrencyOption> loadSelectedCurrency() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currency = resolveSweldoCurrencyOption(
+      prefs.getString(AppKeys.selectedCurrency),
     );
+    if (sweldoCurrencyNotifier.value.code != currency.code) {
+      sweldoCurrencyNotifier.value = currency;
+    }
+    return currency;
+  }
+
+  static Future<void> setSelectedCurrency(String currencyCode) async {
+    final prefs = await SharedPreferences.getInstance();
+    final currency = resolveSweldoCurrencyOption(currencyCode);
+    await prefs.setString(AppKeys.selectedCurrency, currency.code);
+    if (sweldoCurrencyNotifier.value.code != currency.code) {
+      sweldoCurrencyNotifier.value = currency;
+    }
   }
 
   // Manual QA:
@@ -3636,7 +5059,7 @@ class FinanceRepository {
   // - Release hides debug controls
   // - Premium cannot unlock without verifier
   // - APK installs on physical phone
-  // - AAB builds with versionCode 8
+  // - AAB builds with the current production versionCode
   static Future<void> resetFinanceData() async {
     final prefs = await SharedPreferences.getInstance();
     for (final key in _financeResetKeys) {
@@ -3697,6 +5120,8 @@ class FinanceRepository {
       data[key] = value;
     }
     return const JsonEncoder.withIndent('  ').convert(<String, dynamic>{
+      'backupVersion': _backupSchemaVersion,
+      'appName': _backupAppName,
       'schemaVersion': _backupSchemaVersion,
       'app': _backupAppName,
       'scope': scope,
@@ -3719,12 +5144,17 @@ class FinanceRepository {
     }
 
     final wrapper = decoded.cast<String, dynamic>();
-    final backupAppName = _readStoredString(wrapper['app']);
+    final backupAppName = _readStoredString(
+      wrapper['appName'],
+      fallback: _readStoredString(wrapper['app']),
+    );
     if (backupAppName.isNotEmpty && backupAppName != _backupAppName) {
       throw const FormatException('Backup is for a different app.');
     }
     final schemaVersion = _readStoredInt(
-      wrapper['schemaVersion'],
+      wrapper.containsKey('backupVersion')
+          ? wrapper['backupVersion']
+          : wrapper['schemaVersion'],
       fallback: -1,
     );
     if (schemaVersion != _backupSchemaVersion) {
@@ -3773,6 +5203,9 @@ class FinanceRepository {
   static Future<void> importLocalBackupJson(String raw) async {
     final parsed = parseLocalBackupJson(raw);
     final prefs = await SharedPreferences.getInstance();
+
+    await prefs.remove(AppKeys.sampleDataSeedVersion);
+    await prefs.remove(AppKeys.sampleDataSetupSnapshot);
 
     for (final key in parsed.keys) {
       await prefs.remove(key);
@@ -3836,39 +5269,345 @@ class FinanceRepository {
       }
     }
   }
+
+  static bool _isSampleDataId(String id) {
+    return id.trim().toLowerCase().startsWith(_sampleDataIdPrefix);
+  }
+
+  static Future<void> loadSampleData() async {
+    final now = dateOnly(DateTime.now());
+    final prefs = await SharedPreferences.getInstance();
+
+    final currentExpenses = await loadExpenses();
+    final currentBills = await loadBills();
+    final currentIncomeEntries = await loadIncomeEntries();
+    final currentSavingsHistory = await loadSavingsHistory();
+    final currentCustomPaymentMethods = await getCustomPaymentMethods();
+    final currentDailyBudgetSettings = await getDailyBudgetSettings();
+    final currentStartingBalance = await getStartingBalance();
+    final currentSavingsGoal = await getSavingsGoal();
+    final currentDaysUntilPayday = await getDaysUntilPayday();
+    final currentCycleStartDate = await getSalaryReceivedDate();
+    final currentNextPaydayDate = await getNextPaydayDate();
+
+    final cleanedExpenses = currentExpenses
+        .where((item) => !_isSampleDataId(item.id))
+        .toList();
+    final cleanedBills = currentBills
+        .where((item) => !_isSampleDataId(item.id))
+        .toList();
+    final cleanedIncomeEntries = currentIncomeEntries
+        .where((item) => !_isSampleDataId(item.id))
+        .toList();
+    final cleanedSavingsHistory = currentSavingsHistory
+        .where((item) => !_isSampleDataId(item.id))
+        .toList();
+
+    final sampleExpenses = <ExpenseItem>[
+      ExpenseItem(
+        id: '${_sampleDataIdPrefix}expense_groceries',
+        title: 'Groceries Demo',
+        amount: 1250,
+        category: 'Groceries',
+        paymentMethod: 'Demo Wallet',
+        createdAt: now.subtract(const Duration(days: 1)),
+      ),
+      ExpenseItem(
+        id: '${_sampleDataIdPrefix}expense_transport',
+        title: 'Transport Demo',
+        amount: 240,
+        category: 'Transport',
+        paymentMethod: 'Cash',
+        createdAt: now,
+      ),
+    ];
+    final sampleBills = <BillItem>[
+      BillItem(
+        id: '${_sampleDataIdPrefix}bill_electricity',
+        title: 'Electricity Demo',
+        amount: 1850,
+        dueDate: now.add(const Duration(days: 3)),
+        paidDate: null,
+        settledCycleKey: null,
+        category: 'Bills',
+        isRecurring: true,
+        isPaid: false,
+      ),
+      BillItem(
+        id: '${_sampleDataIdPrefix}bill_internet',
+        title: 'Internet Demo',
+        amount: 1499,
+        dueDate: now.subtract(const Duration(days: 2)),
+        paidDate: now.subtract(const Duration(days: 1)),
+        settledCycleKey: billCycleKey(now.subtract(const Duration(days: 1))),
+        category: 'Bills',
+        isRecurring: true,
+        isPaid: true,
+      ),
+    ];
+    final sampleIncomeEntries = <IncomeEntry>[
+      IncomeEntry(
+        id: '${_sampleDataIdPrefix}income_salary',
+        amount: 28500,
+        receivedAt: now.subtract(const Duration(days: 2)),
+        note: 'Salary Demo',
+      ),
+    ];
+    final sampleSavingsHistory = <SavingsContributionEntry>[
+      SavingsContributionEntry(
+        id: '${_sampleDataIdPrefix}savings_contribution',
+        amount: 2000,
+        createdAt: now.subtract(const Duration(days: 1)),
+        type: SavingsTransferType.contribution,
+      ),
+    ];
+
+    await saveExpenses(<ExpenseItem>[...sampleExpenses, ...cleanedExpenses]);
+    await saveBills(<BillItem>[...sampleBills, ...cleanedBills]);
+    await saveIncomeEntries(
+      <IncomeEntry>[...sampleIncomeEntries, ...cleanedIncomeEntries],
+    );
+    await saveSavingsHistory(
+      <SavingsContributionEntry>[
+        ...sampleSavingsHistory,
+        ...cleanedSavingsHistory,
+      ],
+    );
+
+    final samplePaymentMethods = <String>[
+      ...currentCustomPaymentMethods,
+      ..._sampleCustomPaymentMethods,
+    ];
+    await saveCustomPaymentMethods(samplePaymentMethods);
+
+    if (currentNextPaydayDate == null && currentDaysUntilPayday <= 0) {
+      final appliedCycleStartDate = now.subtract(const Duration(days: 2));
+      final appliedNextPaydayDate = now.add(const Duration(days: 12));
+      final snapshot = <String, dynamic>{
+        'previous': <String, dynamic>{
+          'daysUntilPayday': currentDaysUntilPayday,
+          'salaryReceivedDate':
+              currentCycleStartDate?.toIso8601String(),
+          'nextPaydayDate': currentNextPaydayDate?.toIso8601String(),
+        },
+        'applied': <String, dynamic>{
+          'daysUntilPayday': 12,
+          'salaryReceivedDate': appliedCycleStartDate.toIso8601String(),
+          'nextPaydayDate': appliedNextPaydayDate.toIso8601String(),
+        },
+      };
+      await prefs.setString(
+        AppKeys.sampleDataSetupSnapshot,
+        jsonEncode(snapshot),
+      );
+      await saveBalanceSetup(
+        startingBalance: currentStartingBalance,
+        daysUntilPayday: 12,
+        savingsGoalTarget: currentSavingsGoal,
+        cycleStartDate: appliedCycleStartDate,
+        nextCutoffDate: appliedNextPaydayDate,
+        useManualDailyBudget: currentDailyBudgetSettings.useManualDailyBudget,
+        manualDailyBudget: currentDailyBudgetSettings.manualDailyBudget,
+      );
+    }
+
+    await prefs.setInt(AppKeys.sampleDataSeedVersion, _sampleDataVersion);
+  }
+
+  static Future<void> clearSampleData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentExpenses = await loadExpenses();
+    final currentBills = await loadBills();
+    final currentIncomeEntries = await loadIncomeEntries();
+    final currentSavingsHistory = await loadSavingsHistory();
+    final currentCustomPaymentMethods = await getCustomPaymentMethods();
+
+    await saveExpenses(
+      currentExpenses.where((item) => !_isSampleDataId(item.id)).toList(),
+    );
+    await saveBills(
+      currentBills.where((item) => !_isSampleDataId(item.id)).toList(),
+    );
+    await saveIncomeEntries(
+      currentIncomeEntries
+          .where((item) => !_isSampleDataId(item.id))
+          .toList(),
+    );
+    await saveSavingsHistory(
+      currentSavingsHistory
+          .where((item) => !_isSampleDataId(item.id))
+          .toList(),
+    );
+
+    await saveCustomPaymentMethods(
+      currentCustomPaymentMethods
+          .where((item) => !_sampleCustomPaymentMethods.contains(item))
+          .toList(),
+    );
+
+    final rawSnapshot =
+        (prefs.getString(AppKeys.sampleDataSetupSnapshot) ?? '').trim();
+    final decodedSnapshot = _decodeStoredJsonMap(rawSnapshot);
+    final previous = decodedSnapshot?['previous'];
+    final applied = decodedSnapshot?['applied'];
+    if (previous is Map && applied is Map) {
+      final previousMap = previous.cast<String, dynamic>();
+      final appliedMap = applied.cast<String, dynamic>();
+      final currentDays = prefs.getInt(AppKeys.daysUntilPayday) ?? 0;
+      final currentCycleStartRaw = prefs.getString(AppKeys.salaryReceivedDate);
+      final currentNextPaydayRaw = prefs.getString(AppKeys.nextPaydayDate);
+
+      if (currentDays ==
+          _readStoredInt(appliedMap['daysUntilPayday'], fallback: currentDays)) {
+        final previousDays =
+            _readStoredInt(previousMap['daysUntilPayday'], fallback: 0);
+        if (previousDays <= 0) {
+          await prefs.remove(AppKeys.daysUntilPayday);
+        } else {
+          await prefs.setInt(AppKeys.daysUntilPayday, previousDays);
+        }
+      }
+
+      final appliedCycleStartRaw =
+          _readStoredString(appliedMap['salaryReceivedDate']);
+      if (currentCycleStartRaw == appliedCycleStartRaw) {
+        final previousCycleStartRaw =
+            _readStoredString(previousMap['salaryReceivedDate']);
+        if (previousCycleStartRaw.isEmpty) {
+          await prefs.remove(AppKeys.salaryReceivedDate);
+        } else {
+          await prefs.setString(
+            AppKeys.salaryReceivedDate,
+            previousCycleStartRaw,
+          );
+        }
+      }
+
+      final appliedNextPaydayRaw =
+          _readStoredString(appliedMap['nextPaydayDate']);
+      if (currentNextPaydayRaw == appliedNextPaydayRaw) {
+        final previousNextPaydayRaw =
+            _readStoredString(previousMap['nextPaydayDate']);
+        if (previousNextPaydayRaw.isEmpty) {
+          await prefs.remove(AppKeys.nextPaydayDate);
+        } else {
+          await prefs.setString(
+            AppKeys.nextPaydayDate,
+            previousNextPaydayRaw,
+          );
+        }
+      }
+    }
+
+    await prefs.remove(AppKeys.sampleDataSeedVersion);
+    await prefs.remove(AppKeys.sampleDataSetupSnapshot);
+  }
 }
 
 class AppThemeController extends ChangeNotifier {
-  SweldoThemePreset _selectedPreset = SweldoThemePreset.emerald;
+  SweldoThemePreset _selectedPreset = SweldoThemePreset.ocean;
+  SweldoUiMode _selectedUiMode = SweldoUiMode.intelliumDigital;
+  bool _hasStoredUiMode = false;
+  bool _hasStoredLegacyTheme = false;
 
   SweldoThemePreset get selectedPreset => _selectedPreset;
+  SweldoUiMode get selectedUiMode => _selectedUiMode;
+
+  SweldoUiMode effectiveUiMode({required bool hasPremium}) {
+    final selectedMode = _hasStoredUiMode
+        ? _selectedUiMode
+        : _hasStoredLegacyTheme
+            ? sweldoUiModeForLegacyThemePreset(_selectedPreset)
+            : SweldoUiMode.intelliumDigital;
+    if (!hasPremium && isPremiumSweldoUiMode(selectedMode)) {
+      return SweldoUiMode.intelliumDigital;
+    }
+    return selectedMode;
+  }
 
   SweldoThemePreset effectivePreset({required bool hasPremium}) {
-    if (isFreeSweldoTheme(_selectedPreset)) {
-      return _selectedPreset;
-    }
-    if (hasPremium) return _selectedPreset;
-    return SweldoThemePreset.emerald;
+    return sweldoLegacyThemePresetForUiMode(
+      effectiveUiMode(hasPremium: hasPremium),
+    );
   }
 
   String currentThemeLabel({required bool hasPremium}) {
-    return sweldoThemeFor(effectivePreset(hasPremium: hasPremium)).label;
+    return sweldoUiModeLabel(effectiveUiMode(hasPremium: hasPremium));
   }
 
   Future<void> load() async {
+    final previousPreset = _selectedPreset;
+    final previousUiMode = _selectedUiMode;
+    final previousHasStoredUiMode = _hasStoredUiMode;
+    final previousHasStoredLegacyTheme = _hasStoredLegacyTheme;
     final prefs = await SharedPreferences.getInstance();
+    final storedUiModeValue = prefs.getString(AppKeys.selectedSweldoUiMode);
+    _hasStoredUiMode = storedUiModeValue?.trim().isNotEmpty == true;
+    if (_hasStoredUiMode) {
+      _selectedUiMode = resolveSweldoUiMode(storedUiModeValue);
+    }
     final storedValue = prefs.getString(AppKeys.selectedTheme);
-    _selectedPreset = SweldoThemePreset.values.firstWhere(
-      (value) => value.name == storedValue,
-      orElse: () => SweldoThemePreset.emerald,
-    );
+    _hasStoredLegacyTheme = storedValue?.trim().isNotEmpty == true;
+    if (_hasStoredLegacyTheme) {
+      _selectedPreset = SweldoThemePreset.values.firstWhere(
+        (value) => value.name == storedValue,
+        orElse: () => SweldoThemePreset.ocean,
+      );
+    }
+    if (!_hasStoredUiMode) {
+      _selectedUiMode = _hasStoredLegacyTheme
+          ? sweldoUiModeForLegacyThemePreset(_selectedPreset)
+          : SweldoUiMode.intelliumDigital;
+    }
+    if (previousPreset != _selectedPreset ||
+        previousUiMode != _selectedUiMode ||
+        previousHasStoredUiMode != _hasStoredUiMode ||
+        previousHasStoredLegacyTheme != _hasStoredLegacyTheme) {
+      notifyListeners();
+    }
+  }
+
+  Future<void> setUiMode(
+    SweldoUiMode mode, {
+    required bool hasPremium,
+  }) async {
+    final resolvedMode =
+        !hasPremium && isPremiumSweldoUiMode(mode)
+            ? SweldoUiMode.intelliumDigital
+            : mode;
+    final nextPreset = sweldoLegacyThemePresetForUiMode(resolvedMode);
+    if (_selectedUiMode == resolvedMode &&
+        _hasStoredUiMode &&
+        _hasStoredLegacyTheme &&
+        _selectedPreset == nextPreset) {
+      return;
+    }
+    _selectedUiMode = resolvedMode;
+    _hasStoredUiMode = true;
+    _hasStoredLegacyTheme = true;
+    _selectedPreset = nextPreset;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppKeys.selectedSweldoUiMode, resolvedMode.name);
+    await prefs.setString(AppKeys.selectedTheme, _selectedPreset.name);
     notifyListeners();
   }
 
   Future<void> setTheme(SweldoThemePreset preset) async {
+    final nextUiMode = sweldoUiModeForLegacyThemePreset(preset);
+    if (_selectedPreset == preset &&
+        _selectedUiMode == nextUiMode &&
+        _hasStoredLegacyTheme &&
+        !_hasStoredUiMode) {
+      return;
+    }
     _selectedPreset = preset;
+    _selectedUiMode = nextUiMode;
+    _hasStoredLegacyTheme = true;
+    _hasStoredUiMode = false;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppKeys.selectedTheme, preset.name);
+    await prefs.remove(AppKeys.selectedSweldoUiMode);
     notifyListeners();
   }
 }
@@ -3892,21 +5631,99 @@ void _debugPremiumLog(String message) {
   }
 }
 
+String _debugJsonKeys(Map<String, dynamic> json) {
+  if (json.isEmpty) return 'none';
+  final keys = json.keys
+      .map((key) => key.trim())
+      .where((key) => key.isNotEmpty)
+      .toList()
+    ..sort();
+  return keys.isEmpty ? 'none' : keys.join(',');
+}
+
+bool _isPremiumEntitlementLabel(String? value) {
+  final normalized = (value ?? '').trim().toLowerCase();
+  return normalized == 'premium' ||
+      normalized == 'pro' ||
+      normalized == 'active' ||
+      normalized == 'verified';
+}
+
+bool _isActivePremiumStatusLabel(String? value) {
+  final normalized = (value ?? '').trim().toLowerCase();
+  return normalized == 'active' ||
+      normalized == 'premium' ||
+      normalized == 'verified' ||
+      normalized == 'ok' ||
+      normalized == 'success';
+}
+
+bool _isInactivePremiumStatusLabel(String? value) {
+  final normalized = (value ?? '').trim().toLowerCase();
+  return normalized == 'inactive' ||
+      normalized == 'expired' ||
+      normalized == 'canceled' ||
+      normalized == 'cancelled' ||
+      normalized == 'rejected' ||
+      normalized == 'failed' ||
+      normalized == 'error';
+}
+
+String _normalizePremiumVerificationUrl(String rawUrl) {
+  final trimmed = rawUrl.trim();
+  if (trimmed.isEmpty) return trimmed;
+
+  final schemePrefixMatch = RegExp(
+    r'^(https?:\/\/)+',
+    caseSensitive: false,
+  ).firstMatch(trimmed);
+  var normalized = trimmed;
+  if (schemePrefixMatch != null) {
+    final repeatedPrefix = schemePrefixMatch.group(0)!;
+    final preferredSchemeMatch = RegExp(
+      r'https?:\/\/',
+      caseSensitive: false,
+    ).firstMatch(repeatedPrefix);
+    if (preferredSchemeMatch != null) {
+      final preferredScheme = preferredSchemeMatch.group(0)!.toLowerCase();
+      normalized = preferredScheme + trimmed.substring(repeatedPrefix.length);
+    }
+  }
+
+  final uri = Uri.tryParse(normalized);
+  if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+    return normalized;
+  }
+
+  final path = uri.path.trim();
+  if (path.isEmpty || path == '/') {
+    return uri.replace(path: '/verify-premium').toString();
+  }
+
+  return uri.toString();
+}
+
 class PremiumVerificationResult {
   final bool isVerified;
   final bool isActive;
+  final bool isRecoverable;
   final PremiumVerificationMode mode;
   final String? message;
+  final String? failureReason;
   final String? purchasedProductId;
   final DateTime? expiryDate;
+  final String? latestOrderId;
 
   const PremiumVerificationResult._({
     required this.isVerified,
     required this.isActive,
+    required this.isRecoverable,
     required this.mode,
     this.message,
+    this.failureReason,
     this.purchasedProductId,
     this.expiryDate,
+    this.latestOrderId,
   });
 
   const PremiumVerificationResult.verified({
@@ -3914,13 +5731,16 @@ class PremiumVerificationResult {
     String? purchasedProductId,
     String? message,
     DateTime? expiryDate,
+    String? latestOrderId,
   }) : this._(
           isVerified: true,
           isActive: true,
+          isRecoverable: false,
           mode: mode,
           purchasedProductId: purchasedProductId,
           message: message,
           expiryDate: expiryDate,
+          latestOrderId: latestOrderId,
         );
 
   const PremiumVerificationResult.rejected({
@@ -3928,14 +5748,20 @@ class PremiumVerificationResult {
     String? message,
     String? purchasedProductId,
     bool isActive = false,
+    bool isRecoverable = false,
+    String? failureReason,
     DateTime? expiryDate,
+    String? latestOrderId,
   }) : this._(
           isVerified: false,
           isActive: isActive,
+          isRecoverable: isRecoverable,
           mode: mode,
           message: message,
+          failureReason: failureReason,
           purchasedProductId: purchasedProductId,
           expiryDate: expiryDate,
+          latestOrderId: latestOrderId,
         );
 }
 
@@ -3948,9 +5774,16 @@ abstract class PremiumPurchaseVerificationRepository {
   });
 }
 
+const String sweldoTrackPremiumProductId = 'sweldotrack_premium_monthly';
+const String sweldoTrackPremiumPackageName =
+    'com.intelliumdigital.sweldotrack';
+const String sweldoTrackPremiumPlatform = 'android';
+
 class PremiumBackendVerificationPayload {
   final String productId;
+  final String packageName;
   final String purchaseToken;
+  final String userId;
   final String localReceipt;
   final String verificationSource;
   final String purchaseStatus;
@@ -3959,7 +5792,9 @@ class PremiumBackendVerificationPayload {
 
   const PremiumBackendVerificationPayload({
     required this.productId,
+    required this.packageName,
     required this.purchaseToken,
+    required this.userId,
     required this.localReceipt,
     required this.verificationSource,
     required this.purchaseStatus,
@@ -3969,6 +5804,7 @@ class PremiumBackendVerificationPayload {
 
   factory PremiumBackendVerificationPayload.fromPurchase(
     PurchaseDetails purchase,
+    String userId,
   ) {
     final purchaseToken =
         purchase.verificationData.serverVerificationData.trim();
@@ -3976,9 +5812,11 @@ class PremiumBackendVerificationPayload {
 
     return PremiumBackendVerificationPayload(
       productId: purchase.productID,
+      packageName: sweldoTrackPremiumPackageName,
       purchaseToken: purchaseToken,
+      userId: userId.trim(),
       localReceipt: localReceipt,
-      verificationSource: purchase.verificationData.source,
+      verificationSource: purchase.verificationData.source.trim(),
       purchaseStatus: purchase.status.name,
       purchaseId: (purchase.purchaseID ?? '').trim(),
       transactionDateMillis: int.tryParse(
@@ -3990,13 +5828,15 @@ class PremiumBackendVerificationPayload {
   Map<String, dynamic> toJson() {
     return {
       'productId': productId,
+      'packageName': packageName,
       'purchaseToken': purchaseToken,
+      'userId': userId,
       'localReceipt': localReceipt,
       'verificationSource': verificationSource,
       'purchaseStatus': purchaseStatus,
       'purchaseId': purchaseId,
       'transactionDateMillis': transactionDateMillis,
-      'platform': defaultTargetPlatform.name,
+      'platform': sweldoTrackPremiumPlatform,
     };
   }
 }
@@ -4004,25 +5844,46 @@ class PremiumBackendVerificationPayload {
 class PremiumBackendEntitlementStatus {
   final bool isVerified;
   final bool isActive;
+  final bool isRecoverable;
   final String? productId;
+  final String? packageName;
+  final String? reason;
+  final String? verificationMode;
   final DateTime? expiryDate;
   final String? message;
+  final String? orderId;
 
   const PremiumBackendEntitlementStatus({
     required this.isVerified,
     required this.isActive,
+    this.isRecoverable = false,
     this.productId,
+    this.packageName,
+    this.reason,
+    this.verificationMode,
     this.expiryDate,
     this.message,
+    this.orderId,
   });
 
   factory PremiumBackendEntitlementStatus.fromJson(Map<String, dynamic> json) {
     Map<String, dynamic> entitlement = const {};
+    Map<String, dynamic> error = const {};
+    String? entitlementLabel;
     final entitlementValue = json['entitlement'];
     if (entitlementValue is Map<String, dynamic>) {
       entitlement = entitlementValue;
     } else if (entitlementValue is Map) {
       entitlement = Map<String, dynamic>.from(entitlementValue);
+    } else if (entitlementValue is String &&
+        entitlementValue.trim().isNotEmpty) {
+      entitlementLabel = entitlementValue.trim();
+    }
+    final errorValue = json['error'];
+    if (errorValue is Map<String, dynamic>) {
+      error = errorValue;
+    } else if (errorValue is Map) {
+      error = Map<String, dynamic>.from(errorValue);
     }
 
     dynamic pickValue(String key) {
@@ -4040,7 +5901,7 @@ class PremiumBackendEntitlementStatus {
       return null;
     }
 
-    bool pickBool(List<String> keys, {required bool fallback}) {
+    bool? pickOptionalBool(List<String> keys) {
       for (final key in keys) {
         final value = pickValue(key);
         if (value is bool) return value;
@@ -4051,13 +5912,30 @@ class PremiumBackendEntitlementStatus {
           if (normalized == 'false' || normalized == '0') return false;
         }
       }
-      return fallback;
+      return null;
+    }
+
+    bool? pickOptionalErrorBool(String key) {
+      final value = error[key];
+      if (value is bool) return value;
+      if (value is num) return value != 0;
+      if (value is String) {
+        final normalized = value.trim().toLowerCase();
+        if (normalized == 'true' || normalized == '1') return true;
+        if (normalized == 'false' || normalized == '0') return false;
+      }
+      return null;
     }
 
     DateTime? parseDate(dynamic value) {
       if (value == null) return null;
       if (value is String) {
-        return DateTime.tryParse(value.trim());
+        final trimmed = value.trim();
+        final parsedInteger = int.tryParse(trimmed);
+        if (parsedInteger != null) {
+          return DateTime.fromMillisecondsSinceEpoch(parsedInteger, isUtc: true);
+        }
+        return DateTime.tryParse(trimmed);
       }
       if (value is int) {
         return DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
@@ -4071,40 +5949,78 @@ class PremiumBackendEntitlementStatus {
       return null;
     }
 
-    final verified = pickBool(
-      const ['verified', 'isVerified', 'entitled', 'isEntitled'],
-      fallback: false,
+    final verifiedFlag = pickOptionalBool(
+      const ['verified', 'isVerified', 'entitled', 'isEntitled', 'ok'],
     );
-    final active = pickBool(
-      const ['active', 'isActive'],
-      fallback: verified,
+    final activeFlag = pickOptionalBool(const ['active', 'isActive']);
+    final premiumFlag = pickOptionalBool(const ['premium', 'isPremium']);
+    final recoverableFlag =
+        pickOptionalBool(const ['recoverable']) ??
+        pickOptionalErrorBool('recoverable') ??
+        false;
+    final statusLabel = pickString(const ['status', 'state']);
+    final entitlementSignalsPremium = _isPremiumEntitlementLabel(
+      entitlementLabel,
     );
+    final statusSignalsActive = _isActivePremiumStatusLabel(statusLabel);
+    final statusSignalsInactive = _isInactivePremiumStatusLabel(statusLabel);
+
+    final implicitSuccessSignal =
+        entitlementSignalsPremium || statusSignalsActive;
+    final explicitVerifiedState = verifiedFlag ?? premiumFlag ?? activeFlag;
+    final verified = explicitVerifiedState ?? implicitSuccessSignal;
+
+    var active = activeFlag ?? premiumFlag ?? implicitSuccessSignal;
+    if (activeFlag == null &&
+        premiumFlag == null &&
+        !implicitSuccessSignal &&
+        verifiedFlag == true &&
+        !statusSignalsInactive) {
+      active = true;
+    }
+    if (statusSignalsInactive || activeFlag == false || premiumFlag == false) {
+      active = false;
+    }
 
     return PremiumBackendEntitlementStatus(
       isVerified: verified,
       isActive: active,
+      isRecoverable: recoverableFlag,
       productId: pickString(const ['productId', 'product_id']),
+      packageName: pickString(const ['packageName', 'package_name']),
+      reason:
+          pickString(const ['reason', 'code', 'failureReason']) ??
+          (error['code'] is String ? (error['code'] as String).trim() : null),
+      verificationMode: pickString(
+        const ['verificationMode', 'verification_mode'],
+      ),
+      orderId: pickString(
+        const ['orderId', 'order_id', 'latestOrderId', 'purchaseId'],
+      ),
       expiryDate: parseDate(
         pickValue('expiryDate') ??
+            pickValue('expiryTimeMillis') ??
             pickValue('expiry_date') ??
             pickValue('expiresAt') ??
             pickValue('expires_at'),
       ),
-      message: pickString(const ['message', 'detail', 'reason']),
+      message:
+          pickString(const ['message', 'detail']) ??
+          (error['message'] is String
+              ? (error['message'] as String).trim()
+              : null),
     );
   }
 }
 
 class PremiumBackendVerificationConfig {
   final String verificationUrl;
-  final String bearerToken;
-  final String apiKey;
+  final String authToken;
   final Duration timeout;
 
   const PremiumBackendVerificationConfig({
     required this.verificationUrl,
-    required this.bearerToken,
-    required this.apiKey,
+    required this.authToken,
     this.timeout = const Duration(seconds: 15),
   });
 
@@ -4115,17 +6031,14 @@ class PremiumBackendVerificationConfig {
 
     return const PremiumBackendVerificationConfig(
       verificationUrl: configuredVerificationUrl,
-      bearerToken: String.fromEnvironment(
-        'SWELDOTRACK_PREMIUM_VERIFY_BEARER_TOKEN',
-      ),
-      apiKey: String.fromEnvironment(
-        'SWELDOTRACK_PREMIUM_VERIFY_API_KEY',
+      authToken: String.fromEnvironment(
+        'SWELDOTRACK_PREMIUM_VERIFY_AUTH',
       ),
     );
   }
 
   Uri? get verificationUri {
-    final rawUrl = verificationUrl.trim();
+    final rawUrl = _normalizePremiumVerificationUrl(verificationUrl);
     if (rawUrl.isEmpty) return null;
 
     final uri = Uri.tryParse(rawUrl);
@@ -4142,8 +6055,7 @@ class PremiumBackendVerificationConfig {
   }
 
   bool get hasValidVerificationUrl => verificationUri != null;
-  bool get hasAuthenticationConfig =>
-      bearerToken.trim().isNotEmpty || apiKey.trim().isNotEmpty;
+  bool get hasAuthenticationConfig => authToken.trim().isNotEmpty;
 
   bool get isConfigured => hasValidVerificationUrl && hasAuthenticationConfig;
 
@@ -4184,15 +6096,13 @@ class PremiumBackendVerificationConfig {
       'Accept': 'application/json',
     };
 
-    final normalizedBearerToken = bearerToken.trim();
-    if (normalizedBearerToken.isNotEmpty) {
-      final lowerToken = normalizedBearerToken.toLowerCase();
-      headers['Authorization'] = lowerToken.startsWith('bearer ')
-          ? normalizedBearerToken
-          : 'Bearer $normalizedBearerToken';
-    }
-    if (apiKey.trim().isNotEmpty) {
-      headers['x-api-key'] = apiKey.trim();
+    final normalizedAuthToken = authToken.trim();
+    if (normalizedAuthToken.isNotEmpty) {
+      // Authorization: Bearer is the preferred production header.
+      headers['Authorization'] =
+          normalizedAuthToken.toLowerCase().startsWith('bearer ')
+              ? normalizedAuthToken
+              : 'Bearer $normalizedAuthToken';
     }
 
     return headers;
@@ -4233,17 +6143,20 @@ class HttpPremiumBackendApiClient implements PremiumBackendApiClient {
   ) async {
     final uri = config.verificationUri;
     if (uri == null) {
-      _debugPremiumLog('verification skipped: invalid verifier URL');
+      _debugPremiumLog(
+        'verification skipped: invalid verifier URL, verificationUrlPresent=${config.hasValidVerificationUrl}, authPresent=${config.hasAuthenticationConfig}',
+      );
       return PremiumBackendEntitlementStatus(
         isVerified: false,
         isActive: false,
+        isRecoverable: true,
         productId: payload.productId,
         message: unavailableMessage,
       );
     }
 
     _debugPremiumLog(
-      'verification request started: source=${payload.verificationSource}, purchaseStatus=${payload.purchaseStatus}',
+      'verification request started: productId=${payload.productId}, purchaseStatus=${payload.purchaseStatus}, verificationUrlPresent=${config.hasValidVerificationUrl}, authPresent=${config.hasAuthenticationConfig}, packageName=${payload.packageName}',
     );
     final response = await _httpClient
         .post(
@@ -4265,19 +6178,27 @@ class HttpPremiumBackendApiClient implements PremiumBackendApiClient {
         body = Map<String, dynamic>.from(decoded);
       }
     }
+    _debugPremiumLog(
+      'verification response parsed: statusCode=${response.statusCode}, responseKeys=${_debugJsonKeys(body)}',
+    );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final status = PremiumBackendEntitlementStatus.fromJson(body);
-      final backendMessage = (status.message ?? '').trim();
-      final fallbackMessage = _looksLikeReceiptRejectedMessage(backendMessage)
-          ? backendMessage
-          : 'Verification failed. Please try again.';
       return PremiumBackendEntitlementStatus(
         isVerified: false,
         isActive: false,
+        isRecoverable:
+            status.isRecoverable ||
+            _isRecoverableVerificationHttpStatus(response.statusCode),
         productId: status.productId ?? payload.productId,
+        packageName: status.packageName ?? payload.packageName,
         expiryDate: status.expiryDate,
-        message: fallbackMessage,
+        reason: status.reason,
+        verificationMode: status.verificationMode,
+        message: status.message?.trim().isNotEmpty == true
+            ? status.message!.trim()
+            : 'Premium verification could not be completed right now.',
+        orderId: status.orderId,
       );
     }
 
@@ -4285,9 +6206,14 @@ class HttpPremiumBackendApiClient implements PremiumBackendApiClient {
     return PremiumBackendEntitlementStatus(
       isVerified: status.isVerified,
       isActive: status.isActive,
+      isRecoverable: status.isRecoverable,
       productId: status.productId ?? payload.productId,
+      packageName: status.packageName ?? payload.packageName,
       expiryDate: status.expiryDate,
+      reason: status.reason,
+      verificationMode: status.verificationMode,
       message: status.message,
+      orderId: status.orderId,
     );
   }
 }
@@ -4306,18 +6232,27 @@ abstract class PremiumBackendVerificationService {
 // Premium app-side launch flag. UI stays visible when enabled, but release
 // builds must still fail closed until backend receipt verification can verify.
 const bool premiumLaunchEnabled = true;
-const String premiumTemporarilyUnavailableLabel =
-    'Premium Temporarily Unavailable';
-const String premiumTemporarilyUnavailableActionLabel =
-    'Premium Temporarily Unavailable';
+const String premiumUpgradeLabel = 'Purchase Premium';
+const String premiumAccessLabel = 'SweldoTrack Premium';
+const String premiumUnlockActionLabel = 'Unlock Premium';
+const String premiumStoreUnavailableLabel = 'Store Unavailable';
+const String premiumFallbackPriceLabel = '₱120/month';
+const String premiumAvailabilityCheckMessage =
+    'Checking Google Play premium availability...';
+const String premiumUpgradeDetailMessage =
+    'Light, Dark, and Intellium Digital are free. Premium unlocks Neon and Executive appearances, advanced analytics, backup tools, and optional smart features through Google Play.';
 const String premiumPurchasesUnavailableMessage =
-    'Premium purchases are temporarily unavailable. Please try again later.';
+    'Premium purchase verification is not ready right now. Please try again later.';
 const String premiumRestoreUnavailableMessage =
-    'Premium purchases are temporarily unavailable. Please try again later.';
+    'Premium restore is not ready right now. Please try again later.';
 const String premiumBillingUnavailableMessage =
-    'Google Play Billing is unavailable on this device.';
+    'Google Play billing is unavailable right now. Premium purchases may require this app to be installed from Google Play through internal testing, closed/open testing, or production instead of a direct APK.';
 const String premiumPricingUnavailableMessage =
-    'Premium pricing is unavailable right now. Please try again later.';
+    'Premium is not currently available for purchase on this build. Make sure you installed SweldoTrack from Google Play through internal testing, closed/open testing, or production, then try again.';
+const String premiumVerificationIssueMessage =
+    'Your payment was detected, but premium verification could not be completed. Tap Restore Purchase to try again.';
+const String referralServiceUnavailableMessage =
+    'Referral service is currently unavailable. Please try again later.';
 const String premiumPurchaseStartFailedMessage =
     'Premium purchase could not be started. Please try again.';
 const String premiumPurchaseCanceledMessage =
@@ -4326,20 +6261,403 @@ const String premiumPurchaseNotConfirmedMessage =
     'Premium purchase could not be confirmed.';
 const String premiumNoPreviousPurchaseMessage =
     'No previous premium purchase was found for this Google Play account.';
+const Duration premiumRecoverableFailureGracePeriod = Duration(days: 7);
+const String premiumVerificationRefreshStatusMessage =
+    'Premium Active - verification will refresh automatically.';
+const String premiumVerificationRefreshDetailMessage =
+    'Premium is active. We\'ll refresh verification when connection is available.';
 const double referralPaidRewardAmount = 20;
+
+const String sweldoTrackReferralBackendBaseUrl = String.fromEnvironment(
+  'SWELDOTRACK_REFERRAL_BACKEND_URL',
+);
+
+Uri? _configuredReferralBackendUri() {
+  final rawUrl = sweldoTrackReferralBackendBaseUrl.trim();
+  if (rawUrl.isEmpty) return null;
+
+  final uri = Uri.tryParse(rawUrl);
+  if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+    return null;
+  }
+
+  final normalizedScheme = uri.scheme.toLowerCase();
+  final allowsHttpInDebug = kDebugMode && normalizedScheme == 'http';
+  if (normalizedScheme != 'https' && !allowsHttpInDebug) {
+    return null;
+  }
+
+  return uri;
+}
+
+String premiumDisplayPrice(PremiumService premiumService) {
+  final storePrice = premiumService.premiumPriceLabel?.trim();
+  if (storePrice != null && storePrice.isNotEmpty) {
+    return storePrice.contains('/') ? storePrice : '$storePrice/month';
+  }
+  return premiumFallbackPriceLabel;
+}
+
+class ReferralServiceException implements Exception {
+  final String message;
+  final String? code;
+
+  const ReferralServiceException(this.message, {this.code});
+
+  bool get isSelfReferralBlocked => code == 'self_referral_blocked';
+  bool get hasAssignedReferrer => code == 'referrer_already_assigned';
+}
+
+class ReferralActivityItem {
+  final DateTime? date;
+  final String message;
+
+  const ReferralActivityItem({
+    required this.date,
+    required this.message,
+  });
+}
+
+class ReferralDashboardData {
+  final String userId;
+  final String referralCode;
+  final String? referredByCode;
+  final int totalReferrals;
+  final int pendingRewards;
+  final int paidRewards;
+  final double pendingEarningsPhp;
+  final double paidEarningsPhp;
+  final double totalEarningsPhp;
+  final List<ReferralActivityItem> activity;
+
+  const ReferralDashboardData({
+    required this.userId,
+    required this.referralCode,
+    required this.referredByCode,
+    required this.totalReferrals,
+    required this.pendingRewards,
+    required this.paidRewards,
+    required this.pendingEarningsPhp,
+    required this.paidEarningsPhp,
+    required this.totalEarningsPhp,
+    required this.activity,
+  });
+
+  factory ReferralDashboardData.empty() {
+    return const ReferralDashboardData(
+      userId: '',
+      referralCode: '------',
+      referredByCode: null,
+      totalReferrals: 0,
+      pendingRewards: 0,
+      paidRewards: 0,
+      pendingEarningsPhp: 0,
+      paidEarningsPhp: 0,
+      totalEarningsPhp: 0,
+      activity: <ReferralActivityItem>[],
+    );
+  }
+
+  factory ReferralDashboardData.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic> user = const <String, dynamic>{};
+    Map<String, dynamic> stats = const <String, dynamic>{};
+
+    final rawUser = json['user'];
+    if (rawUser is Map<String, dynamic>) {
+      user = rawUser;
+    } else if (rawUser is Map) {
+      user = Map<String, dynamic>.from(rawUser);
+    }
+
+    final rawStats = json['stats'];
+    if (rawStats is Map<String, dynamic>) {
+      stats = rawStats;
+    } else if (rawStats is Map) {
+      stats = Map<String, dynamic>.from(rawStats);
+    }
+
+    final activity = <ReferralActivityItem>[
+      ..._parseReferralRewardActivity(json['rewards']),
+      ..._parseReferralReferralActivity(json['referrals']),
+    ]..sort((left, right) {
+        final leftDate = left.date;
+        final rightDate = right.date;
+        if (leftDate == null && rightDate == null) return 0;
+        if (leftDate == null) return 1;
+        if (rightDate == null) return -1;
+        return rightDate.compareTo(leftDate);
+      });
+
+    return ReferralDashboardData(
+      userId: _readStoredString(user['userId']),
+      referralCode: _readStoredString(user['referralCode'], fallback: '------'),
+      referredByCode: () {
+        final referredByCode = _readStoredString(user['referredByCode']);
+        if (referredByCode.isNotEmpty) return referredByCode;
+        final legacyReferrerCode = _readStoredString(user['referrerCode']);
+        if (legacyReferrerCode.isNotEmpty) return legacyReferrerCode;
+        return null;
+      }(),
+      totalReferrals: _readStoredInt(
+        stats['totalReferrals'],
+        fallback: 0,
+      ),
+      pendingRewards: _readStoredInt(
+        stats['pendingRewards'],
+        fallback: 0,
+      ),
+      paidRewards: _readStoredInt(
+        stats['paidRewards'],
+        fallback: 0,
+      ),
+      pendingEarningsPhp: _readStoredMoney(
+        stats['pendingEarningsPhp'],
+        allowNegative: false,
+      ),
+      paidEarningsPhp: _readStoredMoney(
+        stats['paidEarningsPhp'],
+        allowNegative: false,
+      ),
+      totalEarningsPhp: _readStoredMoney(
+        stats['totalEarningsPhp'],
+        allowNegative: false,
+      ),
+      activity: activity.take(12).toList(growable: false),
+    );
+  }
+
+  bool get hasAppliedReferralCode =>
+      (referredByCode ?? '').trim().isNotEmpty;
+
+  static List<ReferralActivityItem> _parseReferralRewardActivity(dynamic value) {
+    if (value is! List) return const <ReferralActivityItem>[];
+
+    return value
+        .whereType<Object?>()
+        .map((item) {
+          final map = item is Map<String, dynamic>
+              ? item
+              : item is Map
+                  ? Map<String, dynamic>.from(item)
+                  : const <String, dynamic>{};
+          final status = _readStoredString(map['status']).toLowerCase();
+          final amount = _readStoredMoney(map['amountPhp'], allowNegative: false);
+          final date = parseStoredIsoDate(
+            _readStoredString(map['paidAt']).isNotEmpty
+                ? _readStoredString(map['paidAt'])
+                : _readStoredString(map['createdAt']),
+          );
+          final prefix = status == 'paid' ? 'Paid reward' : 'Pending reward';
+          return ReferralActivityItem(
+            date: date,
+            message:
+                '$prefix • ${formatMoney(amount, decimals: 2)} • Referral rewards are based on verified Premium subscriptions.',
+          );
+        })
+        .toList(growable: false);
+  }
+
+  static List<ReferralActivityItem> _parseReferralReferralActivity(dynamic value) {
+    if (value is! List) return const <ReferralActivityItem>[];
+
+    return value
+        .whereType<Object?>()
+        .map((item) {
+          final map = item is Map<String, dynamic>
+              ? item
+              : item is Map
+                  ? Map<String, dynamic>.from(item)
+                  : const <String, dynamic>{};
+          final status = _readStoredString(map['status']).toLowerCase();
+          final date = parseStoredIsoDate(
+            _readStoredString(map['convertedAt']).isNotEmpty
+                ? _readStoredString(map['convertedAt'])
+                : _readStoredString(map['appliedAt']),
+          );
+          final message = status == 'reward_pending'
+              ? 'A referred Premium subscription was verified and is waiting for reward review.'
+              : 'A referral code was applied successfully.';
+          return ReferralActivityItem(
+            date: date,
+            message: message,
+          );
+        })
+        .toList(growable: false);
+  }
+}
+
+class ReferralService {
+  final http.Client _httpClient;
+  final Duration _timeout;
+  final Uri? _baseUri;
+
+  ReferralService({
+    http.Client? httpClient,
+    Duration timeout = const Duration(seconds: 15),
+    Uri? baseUri,
+  })  : _httpClient = httpClient ?? http.Client(),
+        _timeout = timeout,
+        _baseUri = baseUri ?? _configuredReferralBackendUri();
+
+  Future<ReferralDashboardData> registerUser({
+    required String userId,
+    String? displayName,
+  }) {
+    return _sendJson(
+      method: 'POST',
+      path: '/referral/register-user',
+      body: <String, dynamic>{
+        'userId': userId.trim(),
+        if ((displayName ?? '').trim().isNotEmpty)
+          'displayName': displayName!.trim(),
+      },
+    );
+  }
+
+  Future<ReferralDashboardData> applyReferralCode({
+    required String userId,
+    required String code,
+  }) {
+    return _sendJson(
+      method: 'POST',
+      path: '/referral/apply-code',
+      body: <String, dynamic>{
+        'userId': userId.trim(),
+        'referralCode': code.trim().toUpperCase(),
+      },
+    );
+  }
+
+  Future<ReferralDashboardData> loadReferralDashboard({
+    required String userId,
+  }) {
+    return _sendJson(
+      method: 'GET',
+      path: '/referral/me',
+      queryParameters: <String, String>{
+        'userId': userId.trim(),
+      },
+    );
+  }
+
+  Future<ReferralDashboardData> _sendJson({
+    required String method,
+    required String path,
+    Map<String, dynamic>? body,
+    Map<String, String>? queryParameters,
+  }) async {
+    final baseUri = _baseUri;
+    if (baseUri == null) {
+      throw const ReferralServiceException(referralServiceUnavailableMessage);
+    }
+
+    final requestUri = baseUri
+        .replace(
+          path: path,
+          queryParameters: queryParameters,
+        );
+
+    try {
+      late final http.Response response;
+      if (method == 'POST') {
+        response = await _httpClient
+            .post(
+              requestUri,
+              headers: const <String, String>{
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: jsonEncode(body ?? const <String, dynamic>{}),
+            )
+            .timeout(_timeout);
+      } else {
+        response = await _httpClient
+            .get(
+              requestUri,
+              headers: const <String, String>{
+                'Accept': 'application/json',
+              },
+            )
+            .timeout(_timeout);
+      }
+
+      Map<String, dynamic> decodedBody = const <String, dynamic>{};
+      if (response.body.trim().isNotEmpty) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          decodedBody = decoded;
+        } else if (decoded is Map) {
+          decodedBody = Map<String, dynamic>.from(decoded);
+        }
+      }
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        final error = decodedBody['error'];
+        Map<String, dynamic> errorMap = const <String, dynamic>{};
+        if (error is Map<String, dynamic>) {
+          errorMap = error;
+        } else if (error is Map) {
+          errorMap = Map<String, dynamic>.from(error);
+        }
+
+        final code = _readStoredString(errorMap['code']);
+        if (code == 'self_referral_blocked') {
+          throw const ReferralServiceException(
+            'You cannot use your own referral code.',
+            code: 'self_referral_blocked',
+          );
+        }
+
+        final message = _readStoredString(
+          errorMap['message'],
+          fallback: referralServiceUnavailableMessage,
+        );
+        throw ReferralServiceException(message, code: code);
+      }
+
+      return ReferralDashboardData.fromJson(decodedBody);
+    } on ReferralServiceException {
+      rethrow;
+    } on TimeoutException {
+      throw const ReferralServiceException(referralServiceUnavailableMessage);
+    } on FormatException {
+      throw const ReferralServiceException(referralServiceUnavailableMessage);
+    } catch (_) {
+      throw const ReferralServiceException(referralServiceUnavailableMessage);
+    }
+  }
+}
 
 bool _looksLikeReceiptRejectedMessage(String rawMessage) {
   final message = rawMessage.trim().toLowerCase();
   if (message.isEmpty) return false;
   return message.contains('reject') ||
       message.contains('receipt') ||
+      message.contains('purchase could not be confirmed') ||
+      message.contains('subscription is not active') ||
       message.contains('entitlement') ||
       message.contains('expired') ||
+      message.contains('package name') ||
+      message.contains('package mismatch') ||
       message.contains('unexpected product id') ||
       message.contains('unexpected premium product id') ||
+      message.contains('product mismatch') ||
+      message.contains('invalid purchase token') ||
+      message.contains('purchase not found') ||
       message.contains('no longer active') ||
       message.contains('already has this premium purchase') ||
       message.contains('unexpected product');
+}
+
+bool _isRecoverableVerificationHttpStatus(int statusCode) {
+  return statusCode == 401 ||
+      statusCode == 403 ||
+      statusCode == 408 ||
+      statusCode == 429 ||
+      statusCode == 500 ||
+      statusCode == 502 ||
+      statusCode == 503 ||
+      statusCode == 504;
 }
 
 class BackendApiPremiumVerificationService
@@ -4365,7 +6683,9 @@ class BackendApiPremiumVerificationService
       return PremiumVerificationResult.rejected(
         mode: PremiumVerificationMode.backend,
         purchasedProductId: payload.productId,
+        isRecoverable: true,
         message: unavailableMessage,
+        latestOrderId: payload.purchaseId,
       );
     }
 
@@ -4374,7 +6694,24 @@ class BackendApiPremiumVerificationService
       final resolvedProductId = entitlement.productId?.trim().isNotEmpty == true
           ? entitlement.productId!.trim()
           : payload.productId;
+      final resolvedPackageName =
+          entitlement.packageName?.trim().isNotEmpty == true
+              ? entitlement.packageName!.trim()
+              : payload.packageName;
       final expiryDateUtc = entitlement.expiryDate?.toUtc();
+
+      if (resolvedPackageName != payload.packageName) {
+        _debugPremiumLog('verification rejected: unexpected package name');
+        return PremiumVerificationResult.rejected(
+          mode: PremiumVerificationMode.backend,
+          purchasedProductId: resolvedProductId,
+          expiryDate: entitlement.expiryDate,
+          failureReason: entitlement.reason ?? 'wrong_package_name',
+          message:
+              'Premium verification failed because the package name did not match.',
+          latestOrderId: entitlement.orderId ?? payload.purchaseId,
+        );
+      }
 
       if (resolvedProductId != payload.productId) {
         _debugPremiumLog('verification rejected: unexpected product id');
@@ -4382,7 +6719,10 @@ class BackendApiPremiumVerificationService
           mode: PremiumVerificationMode.backend,
           purchasedProductId: resolvedProductId,
           expiryDate: entitlement.expiryDate,
-          message: 'Receipt rejected.',
+          failureReason: entitlement.reason ?? 'wrong_product_id',
+          message:
+              'Premium verification failed because the product ID did not match.',
+          latestOrderId: entitlement.orderId ?? payload.purchaseId,
         );
       }
 
@@ -4392,10 +6732,13 @@ class BackendApiPremiumVerificationService
         return PremiumVerificationResult.rejected(
           mode: PremiumVerificationMode.backend,
           purchasedProductId: resolvedProductId,
+          isRecoverable: entitlement.isRecoverable,
+          failureReason: entitlement.reason,
           expiryDate: entitlement.expiryDate,
           message: entitlement.message?.trim().isNotEmpty == true
               ? entitlement.message!.trim()
               : 'Receipt rejected.',
+          latestOrderId: entitlement.orderId ?? payload.purchaseId,
         );
       }
 
@@ -4404,9 +6747,12 @@ class BackendApiPremiumVerificationService
         return PremiumVerificationResult.rejected(
           mode: PremiumVerificationMode.backend,
           purchasedProductId: resolvedProductId,
+          isRecoverable: entitlement.isRecoverable,
+          failureReason: entitlement.reason ?? 'inactive',
           expiryDate: entitlement.expiryDate,
           message:
               entitlement.message ?? 'Premium entitlement is no longer active.',
+          latestOrderId: entitlement.orderId ?? payload.purchaseId,
         );
       }
 
@@ -4416,9 +6762,12 @@ class BackendApiPremiumVerificationService
         return PremiumVerificationResult.rejected(
           mode: PremiumVerificationMode.backend,
           purchasedProductId: resolvedProductId,
+          isRecoverable: entitlement.isRecoverable,
+          failureReason: entitlement.reason ?? 'expired',
           expiryDate: entitlement.expiryDate,
           message:
               entitlement.message ?? 'Premium entitlement has already expired.',
+          latestOrderId: entitlement.orderId ?? payload.purchaseId,
         );
       }
 
@@ -4429,27 +6778,34 @@ class BackendApiPremiumVerificationService
         expiryDate: entitlement.expiryDate,
         message: entitlement.message ??
             'Premium entitlement verified by the backend.',
+        latestOrderId: entitlement.orderId ?? payload.purchaseId,
       );
     } on TimeoutException {
       _debugPremiumLog('verification failed: timeout');
       return PremiumVerificationResult.rejected(
         mode: PremiumVerificationMode.backend,
         purchasedProductId: payload.productId,
-        message: 'Verification failed. Please try again.',
+        isRecoverable: true,
+        message: 'Premium verification timed out.',
+        latestOrderId: payload.purchaseId,
       );
     } on FormatException {
       _debugPremiumLog('verification failed: invalid backend response');
       return PremiumVerificationResult.rejected(
         mode: PremiumVerificationMode.backend,
         purchasedProductId: payload.productId,
+        isRecoverable: true,
         message: 'Verification failed. Please try again.',
+        latestOrderId: payload.purchaseId,
       );
     } catch (_) {
       _debugPremiumLog('verification failed: backend unreachable or errored');
       return PremiumVerificationResult.rejected(
         mode: PremiumVerificationMode.backend,
         purchasedProductId: payload.productId,
+        isRecoverable: true,
         message: 'Verification failed. Please try again.',
+        latestOrderId: payload.purchaseId,
       );
     }
   }
@@ -4471,16 +6827,30 @@ class BackendPremiumPurchaseVerificationRepository
     if (purchase.productID != expectedProductId) {
       return const PremiumVerificationResult.rejected(
         mode: PremiumVerificationMode.backend,
+        isRecoverable: true,
         message: 'Unexpected premium product ID.',
       );
     }
 
-    final payload = PremiumBackendVerificationPayload.fromPurchase(purchase);
+    final userId = await FinanceRepository.getOrCreateStableUserId();
+    final payload = PremiumBackendVerificationPayload.fromPurchase(
+      purchase,
+      userId,
+    );
 
-    if (payload.purchaseToken.isEmpty && payload.localReceipt.isEmpty) {
+    if (payload.packageName != sweldoTrackPremiumPackageName) {
       return const PremiumVerificationResult.rejected(
         mode: PremiumVerificationMode.backend,
-        message: 'Purchase receipt data is missing.',
+        isRecoverable: false,
+        message: 'Unexpected package name.',
+      );
+    }
+
+    if (payload.purchaseToken.isEmpty) {
+      return const PremiumVerificationResult.rejected(
+        mode: PremiumVerificationMode.backend,
+        isRecoverable: false,
+        message: 'Google Play purchase token is missing.',
       );
     }
 
@@ -4505,6 +6875,7 @@ class LocalStubPremiumPurchaseVerificationRepository
     if (!canUseLocalStub) {
       return const PremiumVerificationResult.rejected(
         mode: PremiumVerificationMode.localStub,
+        isRecoverable: true,
         message:
             'Local premium verification is unavailable outside debug builds.',
       );
@@ -4513,6 +6884,7 @@ class LocalStubPremiumPurchaseVerificationRepository
     if (purchase.productID != expectedProductId) {
       return const PremiumVerificationResult.rejected(
         mode: PremiumVerificationMode.localStub,
+        isRecoverable: false,
         message: 'Unexpected premium product ID.',
       );
     }
@@ -4525,6 +6897,7 @@ class LocalStubPremiumPurchaseVerificationRepository
     if (receiptPayload.isEmpty) {
       return const PremiumVerificationResult.rejected(
         mode: PremiumVerificationMode.localStub,
+        isRecoverable: false,
         message: 'Purchase receipt data is missing.',
       );
     }
@@ -4581,7 +6954,8 @@ class InAppPurchasePremiumBillingGateway implements PremiumBillingGateway {
 }
 
 class PremiumService extends ChangeNotifier {
-  static const productId = 'sweldotrack_premium_monthly';
+  static const productId = sweldoTrackPremiumProductId;
+  static const packageName = sweldoTrackPremiumPackageName;
   static const Duration _defaultRestoreTimeout = Duration(seconds: 15);
 
   // Google Play IAP QA:
@@ -4622,13 +6996,18 @@ class PremiumService extends ChangeNotifier {
   DateTime? _lastVerifiedAt;
   DateTime? _verifiedEntitlementExpiryDate;
   String? _lastVerificationMessage;
+  bool _hasCheckedStoreAvailability = false;
   bool isAvailable = false;
   bool isLoadingProduct = true;
   bool isPurchasePending = false;
   bool isRestorePending = false;
   ProductDetails? productDetails;
   String? errorMessage;
-  final Set<String> _processedPurchaseUpdateKeys = <String>{};
+  final Set<String> _successfullyProcessedPurchaseUpdateKeys = <String>{};
+  final Set<String> _verifyingPurchaseUpdateKeys = <String>{};
+  final Map<String, PurchaseDetails> _recoverableVerificationRetryQueue =
+      <String, PurchaseDetails>{};
+  int? _lastNotifiedStateHash;
 
   PremiumService({
     PremiumPurchaseVerificationRepository? verificationRepository,
@@ -4656,7 +7035,15 @@ class PremiumService extends ChangeNotifier {
     );
   }
 
-  bool get isPremium => hasValidVerifiedEntitlement || _isTestPremiumOverride;
+  bool get _hasActiveCachedPremium =>
+      _hasCachedPremiumState &&
+      (_verifiedEntitlementExpiryDate != null ||
+          shouldKeepPremiumDuringGracePeriod);
+  bool get hasActiveCachedPremium => _hasActiveCachedPremium;
+  bool get isPremium =>
+      hasValidVerifiedEntitlement ||
+      _hasActiveCachedPremium ||
+      (kDebugMode && _isTestPremiumOverride);
   bool get _isVerifiedEntitlementExpired {
     final expiryDate = _verifiedEntitlementExpiryDate?.toUtc();
     if (expiryDate == null) return false;
@@ -4665,6 +7052,29 @@ class PremiumService extends ChangeNotifier {
 
   bool get hasValidVerifiedEntitlement =>
       _hasVerifiedEntitlement && !_isVerifiedEntitlementExpired;
+  bool get shouldKeepPremiumDuringGracePeriod {
+    if (!_hasCachedPremiumState || _verifiedEntitlementExpiryDate != null) {
+      return false;
+    }
+    final lastVerifiedAtUtc = _lastVerifiedAt?.toUtc();
+    if (lastVerifiedAtUtc == null) return false;
+    return lastVerifiedAtUtc
+        .add(premiumRecoverableFailureGracePeriod)
+        .isAfter(DateTime.now().toUtc());
+  }
+  bool get _isCachedPremiumExpiredAwaitingConfirmation {
+    final expiryDate = _verifiedEntitlementExpiryDate?.toUtc();
+    if (!_hasCachedPremiumState || expiryDate == null) return false;
+    return !expiryDate.isAfter(DateTime.now().toUtc());
+  }
+  bool get hasRecoverableVerificationFailure =>
+      hasRecoverablePremiumVerificationIssue;
+  bool get _shouldShowPremiumRefreshNotice =>
+      isPremium &&
+      (hasRecoverableVerificationFailure ||
+          _isCachedPremiumExpiredAwaitingConfirmation);
+  bool get shouldShowPremiumVerificationRefreshNotice =>
+      _shouldShowPremiumRefreshNotice;
 
   BackendPremiumPurchaseVerificationRepository?
       get _backendVerificationRepositoryOrNull {
@@ -4686,12 +7096,25 @@ class PremiumService extends ChangeNotifier {
 
   bool get isAnyPremiumActionPending =>
       _isPurchaseLaunchInProgress || isPurchasePending || isRestorePending;
-
-  bool get canPurchasePremium {
+  bool get _supportsGooglePlayPremium =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  bool get hasCheckedStoreAvailability => _hasCheckedStoreAvailability;
+  bool get isStoreUnavailable =>
+      _hasCheckedStoreAvailability && (!_supportsGooglePlayPremium || !isAvailable);
+  bool get canStartPremiumUpgradeFlow {
     if (!premiumLaunchEnabled) return false;
     if (isPremium) return false;
     if (isAnyPremiumActionPending) return false;
-    if (!isVerifierConfigured) return false;
+    if (!_supportsGooglePlayPremium) return false;
+    if (!_hasCheckedStoreAvailability || isLoadingProduct) return true;
+    return !isStoreUnavailable;
+  }
+
+  bool get canPurchasePremium {
+    if (!premiumLaunchEnabled) return false;
+    if (!_supportsGooglePlayPremium) return false;
+    if (isPremium) return false;
+    if (isAnyPremiumActionPending) return false;
     if (!isAvailable) return false;
     if (productDetails == null) return false;
     return true;
@@ -4699,9 +7122,9 @@ class PremiumService extends ChangeNotifier {
 
   bool get canRestorePremium {
     if (!premiumLaunchEnabled) return false;
+    if (!_supportsGooglePlayPremium) return false;
     if (isAnyPremiumActionPending) return false;
-    if (!isVerifierConfigured) return false;
-    if (!isAvailable) return false;
+    if (_hasCheckedStoreAvailability && !isAvailable) return false;
     return true;
   }
 
@@ -4712,15 +7135,34 @@ class PremiumService extends ChangeNotifier {
   bool get requiresBackendVerificationSetup =>
       premiumLaunchEnabled && !isVerifierConfigured;
 
-  String get priceLabel => _normalizePremiumPriceLabel(productDetails?.price);
+  String? get premiumPriceLabel =>
+      _normalizePremiumPriceLabel(productDetails?.price);
+  String get priceLabel => premiumPriceLabel ?? premiumFallbackPriceLabel;
+  String get premiumDisplayPriceLabel => premiumDisplayPrice(this);
+  bool get hasLoadedStorePrice => premiumPriceLabel != null;
   PremiumVerificationMode? get lastVerificationMode => _lastVerificationMode;
   DateTime? get lastVerifiedAt => _lastVerifiedAt;
   bool get hasCachedPremiumState => _hasCachedPremiumState;
   bool get isTestPremiumOverrideEnabled => _isTestPremiumOverride;
   bool get isProductLoaded => productDetails != null;
+  bool get hasBillingAvailabilityError =>
+      _hasCheckedStoreAvailability && (!_supportsGooglePlayPremium || !isAvailable);
   String get loadedProductId => productDetails?.id ?? '';
   String get loadedProductPrice => productDetails?.price.trim() ?? '';
   String? get lastVerificationMessage => _lastVerificationMessage;
+  bool get hasRecoverablePremiumVerificationIssue {
+    return _lastVerificationFailureKind ==
+            PremiumVerificationFailureKind.backendFailed ||
+        _lastVerificationFailureKind ==
+            PremiumVerificationFailureKind.verifierMissing;
+  }
+
+  bool get hasPaymentDetectedButNotVerified {
+    return hasRecoverablePremiumVerificationIssue &&
+        _recoverableVerificationRetryQueue.isNotEmpty &&
+        !isPremium &&
+        _lastVerificationMode == PremiumVerificationMode.backend;
+  }
 
   String? get purchaseUnavailableReason {
     if (!premiumLaunchEnabled) return premiumPurchasesUnavailableMessage;
@@ -4731,11 +7173,11 @@ class PremiumService extends ChangeNotifier {
     if (isRestorePending) {
       return 'A premium restore is already in progress. Please wait.';
     }
-    if (!isVerifierConfigured) return premiumPurchasesUnavailableMessage;
-    if (!isAvailable) return premiumBillingUnavailableMessage;
-    if (isLoadingProduct && productDetails == null) {
-      return 'Premium pricing is still loading from Google Play.';
+    if (!_supportsGooglePlayPremium) return premiumBillingUnavailableMessage;
+    if (!_hasCheckedStoreAvailability || isLoadingProduct) {
+      return premiumAvailabilityCheckMessage;
     }
+    if (!isAvailable) return premiumBillingUnavailableMessage;
     if (productDetails == null) return premiumPricingUnavailableMessage;
     return null;
   }
@@ -4746,40 +7188,34 @@ class PremiumService extends ChangeNotifier {
       return 'A premium purchase is already in progress. Please wait.';
     }
     if (isRestorePending) return 'Restore is already in progress. Please wait.';
-    if (!isVerifierConfigured) return premiumRestoreUnavailableMessage;
-    if (!isAvailable) return premiumBillingUnavailableMessage;
+    if (!_supportsGooglePlayPremium) return premiumBillingUnavailableMessage;
+    if (_hasCheckedStoreAvailability && !isAvailable) {
+      return premiumBillingUnavailableMessage;
+    }
     return null;
   }
 
   String get premiumStatusLabel {
-    if (!premiumLaunchEnabled) return premiumTemporarilyUnavailableLabel;
+    if (!premiumLaunchEnabled) return premiumAccessLabel;
     if (isPremium) return 'Premium Active';
     if (_isPurchaseLaunchInProgress || isPurchasePending) {
       return 'Purchase Pending';
     }
     if (isRestorePending) return 'Checking Premium';
-    if (requiresBackendVerificationSetup) {
-      return premiumTemporarilyUnavailableLabel;
+    if (hasPaymentDetectedButNotVerified) return 'Payment Detected';
+    if (_lastVerificationFailureKind ==
+        PremiumVerificationFailureKind.receiptRejected) {
+      return 'Purchase Not Confirmed';
     }
-    if (isLoadingProduct) return 'Loading Pricing';
-    if (!isAvailable || !isProductLoaded) {
-      return premiumTemporarilyUnavailableLabel;
-    }
-    switch (_lastVerificationFailureKind) {
-      case PremiumVerificationFailureKind.backendFailed:
-        return premiumTemporarilyUnavailableLabel;
-      case PremiumVerificationFailureKind.receiptRejected:
-        return 'Purchase Not Confirmed';
-      case PremiumVerificationFailureKind.verifierMissing:
-        return premiumTemporarilyUnavailableLabel;
-      case PremiumVerificationFailureKind.none:
-        break;
-    }
-    return 'Free';
+    if (isStoreUnavailable) return premiumStoreUnavailableLabel;
+    return premiumAccessLabel;
   }
 
   String get premiumStatusDetail {
     if (!premiumLaunchEnabled) return premiumPurchasesUnavailableMessage;
+    if (_shouldShowPremiumRefreshNotice) {
+      return premiumVerificationRefreshDetailMessage;
+    }
     if (isPremium) return 'Premium is active on this device.';
     if (_isPurchaseLaunchInProgress || isPurchasePending) {
       return 'Your premium purchase is still pending in Google Play.';
@@ -4787,30 +7223,13 @@ class PremiumService extends ChangeNotifier {
     if (isRestorePending) {
       return 'Checking Google Play for a previous premium purchase.';
     }
-    if (requiresBackendVerificationSetup) {
-      return premiumPurchasesUnavailableMessage;
-    }
-    if (isLoadingProduct) {
-      return 'Loading the latest premium pricing from Google Play.';
-    }
-    if (!isAvailable) {
-      return premiumBillingUnavailableMessage;
-    }
-    if (!isProductLoaded) {
-      return premiumPricingUnavailableMessage;
-    }
+    if (hasPaymentDetectedButNotVerified) return premiumVerificationIssueMessage;
     if (_lastVerificationFailureKind ==
-        PremiumVerificationFailureKind.verifierMissing) {
-      return premiumPurchasesUnavailableMessage;
+        PremiumVerificationFailureKind.receiptRejected) {
+      return premiumPurchaseNotConfirmedMessage;
     }
-    if (_lastVerificationFailureKind ==
-        PremiumVerificationFailureKind.backendFailed) {
-      return 'Premium verification could not be completed right now. Please try again later.';
-    }
-    if (_lastVerificationMessage?.trim().isNotEmpty == true) {
-      return _lastVerificationMessage!.trim();
-    }
-    return 'Premium is available at $priceLabel.';
+    if (isStoreUnavailable) return premiumBillingUnavailableMessage;
+    return premiumUpgradeDetailMessage;
   }
 
   List<(String, String)> get developerDiagnostics => <(String, String)>[
@@ -4837,11 +7256,10 @@ class PremiumService extends ChangeNotifier {
         ),
       ];
 
-  String _normalizePremiumPriceLabel(String? rawPriceLabel) {
-    const fallbackLabel = '\u20B1120/month';
+  String? _normalizePremiumPriceLabel(String? rawPriceLabel) {
     final label = rawPriceLabel?.trim();
     if (label == null || label.isEmpty) {
-      return fallbackLabel;
+      return null;
     }
 
     final slashIndex = label.indexOf('/');
@@ -4875,41 +7293,78 @@ class PremiumService extends ChangeNotifier {
   }
 
   String get premiumActionLabel {
+    return premiumPrimaryActionLabel;
+  }
+
+  String get premiumPrimaryActionLabel {
     if (isPremium) return 'Premium Active';
     if (_isPurchaseLaunchInProgress || isPurchasePending) {
       return 'Purchase Pending';
     }
-    if (!premiumLaunchEnabled) {
-      return premiumTemporarilyUnavailableActionLabel;
+    if (isRestorePending) return 'Checking Premium';
+    if (hasPaymentDetectedButNotVerified) return 'Restore Purchase';
+    if (isStoreUnavailable) return premiumStoreUnavailableLabel;
+    return '$premiumUpgradeLabel - $premiumDisplayPriceLabel';
+  }
+
+  String get premiumSecondaryActionLabel {
+    if (isPremium) return 'Premium Active';
+    if (_isPurchaseLaunchInProgress || isPurchasePending) {
+      return 'Purchase Pending';
     }
-    if (requiresBackendVerificationSetup) {
-      return premiumTemporarilyUnavailableActionLabel;
-    }
-    if (isLoadingProduct) return 'Loading Pricing';
-    if (!isAvailable || productDetails == null) {
-      return premiumTemporarilyUnavailableActionLabel;
-    }
-    if (_lastVerificationFailureKind ==
-            PremiumVerificationFailureKind.backendFailed ||
-        _lastVerificationFailureKind ==
-            PremiumVerificationFailureKind.verifierMissing) {
-      return premiumTemporarilyUnavailableActionLabel;
-    }
-    return 'Upgrade to Premium - $priceLabel';
+    if (isRestorePending) return 'Checking Premium';
+    if (hasPaymentDetectedButNotVerified) return 'Restore Purchase';
+    if (isStoreUnavailable) return premiumStoreUnavailableLabel;
+    return '$premiumUnlockActionLabel - $premiumDisplayPriceLabel';
   }
 
   String get premiumPurchaseAvailabilityMessage {
     return purchaseUnavailableReason ?? premiumStatusDetail;
   }
 
+  Future<void> startPremiumUpgradeFlow() async {
+    if (isPremium) return;
+
+    if (isAnyPremiumActionPending) {
+      errorMessage = premiumPurchaseAvailabilityMessage;
+      notifyListeners();
+      return;
+    }
+
+    if (!_supportsGooglePlayPremium) {
+      errorMessage = premiumBillingUnavailableMessage;
+      notifyListeners();
+      return;
+    }
+
+    if (!_hasCheckedStoreAvailability || (isLoadingProduct && productDetails == null)) {
+      await refreshStoreState();
+    }
+
+    if (hasRecoverablePremiumVerificationIssue && canRestorePremium) {
+      await restorePurchases();
+      return;
+    }
+
+    if (canPurchasePremium) {
+      await buyPremium();
+      return;
+    }
+
+    if (canRestorePremium && !isProductLoaded) {
+      await restorePurchases();
+      return;
+    }
+
+    errorMessage = premiumPurchaseAvailabilityMessage;
+    notifyListeners();
+  }
+
   String get premiumRestoreAvailabilityMessage {
+    if (hasPaymentDetectedButNotVerified) return premiumVerificationIssueMessage;
     final unavailableReason = restoreUnavailableReason;
     if (unavailableReason != null) {
       return unavailableReason;
-    }
-    if (_lastVerificationFailureKind ==
-        PremiumVerificationFailureKind.backendFailed) {
-      return 'Premium verification could not be completed right now. Please try Restore again later.';
     }
     return 'Restore your previous premium purchase from Google Play.';
   }
@@ -4966,9 +7421,150 @@ class PremiumService extends ChangeNotifier {
     );
   }
 
+  void _keepPremiumActiveDuringRecoverableFailure({
+    required String debugEvent,
+    PremiumVerificationMode? verificationMode,
+    PremiumVerificationFailureKind? failureKind,
+  }) {
+    _lastVerificationMode =
+        verificationMode ??
+        _lastVerificationMode ??
+        PremiumVerificationMode.backend;
+    _lastVerificationMessage = premiumVerificationRefreshDetailMessage;
+    _lastVerificationFailureKind =
+        failureKind ?? PremiumVerificationFailureKind.backendFailed;
+    errorMessage = null;
+    _debugPremiumLog(debugEvent);
+  }
+
   void _clearVerificationFailureState() {
     _lastVerificationFailureKind = PremiumVerificationFailureKind.none;
     _lastVerificationMessage = null;
+  }
+
+  bool _isConfirmedInactiveSignal(String? value) {
+    final normalized = (value ?? '').trim().toLowerCase();
+    if (normalized.isEmpty) return false;
+    return normalized.contains('inactive') ||
+        normalized.contains('expired') ||
+        normalized.contains('canceled') ||
+        normalized.contains('cancelled') ||
+        normalized.contains('subscription is not active') ||
+        normalized.contains('no longer active');
+  }
+
+  bool _isConfirmedInvalidEntitlementSignal(String? value) {
+    final normalized = (value ?? '').trim().toLowerCase();
+    if (normalized.isEmpty) return false;
+    return normalized.contains('wrong_package_name') ||
+        normalized.contains('wrong product id') ||
+        normalized.contains('wrong_product_id') ||
+        normalized.contains('package mismatch') ||
+        normalized.contains('product mismatch') ||
+        normalized.contains('invalid_purchase_token') ||
+        normalized.contains('invalid purchase token') ||
+        normalized.contains('purchase not found');
+  }
+
+  bool _shouldDowngradeForVerificationFailure(
+    PremiumVerificationResult verification,
+  ) {
+    if (verification.mode != PremiumVerificationMode.backend ||
+        verification.isRecoverable) {
+      return false;
+    }
+    if (_isConfirmedInactiveSignal(verification.failureReason) ||
+        _isConfirmedInactiveSignal(verification.message)) {
+      return true;
+    }
+    if (_isConfirmedInvalidEntitlementSignal(verification.failureReason) ||
+        _isConfirmedInvalidEntitlementSignal(verification.message)) {
+      return true;
+    }
+    final expiryDate = verification.expiryDate?.toUtc();
+    if (expiryDate == null) return false;
+    return !expiryDate.isAfter(DateTime.now().toUtc());
+  }
+
+  void _recordVerificationFailureWithoutDowngrade(
+    PremiumVerificationResult verification, {
+    bool surfaceErrorMessage = false,
+    String debugEvent = 'premium_verification_recoverable_failure_keep_premium',
+  }) {
+    final resolvedMessage = _resolveVerificationFailureMessage(verification);
+    final failureKind = _classifyVerificationFailure(resolvedMessage);
+    if (_hasActiveCachedPremium || hasValidVerifiedEntitlement) {
+      _keepPremiumActiveDuringRecoverableFailure(
+        debugEvent: debugEvent,
+        verificationMode: verification.mode,
+        failureKind: failureKind,
+      );
+      return;
+    }
+    _lastVerificationMode = verification.mode;
+    _lastVerificationMessage = resolvedMessage;
+    _lastVerificationFailureKind = failureKind;
+    if (surfaceErrorMessage) {
+      errorMessage = resolvedMessage;
+    }
+  }
+
+  void _recordRestoreResultMessage({
+    required String message,
+    required bool surfaceErrorMessage,
+    required bool treatAsRecoverableFailure,
+  }) {
+    if (treatAsRecoverableFailure &&
+        (_hasActiveCachedPremium || hasValidVerifiedEntitlement || isPremium)) {
+      _keepPremiumActiveDuringRecoverableFailure(
+        debugEvent: 'premium_restore_recoverable_failure_keep_cached',
+        verificationMode: _lastVerificationMode,
+      );
+      return;
+    }
+    _lastVerificationMode ??= PremiumVerificationMode.backend;
+    _lastVerificationMessage = message;
+    _lastVerificationFailureKind = treatAsRecoverableFailure
+        ? _classifyVerificationFailure(message)
+        : PremiumVerificationFailureKind.none;
+    if (surfaceErrorMessage) {
+      errorMessage = message;
+    }
+  }
+
+  int _buildNotificationStateHash() {
+    return Object.hashAll(<Object?>[
+      _initialized,
+      _hasVerifiedEntitlement,
+      _hasCachedPremiumState,
+      _isTestPremiumOverride,
+      _isPurchaseLaunchInProgress,
+      _restorePurchaseDeliveredUpdate,
+      _restoreStoreReportedFailure,
+      _lastVerificationMode?.name,
+      _lastVerificationFailureKind.name,
+      _lastVerifiedAt?.millisecondsSinceEpoch,
+      _verifiedEntitlementExpiryDate?.millisecondsSinceEpoch,
+      _lastVerificationMessage,
+      _hasCheckedStoreAvailability,
+      isAvailable,
+      isLoadingProduct,
+      isPurchasePending,
+      isRestorePending,
+      productDetails?.id,
+      productDetails?.price,
+      errorMessage,
+      isPremium,
+      _recoverableVerificationRetryQueue.length,
+    ]);
+  }
+
+  @override
+  void notifyListeners() {
+    final stateHash = _buildNotificationStateHash();
+    if (_lastNotifiedStateHash == stateHash) return;
+    _lastNotifiedStateHash = stateHash;
+    super.notifyListeners();
   }
 
   Future<void> initialize() async {
@@ -4979,14 +7575,28 @@ class PremiumService extends ChangeNotifier {
 
     _initialized = true;
     await _loadLocalStatus();
+    notifyListeners();
 
     if (!premiumLaunchEnabled) {
+      _hasCheckedStoreAvailability = false;
       isAvailable = false;
       isLoadingProduct = false;
       isPurchasePending = false;
       isRestorePending = false;
       productDetails = null;
       errorMessage = null;
+      notifyListeners();
+      return;
+    }
+
+    if (!_supportsGooglePlayPremium) {
+      _hasCheckedStoreAvailability = true;
+      isAvailable = false;
+      isLoadingProduct = false;
+      isPurchasePending = false;
+      isRestorePending = false;
+      productDetails = null;
+      errorMessage = premiumBillingUnavailableMessage;
       notifyListeners();
       return;
     }
@@ -4998,7 +7608,14 @@ class PremiumService extends ChangeNotifier {
         _isPurchaseLaunchInProgress = false;
         isPurchasePending = false;
         isRestorePending = false;
-        errorMessage = premiumBillingUnavailableMessage;
+        if (_hasActiveCachedPremium || hasValidVerifiedEntitlement) {
+          _keepPremiumActiveDuringRecoverableFailure(
+            debugEvent:
+                'premium_verification_recoverable_failure_keep_premium',
+          );
+        } else {
+          errorMessage = premiumBillingUnavailableMessage;
+        }
         _completeRestoreFlow(storeReportedFailure: true);
         notifyListeners();
       },
@@ -5010,6 +7627,7 @@ class PremiumService extends ChangeNotifier {
 
   Future<void> refreshStoreState() async {
     if (!premiumLaunchEnabled) {
+      _hasCheckedStoreAvailability = false;
       isAvailable = false;
       isLoadingProduct = false;
       isPurchasePending = false;
@@ -5020,16 +7638,34 @@ class PremiumService extends ChangeNotifier {
       return;
     }
 
+    if (!_supportsGooglePlayPremium) {
+      _hasCheckedStoreAvailability = true;
+      isAvailable = false;
+      isLoadingProduct = false;
+      isPurchasePending = false;
+      isRestorePending = false;
+      productDetails = null;
+      errorMessage = premiumBillingUnavailableMessage;
+      notifyListeners();
+      return;
+    }
+
     errorMessage = null;
+    _hasCheckedStoreAvailability = false;
     isLoadingProduct = true;
     notifyListeners();
 
     try {
       isAvailable = await _billingGateway.isAvailable();
+      _hasCheckedStoreAvailability = true;
       _debugPremiumLog('billing availability checked: available=$isAvailable');
       if (!isAvailable) {
         productDetails = null;
-        errorMessage = premiumBillingUnavailableMessage;
+        if (_hasActiveCachedPremium || hasValidVerifiedEntitlement) {
+          errorMessage = null;
+        } else {
+          errorMessage = premiumBillingUnavailableMessage;
+        }
         isLoadingProduct = false;
         notifyListeners();
         return;
@@ -5040,18 +7676,25 @@ class PremiumService extends ChangeNotifier {
         'product query completed: found=${response.productDetails.isNotEmpty}, notFoundCount=${response.notFoundIDs.length}, errorPresent=${response.error != null}',
       );
       if (response.error != null) {
-        errorMessage = premiumPricingUnavailableMessage;
+        errorMessage = (_hasActiveCachedPremium || hasValidVerifiedEntitlement)
+            ? null
+            : premiumPricingUnavailableMessage;
       }
       if (response.productDetails.isEmpty) {
         productDetails = null;
-        errorMessage ??= premiumPricingUnavailableMessage;
+        errorMessage ??=
+            (_hasActiveCachedPremium || hasValidVerifiedEntitlement)
+                ? null
+                : premiumPricingUnavailableMessage;
       } else {
         final matchingProducts = response.productDetails
             .where((product) => product.id == productId)
             .toList();
         if (matchingProducts.isEmpty) {
           productDetails = null;
-          errorMessage = premiumPricingUnavailableMessage;
+          errorMessage = (_hasActiveCachedPremium || hasValidVerifiedEntitlement)
+              ? null
+              : premiumPricingUnavailableMessage;
           _debugPremiumLog('product query mismatch: expected=$productId');
         } else {
           final matchingProduct = matchingProducts.first;
@@ -5063,9 +7706,14 @@ class PremiumService extends ChangeNotifier {
         }
       }
     } catch (_) {
+      _hasCheckedStoreAvailability = true;
       productDetails = null;
       isAvailable = false;
-      errorMessage = premiumBillingUnavailableMessage;
+      if (_hasActiveCachedPremium || hasValidVerifiedEntitlement) {
+        errorMessage = null;
+      } else {
+        errorMessage = premiumBillingUnavailableMessage;
+      }
     }
 
     isLoadingProduct = false;
@@ -5091,6 +7739,7 @@ class PremiumService extends ChangeNotifier {
     await prefs.remove(AppKeys.premiumLastVerifiedAt);
     await prefs.remove(AppKeys.premiumLastExpiryDate);
     await prefs.remove(AppKeys.premiumLastVerificationMode);
+    await prefs.remove(AppKeys.premiumLatestOrderId);
     await prefs.remove(AppKeys.premiumTestOverride);
 
     _hasVerifiedEntitlement = false;
@@ -5147,9 +7796,18 @@ class PremiumService extends ChangeNotifier {
 
   Future<void> restorePurchases() async {
     errorMessage = null;
+    if (!_hasCheckedStoreAvailability) {
+      await refreshStoreState();
+    }
     final unavailableReason = restoreUnavailableReason;
     if (unavailableReason != null) {
-      errorMessage = unavailableReason;
+      if (_hasActiveCachedPremium || hasValidVerifiedEntitlement || isPremium) {
+        _keepPremiumActiveDuringRecoverableFailure(
+          debugEvent: 'premium_restore_recoverable_failure_keep_cached',
+        );
+      } else {
+        errorMessage = unavailableReason;
+      }
       notifyListeners();
       return;
     }
@@ -5194,23 +7852,29 @@ class PremiumService extends ChangeNotifier {
     final cachedProductIsInvalid =
         _hasCachedPremiumState && cachedProductId != productId;
 
-    if (_isVerifiedEntitlementExpired ||
-        cachedModeIsInvalid ||
-        cachedProductIsInvalid) {
+    if (cachedModeIsInvalid || cachedProductIsInvalid) {
       await prefs.remove(AppKeys.premiumActive);
       await prefs.remove(AppKeys.premiumLastProductId);
       await prefs.remove(AppKeys.premiumLastVerifiedAt);
       await prefs.remove(AppKeys.premiumLastExpiryDate);
       await prefs.remove(AppKeys.premiumLastVerificationMode);
+      await prefs.remove(AppKeys.premiumLatestOrderId);
       _hasCachedPremiumState = false;
       _lastVerificationMode = null;
       _lastVerifiedAt = null;
       _verifiedEntitlementExpiryDate = null;
     }
 
-    _hasVerifiedEntitlement = _hasCachedPremiumState &&
-        (resolvedMode == PremiumVerificationMode.backend ||
-            (resolvedMode == PremiumVerificationMode.localStub && kDebugMode));
+    _hasVerifiedEntitlement = false;
+    _debugPremiumLog(
+      'premium_cache_loaded: active=$_hasCachedPremiumState, mode=${_lastVerificationMode?.name ?? 'none'}, verifiedAt=${_lastVerifiedAt?.toIso8601String() ?? 'none'}, expiry=${_verifiedEntitlementExpiryDate?.toIso8601String() ?? 'none'}',
+    );
+    if (_hasActiveCachedPremium) {
+      _debugPremiumLog('premium_showing_cached_entitlement');
+    }
+    if (_isCachedPremiumExpiredAwaitingConfirmation) {
+      _debugPremiumLog('premium_cache_expired_waiting_for_confirmation');
+    }
   }
 
   Future<void> _setTestPremiumOverride(bool value) async {
@@ -5224,6 +7888,7 @@ class PremiumService extends ChangeNotifier {
     String? purchasedProductId,
     PremiumVerificationMode? verificationMode,
     DateTime? expiryDate,
+    String? latestOrderId,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(AppKeys.premiumActive, value);
@@ -5245,6 +7910,7 @@ class PremiumService extends ChangeNotifier {
         verificationMode.name,
       );
     }
+    final normalizedOrderId = (latestOrderId ?? '').trim();
     if (value) {
       _lastVerificationMode = verificationMode;
       _lastVerifiedAt = DateTime.now();
@@ -5262,14 +7928,21 @@ class PremiumService extends ChangeNotifier {
       } else {
         await prefs.remove(AppKeys.premiumLastExpiryDate);
       }
+      if (normalizedOrderId.isNotEmpty) {
+        await prefs.setString(AppKeys.premiumLatestOrderId, normalizedOrderId);
+      }
     } else {
       _lastVerificationMode = verificationMode;
       _lastVerifiedAt = null;
       _verifiedEntitlementExpiryDate = null;
       await prefs.remove(AppKeys.premiumLastVerifiedAt);
       await prefs.remove(AppKeys.premiumLastExpiryDate);
+      await prefs.remove(AppKeys.premiumLatestOrderId);
     }
     _hasCachedPremiumState = value;
+    _debugPremiumLog(
+      'premium saved: active=$value, productId=${normalizedProductId.isEmpty ? 'none' : normalizedProductId}, verificationMode=${verificationMode?.name ?? 'none'}',
+    );
   }
 
   Future<void> _revokePremiumAccess({
@@ -5289,6 +7962,9 @@ class PremiumService extends ChangeNotifier {
       );
       errorMessage = normalizedMessage;
     }
+    _debugPremiumLog(
+      'premium_downgraded_confirmed_inactive: mode=${verificationMode?.name ?? 'none'}',
+    );
   }
 
   Future<void> _onPurchaseUpdated(List<PurchaseDetails> purchases) async {
@@ -5300,7 +7976,8 @@ class PremiumService extends ChangeNotifier {
 
     for (final purchase in purchases) {
       _debugPremiumLog(
-          'purchase update received: status=${purchase.status.name}');
+        'purchase update received: status=${purchase.status.name}, productId=${purchase.productID}, pendingCompletePurchase=${purchase.pendingCompletePurchase}',
+      );
       if (purchase.productID != productId) {
         if (purchase.pendingCompletePurchase &&
             purchase.status != PurchaseStatus.pending) {
@@ -5311,6 +7988,9 @@ class PremiumService extends ChangeNotifier {
 
       switch (purchase.status) {
         case PurchaseStatus.pending:
+          _debugPremiumLog(
+            'purchase pending: productId=${purchase.productID}',
+          );
           errorMessage = null;
           _isPurchaseLaunchInProgress = false;
           isPurchasePending = true;
@@ -5318,40 +7998,105 @@ class PremiumService extends ChangeNotifier {
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
           final purchaseUpdateKey = _purchaseUpdateKey(purchase);
-          final isDuplicateUpdate = _processedPurchaseUpdateKeys.contains(
+          final verificationKey = _purchaseVerificationKey(purchase);
+          final isDuplicateUpdate =
+              _successfullyProcessedPurchaseUpdateKeys.contains(
             purchaseUpdateKey,
           );
-          if (isDuplicateUpdate) {
+          if (isDuplicateUpdate && isPremium) {
             _debugPremiumLog(
-              'purchase update ignored: duplicate ${purchase.status.name}',
+              'purchase update ignored: duplicate success status=${purchase.status.name}, productId=${purchase.productID}',
             );
+            _isPurchaseLaunchInProgress = false;
+            isPurchasePending = false;
+            if (purchase.pendingCompletePurchase) {
+              await _completePurchaseSafely(purchase);
+            }
             if (purchase.status == PurchaseStatus.restored) {
               _completeRestoreFlow(restoredPurchaseDelivered: true);
             }
+            _recoverableVerificationRetryQueue.remove(verificationKey);
             break;
           }
-          _processedPurchaseUpdateKeys.add(purchaseUpdateKey);
+          if (_verifyingPurchaseUpdateKeys.contains(verificationKey)) {
+            _debugPremiumLog(
+              'purchase update ignored: verification already in progress status=${purchase.status.name}, productId=${purchase.productID}',
+            );
+            _isPurchaseLaunchInProgress = false;
+            isPurchasePending = false;
+            break;
+          }
           errorMessage = null;
           _isPurchaseLaunchInProgress = false;
-          final verification = await _verifyPurchase(purchase);
+          _verifyingPurchaseUpdateKeys.add(verificationKey);
+          PremiumVerificationResult verification;
+          try {
+            verification = await _verifyPurchase(purchase);
+          } catch (_) {
+            _debugPremiumLog(
+              'verification failed: unexpected purchase verification exception',
+            );
+            verification = PremiumVerificationResult.rejected(
+              mode: PremiumVerificationMode.backend,
+              purchasedProductId: purchase.productID,
+              isRecoverable: true,
+              message: 'Verification failed. Please try again.',
+              latestOrderId: (purchase.purchaseID ?? '').trim().isEmpty
+                  ? null
+                  : (purchase.purchaseID ?? '').trim(),
+            );
+          } finally {
+            _verifyingPurchaseUpdateKeys.remove(verificationKey);
+          }
           _recordVerificationResult(verification);
           if (verification.isVerified && verification.isActive) {
             _hasVerifiedEntitlement = true;
+            _recoverableVerificationRetryQueue.remove(verificationKey);
             await _persistPremiumCache(
               true,
               purchasedProductId:
                   verification.purchasedProductId ?? purchase.productID,
               verificationMode: verification.mode,
               expiryDate: verification.expiryDate,
+              latestOrderId:
+                  verification.latestOrderId ??
+                  (purchase.purchaseID ?? '').trim(),
             );
+            _successfullyProcessedPurchaseUpdateKeys.add(purchaseUpdateKey);
+            if (purchase.status == PurchaseStatus.restored) {
+              _debugPremiumLog('premium_restore_success_active');
+            }
+            _debugPremiumLog(
+              'premium_verified_active: status=${purchase.status.name}, mode=${verification.mode.name}, expiry=${verification.expiryDate?.toUtc().toIso8601String() ?? 'none'}',
+            );
+            if (purchase.pendingCompletePurchase) {
+              await _completePurchaseSafely(purchase);
+            }
           } else {
-            await _revokePremiumAccess(
-              verificationMode: verification.mode,
-              message: _resolveVerificationFailureMessage(
+            if (_shouldDowngradeForVerificationFailure(verification)) {
+              _recoverableVerificationRetryQueue.remove(verificationKey);
+              await _revokePremiumAccess(
+                verificationMode: verification.mode,
+                message: _resolveVerificationFailureMessage(verification),
+              );
+            } else {
+              _recoverableVerificationRetryQueue[verificationKey] = purchase;
+              _recordVerificationFailureWithoutDowngrade(
                 verification,
-                useRestoreCopy: purchase.status == PurchaseStatus.restored,
-              ),
+                surfaceErrorMessage: !(_hasActiveCachedPremium || isPremium),
+                debugEvent: purchase.status == PurchaseStatus.restored
+                    ? 'premium_restore_recoverable_failure_keep_cached'
+                    : 'premium_verification_recoverable_failure_keep_premium',
+              );
+            }
+            _debugPremiumLog(
+              'purchase verification did not activate premium: status=${purchase.status.name}, productId=${purchase.productID}, failure=${_lastVerificationFailureKind.name}',
             );
+            if (purchase.pendingCompletePurchase &&
+                _lastVerificationFailureKind ==
+                    PremiumVerificationFailureKind.receiptRejected) {
+              await _completePurchaseSafely(purchase);
+            }
           }
           isPurchasePending = false;
           if (purchase.status == PurchaseStatus.restored) {
@@ -5359,26 +8104,33 @@ class PremiumService extends ChangeNotifier {
           }
           break;
         case PurchaseStatus.error:
+          _debugPremiumLog(
+            'purchase error received: productId=${purchase.productID}',
+          );
           _isPurchaseLaunchInProgress = false;
           isPurchasePending = false;
           errorMessage = _resolvePurchaseFailureMessage(purchase);
           if (isRestorePending) {
             _completeRestoreFlow(storeReportedFailure: true);
           }
+          _recoverableVerificationRetryQueue.remove(
+            _purchaseVerificationKey(purchase),
+          );
           break;
         case PurchaseStatus.canceled:
+          _debugPremiumLog(
+            'purchase canceled: productId=${purchase.productID}',
+          );
           _isPurchaseLaunchInProgress = false;
           isPurchasePending = false;
           errorMessage = premiumPurchaseCanceledMessage;
           if (isRestorePending) {
             _completeRestoreFlow(storeReportedFailure: true);
           }
+          _recoverableVerificationRetryQueue.remove(
+            _purchaseVerificationKey(purchase),
+          );
           break;
-      }
-
-      if (purchase.pendingCompletePurchase &&
-          purchase.status != PurchaseStatus.pending) {
-        await _completePurchaseSafely(purchase);
       }
     }
 
@@ -5388,6 +8140,14 @@ class PremiumService extends ChangeNotifier {
   Future<PremiumVerificationResult> _verifyPurchase(
     PurchaseDetails purchase,
   ) async {
+    if (!_supportsGooglePlayPremium) {
+      _debugPremiumLog('verification rejected: unsupported platform');
+      return const PremiumVerificationResult.rejected(
+        mode: PremiumVerificationMode.backend,
+        isRecoverable: true,
+        message: premiumPurchasesUnavailableMessage,
+      );
+    }
     if (_verificationRepository
             is! BackendPremiumPurchaseVerificationRepository &&
         !_canUseNonBackendVerification) {
@@ -5395,6 +8155,7 @@ class PremiumService extends ChangeNotifier {
           'verification rejected: local stub blocked outside debug');
       return const PremiumVerificationResult.rejected(
         mode: PremiumVerificationMode.localStub,
+        isRecoverable: true,
         message: premiumPurchasesUnavailableMessage,
       );
     }
@@ -5404,6 +8165,7 @@ class PremiumService extends ChangeNotifier {
           'verification rejected: no backend verification service');
       return const PremiumVerificationResult.rejected(
         mode: PremiumVerificationMode.backend,
+        isRecoverable: true,
         message: premiumPurchasesUnavailableMessage,
       );
     }
@@ -5432,6 +8194,8 @@ class PremiumService extends ChangeNotifier {
     required bool showBusyState,
     required bool showNoPurchasesMessage,
   }) async {
+    const restoreVerificationFailedMessage =
+        'We could not confirm your previous premium purchase right now. Please try Restore again.';
     errorMessage = null;
 
     if (!isAvailable) {
@@ -5461,20 +8225,42 @@ class PremiumService extends ChangeNotifier {
     }
 
     try {
+      _debugPremiumLog(
+        'premium_restore_started: busy=$showBusyState, cached=$_hasCachedPremiumState, premium=$isPremium',
+      );
       await _billingGateway.restorePurchases();
       await _restorePurchasesCompleter!.future.timeout(_restoreTimeout);
 
-      if (!_restorePurchaseDeliveredUpdate &&
-          !_restoreStoreReportedFailure &&
-          showNoPurchasesMessage) {
-        errorMessage = premiumNoPreviousPurchaseMessage;
+      if (!_restorePurchaseDeliveredUpdate) {
+        if (_restoreStoreReportedFailure ||
+            _recoverableVerificationRetryQueue.isNotEmpty ||
+            _hasActiveCachedPremium ||
+            isPremium) {
+          _recordRestoreResultMessage(
+            message: restoreVerificationFailedMessage,
+            surfaceErrorMessage: showNoPurchasesMessage,
+            treatAsRecoverableFailure: true,
+          );
+        } else {
+          _recordRestoreResultMessage(
+            message: premiumNoPreviousPurchaseMessage,
+            surfaceErrorMessage: showNoPurchasesMessage,
+            treatAsRecoverableFailure: false,
+          );
+        }
       }
     } on TimeoutException {
-      if (showNoPurchasesMessage) {
-        errorMessage = premiumNoPreviousPurchaseMessage;
-      }
+      _recordRestoreResultMessage(
+        message: restoreVerificationFailedMessage,
+        surfaceErrorMessage: showNoPurchasesMessage,
+        treatAsRecoverableFailure: true,
+      );
     } catch (_) {
-      errorMessage = 'Restore failed. Please try again.';
+      _recordRestoreResultMessage(
+        message: restoreVerificationFailedMessage,
+        surfaceErrorMessage: showNoPurchasesMessage,
+        treatAsRecoverableFailure: true,
+      );
     } finally {
       if (_restorePurchasesCompleter != null &&
           !_restorePurchasesCompleter!.isCompleted) {
@@ -5544,21 +8330,21 @@ class PremiumService extends ChangeNotifier {
     return '${purchase.productID}|$purchaseId|$transactionDate|${purchase.status.name}';
   }
 
+  String _purchaseVerificationKey(PurchaseDetails purchase) {
+    final purchaseId = (purchase.purchaseID ?? '').trim();
+    final transactionDate = (purchase.transactionDate ?? '').trim();
+    return '${purchase.productID}|$purchaseId|$transactionDate';
+  }
+
   String _resolveVerificationFailureMessage(
-    PremiumVerificationResult verification, {
-    required bool useRestoreCopy,
-  }) {
+    PremiumVerificationResult verification,
+  ) {
     switch (_classifyVerificationFailure(verification.message)) {
       case PremiumVerificationFailureKind.verifierMissing:
-        return useRestoreCopy
-            ? premiumRestoreUnavailableMessage
-            : premiumPurchasesUnavailableMessage;
+      case PremiumVerificationFailureKind.backendFailed:
+        return premiumVerificationIssueMessage;
       case PremiumVerificationFailureKind.receiptRejected:
         return premiumPurchaseNotConfirmedMessage;
-      case PremiumVerificationFailureKind.backendFailed:
-        return useRestoreCopy
-            ? 'Premium restore could not be confirmed right now. Please try again later.'
-            : 'Premium verification could not be completed right now. Please try again later.';
       case PremiumVerificationFailureKind.none:
         final normalizedMessage = verification.message?.trim();
         if (normalizedMessage != null && normalizedMessage.isNotEmpty) {
@@ -5588,9 +8374,6 @@ class PremiumService extends ChangeNotifier {
 // Onboarding / Welcome setup
 // -----------------------------------------------------------------------------
 
-// Asset-backed onboarding and welcome setup illustrations.
-const bool _useOnboardingAssetIllustrations = true;
-const String _welcomeSetupAssetPath = 'assets/images/setup_profile.png';
 const Color _premiumOnboardingBackground = Color(0xFF050B1D);
 
 class _OnboardingPageData {
@@ -5883,72 +8666,6 @@ class _OnboardingPageView extends StatelessWidget {
   }
 }
 
-class _PremiumIllustrationAsset extends StatelessWidget {
-  final String assetPath;
-  final String? fallbackAssetPath;
-  final BoxFit fit;
-  final Alignment alignment;
-
-  const _PremiumIllustrationAsset({
-    required this.assetPath,
-    this.fallbackAssetPath,
-    this.fit = BoxFit.contain,
-    this.alignment = Alignment.center,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_useOnboardingAssetIllustrations) {
-      return const _OnboardingIllustrationPlaceholder();
-    }
-
-    Widget placeholder() {
-      return const _OnboardingIllustrationPlaceholder();
-    }
-
-    return Image.asset(
-      assetPath,
-      fit: fit,
-      alignment: alignment,
-      errorBuilder: (context, error, stackTrace) {
-        final fallbackPath = fallbackAssetPath;
-        if (fallbackPath == null || fallbackPath == assetPath) {
-          return placeholder();
-        }
-        return Image.asset(
-          fallbackPath,
-          fit: fit,
-          alignment: alignment,
-          errorBuilder: (context, error, stackTrace) {
-            return placeholder();
-          },
-        );
-      },
-    );
-  }
-}
-
-class _OnboardingIllustrationPlaceholder extends StatelessWidget {
-  const _OnboardingIllustrationPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xFF071224),
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: const Center(
-        child: Icon(
-          Icons.image_not_supported_outlined,
-          color: Colors.white70,
-          size: 42,
-        ),
-      ),
-    );
-  }
-}
-
 class _PremiumGradientButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -6045,8 +8762,6 @@ class _PremiumInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ui = SweldoVisualStyle.fromContext(context);
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
@@ -6091,8 +8806,8 @@ class _PremiumInfoCard extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
-                color: ui.textSecondary,
+              style: const TextStyle(
+                color: intelliumTextSecondary,
                 fontSize: 12.9,
                 height: 1.45,
                 fontWeight: FontWeight.w500,
@@ -6106,44 +8821,175 @@ class _PremiumInfoCard extends StatelessWidget {
 }
 
 class _WelcomeHeroCard extends StatelessWidget {
-  final double height;
+  const _WelcomeHeroCard();
 
-  const _WelcomeHeroCard({
-    required this.height,
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF091328),
+            _premiumOnboardingBackground,
+            Color(0xFF040917),
+          ],
+        ),
+        border: Border.all(color: intelliumCyan.withValues(alpha: .16)),
+        boxShadow: [
+          BoxShadow(
+            color: intelliumBlue.withValues(alpha: .14),
+            blurRadius: 28,
+            spreadRadius: -12,
+            offset: const Offset(0, 16),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(
+                'assets/images/getting_started_hero.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withValues(alpha: .02),
+                        Colors.transparent,
+                        _premiumOnboardingBackground.withValues(alpha: .16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+enum _WelcomeOnboardingStage {
+  gettingStarted,
+  premiumOffer,
+}
+
+class _PremiumOnboardingPromoSheet extends StatelessWidget {
+  final bool busy;
+  final VoidCallback? onStartPremium;
+  final VoidCallback? onMaybeLater;
+
+  const _PremiumOnboardingPromoSheet({
+    required this.busy,
+    required this.onStartPremium,
+    required this.onMaybeLater,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _PremiumIllustrationAsset(
-              assetPath: _welcomeSetupAssetPath,
-              fallbackAssetPath: _onboardingPages.first.assetPath,
-              fit: BoxFit.cover,
-              alignment: Alignment.center,
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      _premiumOnboardingBackground.withValues(alpha: .10),
-                      _premiumOnboardingBackground.withValues(alpha: .85),
-                    ],
+    final visual = SweldoVisualStyle.fromContext(context);
+    final ui = sweldoUiStyleOf(context);
+    final noteColor = ui.isDark
+        ? Colors.white.withValues(alpha: .78)
+        : visual.textSecondary;
+
+    return _PremiumFlowBackground(
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            8,
+            16,
+            MediaQuery.of(context).viewInsets.bottom + 22,
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 620),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 6),
+                  Text(
+                    'SweldoTrack Premium',
+                    style: TextStyle(
+                      color: intelliumCyan.withValues(alpha: .94),
+                      fontSize: 13.2,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: .28,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 10),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Image.asset(
+                        'assets/images/onboarding premium pay.png',
+                        width: constraints.maxWidth,
+                        fit: BoxFit.contain,
+                        alignment: Alignment.center,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    child: _PremiumGradientButton(
+                      label: 'Start Premium for Only ₱120',
+                      onPressed: onStartPremium,
+                      trailingIcon: Icons.arrow_forward_rounded,
+                      gradientColors: const [
+                        intelliumCyan,
+                        intelliumBlue,
+                        intelliumPurple,
+                      ],
+                      isLoading: busy,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: busy ? null : onMaybeLater,
+                      child: Text(
+                        'Maybe Later',
+                        style: TextStyle(
+                          color: ui.isDark
+                              ? intelliumPurple.withValues(alpha: .88)
+                              : visual.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Only ₱120/month. Cancel anytime. No hidden fees.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: noteColor,
+                      fontSize: 12.8,
+                      height: 1.4,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -6196,7 +9042,7 @@ InputDecoration _buildPremiumWelcomeInputDecoration({
     ),
     hintStyle: const TextStyle(
       color: intelliumTextMuted,
-      fontWeight: FontWeight.w500,
+      fontWeight: FontWeight.w600,
     ),
     prefixIcon: prefixIcon,
     suffixIcon: suffixIcon,
@@ -6245,6 +9091,29 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int refreshKey = 0;
   bool welcomeDialogOpen = false;
   bool onboardingDialogOpen = false;
+  bool _welcomePromptScheduled = false;
+  bool _onboardingPromptScheduled = false;
+  bool _hasPromptedWelcomeThisSession = false;
+  bool _hasPromptedOnboardingThisSession = false;
+
+  BuildContext _modalHostContext() {
+    final appState = context.findAncestorStateOfType<_SweldoTrackAppState>();
+    final rootContext = appState?.navigatorKey.currentContext;
+    if (rootContext != null && rootContext.mounted) {
+      return rootContext;
+    }
+    return context;
+  }
+
+  Future<void> _waitForNextFrame() {
+    final completer = Completer<void>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    });
+    return completer.future;
+  }
 
   int get activeNavIndex {
     switch (currentIndex) {
@@ -6288,7 +9157,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       refreshKey++;
     });
     unawaited(widget.premiumService.reloadLocalStatus());
-    unawaited(widget.themeController.load());
     maybeShowOnboarding();
   }
 
@@ -6298,7 +9166,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final hasSavedFinanceData =
         await FinanceRepository.hasAnySavedFinanceData();
     final preferredName = await FinanceRepository.getPreferredName();
-    if (!mounted || onboardingDialogOpen) return;
+    if (!mounted || onboardingDialogOpen || _onboardingPromptScheduled) {
+      return;
+    }
 
     if (kDebugMode) {
       debugPrint(
@@ -6315,9 +9185,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       return;
     }
 
+    if (_hasPromptedOnboardingThisSession) return;
+    _onboardingPromptScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || onboardingDialogOpen || welcomeDialogOpen) return;
-      showOnboardingDialog();
+      if (!mounted || onboardingDialogOpen || welcomeDialogOpen) {
+        _onboardingPromptScheduled = false;
+        return;
+      }
+      _hasPromptedOnboardingThisSession = true;
+      unawaited(showOnboardingDialog());
     });
   }
 
@@ -6328,28 +9204,38 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         preferredName.isNotEmpty ||
         welcomeDialogOpen ||
         onboardingDialogOpen ||
+        _welcomePromptScheduled ||
+        _hasPromptedWelcomeThisSession ||
         !mounted) {
       return;
     }
 
+    _welcomePromptScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || welcomeDialogOpen || onboardingDialogOpen) {
+        _welcomePromptScheduled = false;
         return;
       }
-      showWelcomeDialog();
+      _hasPromptedWelcomeThisSession = true;
+      unawaited(showWelcomeDialog());
     });
   }
 
   Future<void> showOnboardingDialog() async {
+    if (onboardingDialogOpen) return;
+    final hostContext = _modalHostContext();
     onboardingDialogOpen = true;
+    var didFinishOnboarding = false;
 
     try {
-      await showModalBottomSheet<void>(
-        context: context,
+      didFinishOnboarding =
+          await showModalBottomSheet<bool>(
+        context: hostContext,
+        useRootNavigator: true,
         isScrollControlled: true,
         isDismissible: false,
         enableDrag: false,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Theme.of(hostContext).scaffoldBackgroundColor,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
@@ -6362,23 +9248,34 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               ),
               child: _OnboardingFlowSheet(
                 onFinish: () async {
-                  await FinanceRepository.setOnboardingComplete(true);
                   if (!sheetContext.mounted) return;
-                  Navigator.pop(sheetContext);
+                  Navigator.of(sheetContext).pop(true);
                 },
               ),
             ),
           ),
         ),
-      );
+      ) ??
+          false;
     } finally {
       onboardingDialogOpen = false;
+      _onboardingPromptScheduled = false;
     }
 
-    await maybeShowWelcome();
+    if (!mounted || !didFinishOnboarding) return;
+    await _waitForNextFrame();
+    if (!mounted) return;
+    await showWelcomeDialog(finalizeOnboardingAfterFlow: true);
   }
 
-  Future<void> showWelcomeDialog() async {
+  Future<void> showWelcomeDialog({
+    bool finalizeOnboardingAfterFlow = false,
+  }) async {
+    if (welcomeDialogOpen || onboardingDialogOpen) {
+      _welcomePromptScheduled = false;
+      return;
+    }
+    final hostContext = _modalHostContext();
     final controller = TextEditingController();
     final startingBalanceController = TextEditingController();
     final cutoffDateController = TextEditingController();
@@ -6397,22 +9294,25 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       cutoffDateController.text =
           formatCalendarDate(dateOnly(existingNextCutoffDate));
     }
-    if (!mounted) {
+    if (!mounted || !hostContext.mounted) {
+      _welcomePromptScheduled = false;
       controller.dispose();
       startingBalanceController.dispose();
       cutoffDateController.dispose();
       return;
     }
-    final ui = SweldoVisualStyle.fromContext(context);
     welcomeDialogOpen = true;
+    var didCompleteWelcomeFlow = false;
 
     try {
-      await showModalBottomSheet<void>(
-        context: context,
+      didCompleteWelcomeFlow =
+          await showModalBottomSheet<bool>(
+        context: hostContext,
+        useRootNavigator: true,
         isScrollControlled: true,
         isDismissible: false,
         enableDrag: false,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Theme.of(hostContext).scaffoldBackgroundColor,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
@@ -6422,6 +9322,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               : dateOnly(existingNextCutoffDate);
           String? validationMessage;
           var saving = false;
+          var premiumBusy = false;
+          var stage = _WelcomeOnboardingStage.gettingStarted;
 
           return StatefulBuilder(
             builder: (context, setSheetState) {
@@ -6490,15 +9392,42 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   useManualDailyBudget: false,
                 );
                 if (!sheetContext.mounted) return;
-                Navigator.pop(sheetContext);
+                setSheetState(() {
+                  saving = false;
+                  validationMessage = null;
+                  stage = _WelcomeOnboardingStage.premiumOffer;
+                });
+              }
+
+              Future<void> startPremiumFromOnboarding() async {
+                if (premiumBusy) return;
+                setSheetState(() => premiumBusy = true);
+                FocusScope.of(sheetContext).unfocus();
+                await widget.premiumService.startPremiumUpgradeFlow();
+                if (!sheetContext.mounted || !mounted) return;
+                setSheetState(() => premiumBusy = false);
               }
 
               final typedName = controller.text.trim();
               final welcomeName = typedName.isEmpty ? 'User' : typedName;
-              final heroHeight = (MediaQuery.of(context).size.height * .36)
-                  .clamp(230.0, 340.0)
-                  .toDouble();
-
+              if (stage == _WelcomeOnboardingStage.premiumOffer) {
+                return PopScope(
+                  canPop: false,
+                  child: _PremiumOnboardingPromoSheet(
+                    busy: premiumBusy,
+                    onStartPremium: premiumBusy
+                        ? null
+                        : () {
+                            unawaited(startPremiumFromOnboarding());
+                          },
+                    onMaybeLater: premiumBusy
+                        ? null
+                        : () {
+                            Navigator.of(sheetContext).pop(true);
+                          },
+                  ),
+                );
+              }
               return PopScope(
                 canPop: false,
                 child: _PremiumFlowBackground(
@@ -6517,7 +9446,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 0),
-                              _WelcomeHeroCard(height: heroHeight),
+                              const _WelcomeHeroCard(),
                               const SizedBox(height: 14),
                               const Text(
                                 'Getting Started',
@@ -6531,8 +9460,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                               const SizedBox(height: 8),
                               RichText(
                                 text: TextSpan(
-                                  style: TextStyle(
-                                    color: ui.textPrimary,
+                                  style: const TextStyle(
+                                    color: intelliumTextPrimary,
                                     fontSize: 34,
                                     fontWeight: FontWeight.w900,
                                     height: 1.02,
@@ -6550,10 +9479,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                                 ),
                               ),
                               const SizedBox(height: 10),
-                              Text(
+                              const Text(
                                 'Set up your profile and starting balance so SweldoTrack can track your money accurately.',
                                 style: TextStyle(
-                                  color: ui.textSecondary,
+                                  color: intelliumTextSecondary,
                                   fontSize: 14.2,
                                   height: 1.48,
                                 ),
@@ -6568,7 +9497,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                                 autofocus: true,
                                 textInputAction: TextInputAction.next,
                                 textCapitalization: TextCapitalization.words,
-                                style: TextStyle(color: ui.textPrimary),
+                                style: const TextStyle(
+                                  color: intelliumTextPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                cursorColor: intelliumCyan,
                                 onChanged: (_) {
                                   setSheetState(() {
                                     if (validationMessage != null) {
@@ -6595,7 +9529,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                                     const TextInputType.numberWithOptions(
                                   decimal: true,
                                 ),
-                                style: TextStyle(color: ui.textPrimary),
+                                style: const TextStyle(
+                                  color: intelliumTextPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                                cursorColor: intelliumCyan,
                                 onChanged: (_) {
                                   setSheetState(() {
                                     if (validationMessage != null) {
@@ -6629,10 +9568,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                                 ),
                               ),
                               const SizedBox(height: 10),
-                              Text(
+                              const Text(
                                 'This is the money you currently have available to spend.',
                                 style: TextStyle(
-                                  color: ui.textMuted,
+                                  color: intelliumTextMuted,
                                   fontSize: 12.5,
                                   height: 1.35,
                                 ),
@@ -6648,7 +9587,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                                 showCursor: false,
                                 enableInteractiveSelection: false,
                                 onTap: saving ? null : pickNextCutoffDate,
-                                style: TextStyle(color: ui.textPrimary),
+                                style: const TextStyle(
+                                  color: intelliumTextPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                cursorColor: intelliumCyan,
                                 decoration: _buildPremiumWelcomeInputDecoration(
                                   hintText: 'Optional',
                                   suffixIcon: SizedBox(
@@ -6692,7 +9636,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                               const _PremiumInfoCard(
                                 icon: Icons.info_outline_rounded,
                                 message:
-                                    'Your Available Balance, Anticipated Balance, and Daily Spending Limit will be based on the details you enter here.',
+                                    'Your Available Balance, Expected Balance, and Safe to Spend Today will be based on the details you enter here.',
                               ),
                               if (validationMessage != null) ...[
                                 const SizedBox(height: 12),
@@ -6731,7 +9675,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                                   onPressed: saving
                                       ? null
                                       : () {
-                                          Navigator.pop(sheetContext);
+                                          setSheetState(() {
+                                            validationMessage = null;
+                                            stage =
+                                                _WelcomeOnboardingStage
+                                                    .premiumOffer;
+                                          });
                                         },
                                   child: Text(
                                     'Skip for Now',
@@ -6755,29 +9704,45 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             },
           );
         },
-      );
+      ) ??
+          false;
     } finally {
       welcomeDialogOpen = false;
+      _welcomePromptScheduled = false;
       controller.dispose();
       startingBalanceController.dispose();
       cutoffDateController.dispose();
     }
 
     if (!mounted) return;
-    setState(() {
-      refreshKey++;
+    if (finalizeOnboardingAfterFlow && didCompleteWelcomeFlow) {
+      await _waitForNextFrame();
+      if (!mounted) return;
+      await FinanceRepository.setOnboardingComplete(true);
+      if (!mounted) return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        refreshKey++;
+      });
     });
   }
 
   void openTrackSheet() {
+    final hostContext = _modalHostContext();
     showModalBottomSheet(
-      context: context,
+      context: hostContext,
+      useRootNavigator: true,
       isScrollControlled: true,
-      backgroundColor: intelliumSurface,
+      backgroundColor: Theme.of(hostContext).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (_) => TrackStarterSheet(onChanged: refreshAll),
+      builder: (_) => TrackStarterSheet(
+        onChanged: refreshAll,
+        premiumService: widget.premiumService,
+      ),
     );
   }
 
@@ -6797,6 +9762,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
     final pages = [
       HomeScreen(
         refreshKey: refreshKey,
@@ -6819,7 +9786,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final safeIndex = currentIndex.clamp(0, pages.length - 1).toInt();
 
     return Scaffold(
-      backgroundColor: intelliumBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: IndexedStack(
         index: safeIndex,
         children: pages,
@@ -6832,8 +9799,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           : Container(
               margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               decoration: BoxDecoration(
-                color: const Color(0xFF111827),
-                borderRadius: BorderRadius.circular(24),
+                color: ui.cardFill.withValues(alpha: uiStyle.isDark ? .94 : .98),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: ui.borderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: uiStyle.isDark ? .18 : .08),
+                    blurRadius: 24,
+                    spreadRadius: -10,
+                    offset: const Offset(0, 16),
+                  ),
+                ],
               ),
               child: SafeArea(
                 top: false,
@@ -6972,7 +9948,7 @@ class ToolsScreen extends StatelessWidget {
         child: AnimatedBuilder(
           animation: premiumService,
           builder: (context, _) => SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
+            padding: _pageContentPadding(context, top: 16, bottom: 110),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -6987,14 +9963,14 @@ class ToolsScreen extends StatelessWidget {
                       ? '3 Live Tools'
                       : '1 Live + 2 Premium',
                   badge: premiumService.isPremium
-                      ? 'Invite & Earn, Calculator, and To-Do List are ready inside your SweldoTrack workspace.'
-                      : 'Invite & Earn is live now. Upgrade to Premium to unlock Calculator and To-Do List.',
+                      ? 'Invite Friends, Calculator, and To-Do List are ready inside your SweldoTrack workspace.'
+                      : 'Invite Friends is live now. Purchase SweldoTrack Premium for ${premiumService.premiumDisplayPriceLabel} to unlock Calculator and To-Do List.',
                 ),
                 const SizedBox(height: 18),
                 ToolAccessCard(
-                  title: 'Invite & Earn',
+                  title: 'Invite Friends',
                   subtitle:
-                      'Share your referral code, track paid referrals, and monitor your earnings in one live screen.',
+                      'Share your code, track backend-reviewed rewards, and monitor verified Premium referral activity.',
                   icon: Icons.card_giftcard_rounded,
                   color: intelliumBlue,
                   onTap: () => openInviteEarn(context),
@@ -7004,7 +9980,7 @@ class ToolsScreen extends StatelessWidget {
                 ToolAccessCard(
                   title: 'Monthly Report Card',
                   subtitle:
-                      'View your monthly income, spending, bills, and savings summary.',
+                      'Review your income, spending, bills, and savings.',
                   icon: Icons.workspace_premium_rounded,
                   color: const Color(0xFFFFC857),
                   onTap: () => openTool(context, 'Monthly Report Card'),
@@ -7055,8 +10031,8 @@ class ToolsScreen extends StatelessWidget {
                       const SizedBox(height: 12),
                       Text(
                         premiumService.isPremium
-                            ? 'Open Invite & Earn, use Calculator for quick budget checks, or manage reminders in To-Do List.'
-                            : 'Invite & Earn is live for all users. Calculator and To-Do List stay visible here with premium access when you are ready.',
+                            ? 'Open Invite Friends, use Calculator for quick budget checks, or manage reminders in To-Do List.'
+                            : 'Invite Friends is live for all users. Calculator and To-Do List stay visible here with premium access when you are ready.',
                         style: TextStyle(
                           color: ui.textSecondary,
                           fontSize: 12.5,
@@ -7115,6 +10091,8 @@ class _MonthlyReportCardScreenState extends State<MonthlyReportCardScreen> {
   double totalIncome = 0;
   double totalExpenses = 0;
   double savingsBalance = 0;
+  double availableBalance = 0;
+  double anticipatedBalance = 0;
   int billsPaidCount = 0;
   int unpaidBillsCount = 0;
   double billsPaidAmount = 0;
@@ -7122,6 +10100,8 @@ class _MonthlyReportCardScreenState extends State<MonthlyReportCardScreen> {
   String? topCategory;
   double topCategoryAmount = 0;
   int healthScore = 0;
+  Map<String, double> categoryBreakdown = const <String, double>{};
+  Map<String, double> paymentMethodBreakdown = const <String, double>{};
 
   @override
   void initState() {
@@ -7135,6 +10115,12 @@ class _MonthlyReportCardScreenState extends State<MonthlyReportCardScreen> {
     final bills = await FinanceRepository.loadBills();
     final incomeEntries = await FinanceRepository.loadIncomeEntries();
     final trackedSavings = await FinanceRepository.getTrackedSavingsAmount();
+    final startingBalance = await FinanceRepository.getStartingBalance();
+    final savingsHistory = await FinanceRepository.loadSavingsHistory();
+    final cycleStartDate = await FinanceRepository.getSalaryReceivedDate();
+    final nextCutoffDate = await FinanceRepository.getNextPaydayDate();
+    final fallbackDaysUntilCutoff = await FinanceRepository.getDaysUntilPayday();
+    final dailyBudgetSettings = await FinanceRepository.getDailyBudgetSettings();
 
     final monthExpenses = expenses
         .where((item) =>
@@ -7161,11 +10147,16 @@ class _MonthlyReportCardScreenState extends State<MonthlyReportCardScreen> {
         .toList();
 
     final categoryTotals = <String, double>{};
+    final paymentTotals = <String, double>{};
     for (final item in monthExpenses) {
       categoryTotals[item.category] =
           (categoryTotals[item.category] ?? 0) + item.amount;
+      paymentTotals[item.paymentMethod] =
+          (paymentTotals[item.paymentMethod] ?? 0) + item.amount;
     }
     final sortedCategories = categoryTotals.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final sortedPayments = paymentTotals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
     final monthlyIncomeTotal = normalizeMoney(
@@ -7187,6 +10178,19 @@ class _MonthlyReportCardScreenState extends State<MonthlyReportCardScreen> {
       unpaidBills: outstandingBills.length,
       savingsBalance: trackedSavings,
     );
+    final budgetOverview = recalculateBudget(
+      startingBalance: startingBalance,
+      incomeEntries: incomeEntries,
+      savingsBalance: trackedSavings,
+      savingsHistory: savingsHistory,
+      bills: bills,
+      expenses: expenses,
+      cycleStartDate: cycleStartDate,
+      nextCutoffDate: nextCutoffDate,
+      fallbackDaysUntilCutoff: fallbackDaysUntilCutoff,
+      useManualDailyBudget: dailyBudgetSettings.useManualDailyBudget,
+      manualDailyBudget: dailyBudgetSettings.manualDailyBudget,
+    );
 
     if (!mounted) return;
     setState(() {
@@ -7194,6 +10198,8 @@ class _MonthlyReportCardScreenState extends State<MonthlyReportCardScreen> {
       totalIncome = monthlyIncomeTotal;
       totalExpenses = monthlyExpenseTotal;
       savingsBalance = trackedSavings;
+      availableBalance = budgetOverview.snapshot.availableBalance;
+      anticipatedBalance = budgetOverview.snapshot.projectedAvailableBalance;
       billsPaidCount = paidBillsThisMonth.length;
       unpaidBillsCount = outstandingBills.length;
       billsPaidAmount = monthlyPaidBillsAmount;
@@ -7204,6 +10210,12 @@ class _MonthlyReportCardScreenState extends State<MonthlyReportCardScreen> {
           ? 0
           : normalizeMoney(sortedCategories.first.value);
       healthScore = score;
+      categoryBreakdown = {
+        for (final entry in sortedCategories) entry.key: normalizeMoney(entry.value),
+      };
+      paymentMethodBreakdown = {
+        for (final entry in sortedPayments) entry.key: normalizeMoney(entry.value),
+      };
       loading = false;
     });
   }
@@ -7237,118 +10249,328 @@ class _MonthlyReportCardScreenState extends State<MonthlyReportCardScreen> {
     return score.clamp(0, 100);
   }
 
+  String get _healthLabel {
+    if (healthScore >= 80) return 'Strong';
+    if (healthScore >= 60) return 'Stable';
+    if (healthScore >= 40) return 'Watchful';
+    return 'Needs Attention';
+  }
+
+  Color get _healthAccent {
+    if (healthScore >= 80) return const Color(0xFF57E9C3);
+    if (healthScore >= 60) return const Color(0xFF6C8CFF);
+    if (healthScore >= 40) return const Color(0xFFFFC857);
+    return const Color(0xFFFF8A5B);
+  }
+
+  bool get _hasMonthlySignals {
+    return totalIncome > 0 ||
+        totalExpenses > 0 ||
+        billsPaidAmount > 0 ||
+        unpaidBillsAmount > 0 ||
+        savingsBalance > 0 ||
+        categoryBreakdown.isNotEmpty ||
+        paymentMethodBreakdown.isNotEmpty;
+  }
+
+  String get _heroInsight {
+    if (!_hasMonthlySignals) {
+      return 'Start logging income, bills, savings, and spending to build your first monthly report.';
+    }
+    if (healthScore >= 80) {
+      return 'Your spending, bills, and savings are looking well balanced this month.';
+    }
+    if (totalIncome > 0 && totalExpenses > totalIncome) {
+      return 'Spending is ahead of this month\'s income, so keep the rest of your budget tight.';
+    }
+    if (unpaidBillsCount > 0) {
+      return 'You still have unpaid bills to watch before the month closes.';
+    }
+    if (topCategory != null) {
+      return '$topCategory is currently driving the largest share of spending.';
+    }
+    return 'Keep logging spending to sharpen your next monthly report.';
+  }
+
+  String get _footerAdvice {
+    if (!_hasMonthlySignals) {
+      return 'Start logging income, bills, savings, and spending to build your first monthly report.';
+    }
+    if (healthScore >= 80) {
+      return 'Keep your momentum and continue tracking daily.';
+    }
+    if (healthScore >= 60) {
+      return 'You\'re on track, but keep monitoring upcoming bills.';
+    }
+    if (healthScore >= 40) {
+      return 'Reduce flexible spending and prioritize upcoming bills.';
+    }
+    return 'Focus on essential spending and update your budget.';
+  }
+
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final summaryMetrics = <_MonthlyReportMetric>[
+      _MonthlyReportMetric(
+        label: 'Income',
+        value: formatMoney(totalIncome),
+        helper: 'Income added this month',
+        accent: const Color(0xFF57E9C3),
+        icon: Icons.payments_rounded,
+      ),
+      _MonthlyReportMetric(
+        label: 'Spending',
+        value: formatMoney(totalExpenses),
+        helper: 'Spending logged this month',
+        accent: intelliumPink,
+        icon: Icons.receipt_long_rounded,
+      ),
+      _MonthlyReportMetric(
+        label: 'Bills Paid',
+        value: formatMoney(billsPaidAmount),
+        helper:
+            '$billsPaidCount bill${billsPaidCount == 1 ? '' : 's'} settled this month',
+        accent: const Color(0xFF6C8CFF),
+        icon: Icons.check_circle_rounded,
+      ),
+      _MonthlyReportMetric(
+        label: 'Savings',
+        value: formatMoney(savingsBalance),
+        helper: 'Current tracked savings balance',
+        accent: intelliumCyan,
+        icon: Icons.savings_rounded,
+      ),
+      if (_hasMonthlySignals) ...[
+        _MonthlyReportMetric(
+          label: 'Available Balance',
+          value: formatMoney(availableBalance),
+          helper: 'Balance after logged activity',
+          accent: const Color(0xFF57E9C3),
+          icon: Icons.account_balance_wallet_rounded,
+        ),
+        _MonthlyReportMetric(
+          label: 'Expected Balance',
+          value: formatMoney(anticipatedBalance),
+          helper: 'After unpaid bills this cycle',
+          accent: const Color(0xFFFFC857),
+          icon: Icons.auto_graph_rounded,
+        ),
+      ],
+    ];
 
-    if (loading) {
-      return PremiumToolScaffold(
-        title: 'Monthly Report Card',
-        subtitle:
-            'View your monthly income, spending, bills, and savings summary.',
-        child: buildPageLoadingState('Loading your monthly report...'),
+    Widget buildSectionHeader(String title, String subtitle) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: ui.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: TextStyle(
+              color: ui.textSecondary,
+              fontSize: 12.5,
+              height: 1.35,
+            ),
+          ),
+        ],
+      );
+    }
+
+    Widget buildHeader() {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 46,
+            width: 46,
+            decoration: ui.cardDecoration(radius: 18),
+            child: IconButton(
+              onPressed: () => Navigator.of(context).maybePop(),
+              icon: Icon(
+                Icons.arrow_back_rounded,
+                color: ui.textPrimary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Monthly Report Card',
+                    style: TextStyle(
+                      color: ui.textPrimary,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Review your income, spending, bills, and savings.',
+                    softWrap: true,
+                    style: TextStyle(
+                      color: ui.textMuted,
+                      fontSize: 12.8,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       );
     }
 
     Widget metricGrid() {
       return LayoutBuilder(
         builder: (context, constraints) {
-          final compact = constraints.maxWidth < 720;
-          final cards = <Widget>[
-            SummaryCard(
-              title: 'Total Income',
-              value: formatPhp(totalIncome),
-              subtitle: 'Income added during $monthLabel',
-              color: const Color(0xFF57E9C3),
-              icon: Icons.payments_rounded,
+          final columns = constraints.maxWidth < 430 ? 1 : 2;
+          final aspectRatio =
+              columns == 1 ? 2.35 : constraints.maxWidth < 720 ? 1.18 : 1.34;
+          return GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: summaryMetrics.length,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: aspectRatio,
             ),
-            SummaryCard(
-              title: 'Total Expenses',
-              value: formatPhp(totalExpenses),
-              subtitle: 'Saved spending entries for this month',
-              color: intelliumPink,
-              icon: Icons.receipt_long_rounded,
-            ),
-            SummaryCard(
-              title: 'Bills Paid',
-              value: '$billsPaidCount',
-              subtitle: '${formatPhp(billsPaidAmount)} settled this month',
-              color: const Color(0xFF6C8CFF),
-              icon: Icons.check_circle_rounded,
-            ),
-            SummaryCard(
-              title: 'Unpaid Bills',
-              value: '$unpaidBillsCount',
-              subtitle: '${formatPhp(unpaidBillsAmount)} currently outstanding',
-              color: const Color(0xFFFF8A5B),
-              icon: Icons.pending_actions_rounded,
-            ),
-            SummaryCard(
-              title: 'Savings Balance',
-              value: formatPhp(savingsBalance),
-              subtitle: 'Current tracked savings on this device',
-              color: intelliumCyan,
-              icon: Icons.savings_rounded,
-            ),
-            SummaryCard(
-              title: 'Health Score',
-              value: '$healthScore / 100',
-              subtitle:
-                  'Simple monthly signal from savings, bills, and spending',
-              color: const Color(0xFFFFC857),
-              icon: Icons.favorite_rounded,
-            ),
-          ];
-
-          if (compact) {
-            return Column(
-              children: [
-                for (var index = 0; index < cards.length; index++) ...[
-                  cards[index],
-                  if (index != cards.length - 1) const SizedBox(height: 12),
-                ],
-              ],
-            );
-          }
-
-          return Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: cards
-                .map(
-                  (card) => SizedBox(
-                    width: (constraints.maxWidth - 12) / 2,
-                    child: card,
-                  ),
-                )
-                .toList(),
+            itemBuilder: (context, index) {
+              final metric = summaryMetrics[index];
+              return _MonthlyMetricCard(
+                label: metric.label,
+                value: metric.value,
+                helper: metric.helper,
+                accent: metric.accent,
+                icon: metric.icon,
+              );
+            },
           );
         },
       );
     }
 
-    return PremiumToolScaffold(
-      title: 'Monthly Report Card',
-      subtitle:
-          'View your monthly income, spending, bills, and savings summary.',
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+    Widget buildBreakdownSection({
+      required String title,
+      required String subtitle,
+      required Map<String, double> totals,
+      required bool isCategory,
+      required String emptyMessage,
+    }) {
+      final entries = totals.entries.toList()
+        ..sort((left, right) => right.value.compareTo(left.value));
+      final total = entries.fold<double>(0, (sum, entry) => sum + entry.value);
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: ui.sectionContainerDecoration(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            HeroCard(
-              colors: const [
-                Color(0xFF122238),
-                intelliumBlue,
-                intelliumPurple,
-              ],
-              title: 'Month Snapshot',
-              value: monthLabel,
-              badge:
-                  'Financial Health Score: $healthScore / 100 | ${topCategory == null ? 'No top category yet' : '$topCategory leads spending'}',
+            buildSectionHeader(title, subtitle),
+            const SizedBox(height: 16),
+            if (entries.isEmpty)
+              _MonthlyInsightCard(
+                title: 'Nothing to show yet',
+                message: emptyMessage,
+                accent: isCategory
+                    ? const Color(0xFF6C8CFF)
+                    : const Color(0xFFFFC857),
+                icon: isCategory
+                    ? Icons.pie_chart_rounded
+                    : Icons.account_balance_wallet_rounded,
+              )
+            else
+              ...List.generate(min(entries.length, 6), (index) {
+                final entry = entries[index];
+                final definition = isCategory
+                    ? resolveSpendingCategoryDefinition(entry.key)
+                    : resolvePaymentMethodDefinition(entry.key);
+                final percentage =
+                    total <= 0 ? 0 : ((entry.value / total) * 100).clamp(0, 100);
+                return Padding(
+                  padding:
+                      EdgeInsets.only(bottom: index == min(entries.length, 6) - 1 ? 0 : 10),
+                  child: _MonthlyBreakdownRow(
+                    label: entry.key,
+                    amount: formatMoney(entry.value),
+                    helper:
+                        '${percentage.toStringAsFixed(0)}% of this month\'s recorded spending',
+                    accent: definition.color,
+                    icon: definition.icon,
+                  ),
+                );
+              }),
+          ],
+        ),
+      );
+    }
+
+    Widget content = SingleChildScrollView(
+      padding: _pageContentPadding(context, top: 18, bottom: 110),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          buildHeader(),
+          if (loading) ...[
+            const SizedBox(height: 32),
+            buildPageLoadingState('Loading your monthly report...'),
+          ] else ...[
+            const SizedBox(height: 24),
+            _MonthlySnapshotHero(
+              monthLabel: monthLabel,
+              healthScore: healthScore,
+              healthLabel: _healthLabel,
+              topSpendLabel: topCategory == null
+                  ? 'Top Spend: None yet'
+                  : 'Top Spend: $topCategory',
+              accent: _healthAccent,
+            ),
+            const SizedBox(height: 14),
+            _MonthlyInsightCard(
+              title: 'Monthly Insight',
+              message: _heroInsight,
+              accent: _healthAccent,
+              icon: Icons.auto_awesome_rounded,
+            ),
+            const SizedBox(height: 22),
+            buildSectionHeader(
+              'Summary',
+              'Core numbers for this month at a glance.',
+            ),
+            const SizedBox(height: 14),
+            metricGrid(),
+            const SizedBox(height: 20),
+            buildBreakdownSection(
+              title: 'Spending Breakdown',
+              subtitle: 'Top categories for saved spending this month',
+              totals: categoryBreakdown,
+              isCategory: true,
+              emptyMessage: 'No spending recorded this month yet.',
             ),
             const SizedBox(height: 18),
-            metricGrid(),
+            buildBreakdownSection(
+              title: 'Payment Methods',
+              subtitle: 'Payment labels used in this month\'s saved spending',
+              totals: paymentMethodBreakdown,
+              isCategory: false,
+              emptyMessage: 'No payment method activity yet.',
+            ),
             const SizedBox(height: 18),
             Container(
               width: double.infinity,
@@ -7357,31 +10579,598 @@ class _MonthlyReportCardScreenState extends State<MonthlyReportCardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  buildSectionHeader(
+                    'Bills & Savings Insight',
+                    'A quick read on paid bills, upcoming bills, and savings activity.',
+                  ),
+                  const SizedBox(height: 16),
+                  if (billsPaidAmount == 0 &&
+                      unpaidBillsAmount == 0 &&
+                      savingsBalance == 0)
+                    const EmptyStateCard(
+                      icon: Icons.savings_outlined,
+                      title: 'No bills or savings activity yet',
+                      subtitle:
+                          'Add bill settlements or savings activity to make this section more useful.',
+                    )
+                  else
+                    Container(
+                      width: double.infinity,
+                      decoration: ui.cardDecoration(radius: 24),
+                      child: Column(
+                        children: [
+                          _MonthlySignalRow(
+                            title: 'Bills Paid',
+                            helper: billsPaidAmount <= 0
+                                ? 'No bills were marked paid this month yet.'
+                                : '$billsPaidCount bill${billsPaidCount == 1 ? '' : 's'} settled this month',
+                            value: formatMoney(billsPaidAmount),
+                            accent: const Color(0xFF6C8CFF),
+                            icon: Icons.check_circle_rounded,
+                            showDivider: true,
+                          ),
+                          _MonthlySignalRow(
+                            title: 'Upcoming Bills',
+                            helper: unpaidBillsAmount <= 0
+                                ? 'No unpaid bills are currently due.'
+                                : '$unpaidBillsCount unpaid bill${unpaidBillsCount == 1 ? '' : 's'} still need attention',
+                            value: formatMoney(unpaidBillsAmount),
+                            accent: const Color(0xFFFFC857),
+                            icon: Icons.receipt_long_rounded,
+                            showDivider: true,
+                          ),
+                          _MonthlySignalRow(
+                            title: 'Savings Activity',
+                            helper: savingsBalance <= 0
+                                ? 'No tracked savings balance is stored on this device yet.'
+                                : 'Current tracked savings balance',
+                            value: formatMoney(savingsBalance),
+                            accent: intelliumCyan,
+                            icon: Icons.savings_rounded,
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            _MonthlyInsightCard(
+              title: 'Next Step',
+              message: _footerAdvice,
+              accent: _healthAccent,
+              icon: Icons.tips_and_updates_rounded,
+            ),
+          ],
+        ],
+      ),
+    );
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(child: content),
+    );
+  }
+}
+
+class _MonthlyReportMetric {
+  final String label;
+  final String value;
+  final String helper;
+  final Color accent;
+  final IconData icon;
+
+  const _MonthlyReportMetric({
+    required this.label,
+    required this.value,
+    required this.helper,
+    required this.accent,
+    required this.icon,
+  });
+}
+
+class _MonthlySnapshotHero extends StatelessWidget {
+  final String monthLabel;
+  final int healthScore;
+  final String healthLabel;
+  final String topSpendLabel;
+  final Color accent;
+
+  const _MonthlySnapshotHero({
+    required this.monthLabel,
+    required this.healthScore,
+    required this.healthLabel,
+    required this.topSpendLabel,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        gradient: ui.analyticsAccentGradient,
+        border: Border.all(
+          color: uiStyle.isDark
+              ? Colors.white.withValues(alpha: .08)
+              : Colors.white.withValues(alpha: .18),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: ui.isJade ? .22 : .16),
+            blurRadius: 30,
+            spreadRadius: -8,
+            offset: const Offset(0, 16),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .14),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  'Monthly Snapshot',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: .96),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: .20),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: accent.withValues(alpha: .30)),
+                ),
+                child: Text(
+                  healthLabel,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked = constraints.maxWidth < 420;
+              final scoreColumn = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    'Top Spending Category',
+                    'Financial Health Score',
                     style: TextStyle(
-                      color: ui.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
+                      color: Colors.white.withValues(alpha: .84),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    topCategory == null
-                        ? 'No expense category has spending data for this month yet.'
-                        : '$topCategory recorded the highest spending in $monthLabel at ${formatPhp(topCategoryAmount)}.',
+                    '$healthScore / 100',
                     style: TextStyle(
-                      color: ui.textSecondary,
-                      fontSize: 13,
-                      height: 1.4,
+                      color: Colors.white,
+                      fontSize: stacked ? 30 : 36,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -.8,
                     ),
                   ),
                 ],
-              ),
-            ),
-          ],
-        ),
+              );
+
+              final topSpendCard = Container(
+                constraints: const BoxConstraints(minWidth: 150),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: .14),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: .08)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Status',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: .80),
+                        fontSize: 11.8,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      healthLabel,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      topSpendLabel,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: .88),
+                        fontSize: 12.4,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (stacked) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      monthLabel,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    scoreColumn,
+                    const SizedBox(height: 16),
+                    topSpendCard,
+                  ],
+                );
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          monthLabel,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        scoreColumn,
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(child: topSpendCard),
+                ],
+              );
+            },
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _MonthlyMetricCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final String helper;
+  final Color accent;
+  final IconData icon;
+
+  const _MonthlyMetricCard({
+    required this.label,
+    required this.value,
+    required this.helper,
+    required this.accent,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: ui.cardDecoration(radius: 24).copyWith(
+            border: Border.all(color: accent.withValues(alpha: .18)),
+          ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: ui.iconChipBackground(accent, radius: 16),
+            child: Icon(icon, color: accent, size: 20),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: ui.textSecondary,
+              fontSize: 12.8,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: ui.textPrimary,
+              fontSize: 23,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            helper,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: ui.textMuted,
+              fontSize: 12,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MonthlyInsightCard extends StatelessWidget {
+  final String title;
+  final String message;
+  final Color accent;
+  final IconData icon;
+
+  const _MonthlyInsightCard({
+    required this.title,
+    required this.message,
+    required this.accent,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: ui.cardDecoration(radius: 24).copyWith(
+            border: Border.all(color: accent.withValues(alpha: .18)),
+          ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: ui.iconChipBackground(accent, radius: 16),
+            child: Icon(icon, color: accent),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: ui.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  message,
+                  style: TextStyle(
+                    color: ui.textSecondary,
+                    fontSize: 12.8,
+                    height: 1.45,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MonthlyBreakdownRow extends StatelessWidget {
+  final String label;
+  final String amount;
+  final String helper;
+  final Color accent;
+  final IconData icon;
+
+  const _MonthlyBreakdownRow({
+    required this.label,
+    required this.amount,
+    required this.helper,
+    required this.accent,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: ui.cardDecoration(radius: 22),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 42,
+            width: 42,
+            decoration: ui.iconChipBackground(accent, radius: 14),
+            child: Icon(icon, color: accent, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: ui.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  helper,
+                  style: TextStyle(
+                    color: ui.textSecondary,
+                    fontSize: 12.3,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            amount,
+            style: TextStyle(
+              color: ui.textPrimary,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MonthlySignalRow extends StatelessWidget {
+  final String title;
+  final String helper;
+  final String value;
+  final Color accent;
+  final IconData icon;
+  final bool showDivider;
+
+  const _MonthlySignalRow({
+    required this.title,
+    required this.helper,
+    required this.value,
+    required this.accent,
+    required this.icon,
+    this.showDivider = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 42,
+                width: 42,
+                decoration: ui.iconChipBackground(accent, radius: 14),
+                child: Icon(icon, color: accent, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: ui.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      helper,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: ui.textSecondary,
+                        fontSize: 12.4,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      color: ui.textPrimary,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (showDivider)
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: ui.borderColor.withValues(alpha: .65),
+          ),
+      ],
     );
   }
 }
@@ -7411,10 +11200,12 @@ class ToolAccessCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
-    final badgeLabel = isLocked ? 'Upgrade' : actionLabel;
+    final badgeLabel = isLocked ? 'Premium' : actionLabel;
     final badgeColor = isLocked ? intelliumPurple : color;
     final supportingCopy =
-        isLocked ? '$subtitle Upgrade to Premium to open this tool.' : subtitle;
+        isLocked
+            ? '$subtitle Unlock SweldoTrack Premium to open this tool.'
+            : subtitle;
     final effectiveLockedMessage =
         lockedMessage ?? 'Unlock SweldoTrack Premium to use $title.';
 
@@ -7429,6 +11220,7 @@ class ToolAccessCard extends StatelessWidget {
                 ),
         borderRadius: BorderRadius.circular(24),
         child: Container(
+          constraints: const BoxConstraints(minHeight: 116),
           padding: const EdgeInsets.all(18),
           decoration: ui.cardDecoration(radius: 24),
           child: Row(
@@ -7474,21 +11266,21 @@ class ToolAccessCard extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: sweldoLabelStyle(
+                        ui,
+                        size: 15.5,
                         color: ui.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                        weight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       supportingCopy,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: sweldoHelperStyle(
+                        ui,
+                        size: 12.5,
                         color: ui.textSecondary,
-                        fontSize: 12.5,
-                        height: 1.35,
+                        height: 1.4,
                       ),
                     ),
                   ],
@@ -7544,24 +11336,73 @@ class NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        active || highlight ? const Color(0xFF00C896) : const Color(0xFF8B9AB0);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: SizedBox(
-        height: 72,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: iconSize),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                  color: color, fontSize: 11, fontWeight: FontWeight.w600),
+    final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
+    final accent = Theme.of(context).colorScheme.primary;
+    final inactiveColor = ui.textMuted;
+    final color = active || highlight ? accent : inactiveColor;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: SizedBox(
+          height: 72,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.symmetric(
+                horizontal: highlight ? 14 : 10,
+                vertical: highlight ? 10 : 8,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(highlight ? 20 : 18),
+                gradient: highlight ? ui.premiumCtaGradient : null,
+                color: !highlight && active
+                    ? accent.withValues(alpha: uiStyle.isDark ? .12 : .10)
+                    : null,
+                border: Border.all(
+                  color: highlight
+                      ? Colors.white.withValues(alpha: uiStyle.isDark ? .18 : .24)
+                      : active
+                          ? accent.withValues(alpha: .18)
+                          : Colors.transparent,
+                ),
+                boxShadow: highlight
+                    ? [
+                        BoxShadow(
+                          color: accent.withValues(alpha: uiStyle.isDark ? .20 : .14),
+                          blurRadius: 18,
+                          spreadRadius: -4,
+                          offset: const Offset(0, 10),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    color: highlight ? Colors.white : color,
+                    size: iconSize,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: highlight ? Colors.white : color,
+                      fontSize: 11,
+                      fontWeight: active || highlight
+                          ? FontWeight.w700
+                          : FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -7570,8 +11411,13 @@ class NavItem extends StatelessWidget {
 
 class TrackStarterSheet extends StatefulWidget {
   final VoidCallback onChanged;
+  final PremiumService premiumService;
 
-  const TrackStarterSheet({super.key, required this.onChanged});
+  const TrackStarterSheet({
+    super.key,
+    required this.onChanged,
+    required this.premiumService,
+  });
 
   @override
   State<TrackStarterSheet> createState() => _TrackStarterSheetState();
@@ -7598,11 +11444,12 @@ class _TrackStarterSheetState extends State<TrackStarterSheet> {
 
   Future<void> _openScreen(BuildContext context, Widget screen) async {
     final navigator = Navigator.of(context);
+    final onChanged = widget.onChanged;
     navigator.pop();
     await navigator.push(
       MaterialPageRoute(builder: (_) => screen),
     );
-    widget.onChanged();
+    onChanged();
   }
 
   @override
@@ -7621,7 +11468,7 @@ class _TrackStarterSheetState extends State<TrackStarterSheet> {
     final primaryLabel =
         hasSavedFinanceData ? 'Open Spending Tracker' : 'Open Balance Setup';
     final primaryScreen = hasSavedFinanceData
-        ? const ExpenseTrackerScreen()
+        ? ExpenseTrackerScreen(premiumService: widget.premiumService)
         : const SweldoBudgetScreen();
 
     return SafeArea(
@@ -7713,7 +11560,9 @@ class _TrackStarterSheetState extends State<TrackStarterSheet> {
                                 color: intelliumCyan,
                                 onTap: () => _openScreen(
                                   context,
-                                  const ExpenseTrackerScreen(),
+                                  ExpenseTrackerScreen(
+                                    premiumService: widget.premiumService,
+                                  ),
                                 ),
                               ),
                             ),
@@ -7872,6 +11721,7 @@ class _HomeScreenState extends State<HomeScreen> {
   double currentBalance = 0;
   double projectedAvailableBalance = 0;
   double settledBillsTotal = 0;
+  double todaySpending = 0;
   double dailyBudget = 0;
   bool usesManualDailyBudget = false;
   bool isManualDailyBudgetSafe = true;
@@ -7880,7 +11730,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<double> weeklyExpenseTrend = List<double>.filled(7, 0);
   int billCount = 0;
   List<BillItem> upcomingBills = [];
-  List<ExpenseItem> recentExpenses = [];
+  List<_HomeActivityItem> recentActivity = [];
+  bool setupChecklistDismissed = false;
 
   // Legacy compatibility aliases. Do not use in new UI.
   @Deprecated('Use startingBalance instead.')
@@ -7929,6 +11780,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final salaryReceivedDate = await FinanceRepository.getSalaryReceivedDate();
     final nextPaydayDate = await FinanceRepository.getNextPaydayDate();
     final goal = await FinanceRepository.getSavingsGoal();
+    final isSetupChecklistDismissed =
+        await FinanceRepository.isSetupChecklistDismissed();
     final unpaidItems = filterBillsForBudgetCycle(
       bills: bills,
       cycleStartDate: salaryReceivedDate,
@@ -7953,6 +11806,44 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     final recentItems = overview.activeCycleExpenses.toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final recentIncomeEntries = incomeEntries.toList()
+      ..sort((a, b) => b.receivedAt.compareTo(a.receivedAt));
+    final recentBillActivity = bills
+        .map((bill) {
+          final activityDate =
+              bill.paidDate ?? resolveUpcomingBillDate(bill) ?? bill.dueDate;
+          final activityLabel = bill.paidDate != null ? 'Bill paid' : 'Bill due';
+          return _HomeActivityItem(
+            type: _HomeActivityType.bill,
+            title: bill.title,
+            subtitle: '$activityLabel • ${formatMonthDay(activityDate)}',
+            amount: bill.amount,
+            occurredAt: activityDate,
+          );
+        })
+        .toList()
+      ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
+    final recentActivityItems = <_HomeActivityItem>[
+      ...recentItems.take(4).map(
+        (expense) => _HomeActivityItem(
+          type: _HomeActivityType.expense,
+          title: expense.title,
+          subtitle: '${expense.category} • ${formatMonthDay(expense.createdAt)}',
+          amount: expense.amount,
+          occurredAt: expense.createdAt,
+        ),
+      ),
+      ...recentIncomeEntries.take(3).map(
+        (income) => _HomeActivityItem(
+          type: _HomeActivityType.income,
+          title: income.note.trim().isEmpty ? 'Income' : income.note.trim(),
+          subtitle: 'Income • ${formatMonthDay(income.receivedAt)}',
+          amount: income.amount,
+          occurredAt: income.receivedAt,
+        ),
+      ),
+      ...recentBillActivity.take(3),
+    ]..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
     final activeCycleExpenseTotal = overview.snapshot.totalLoggedExpenses;
     final rollingSevenDayTrend = buildSevenDayExpenseTrend(expenses);
 
@@ -7969,6 +11860,7 @@ class _HomeScreenState extends State<HomeScreen> {
       currentBalance = overview.snapshot.availableBalance;
       projectedAvailableBalance = overview.snapshot.projectedAvailableBalance;
       settledBillsTotal = overview.snapshot.settledBillsAmount;
+      todaySpending = getTodayExpensesTotal(expenses, bills: bills);
       dailyBudget = overview.snapshot.dailySpendingLimit;
       usesManualDailyBudget = overview.snapshot.usesManualDailyBudget;
       isManualDailyBudgetSafe = overview.snapshot.isManualDailyBudgetSafe;
@@ -7977,14 +11869,15 @@ class _HomeScreenState extends State<HomeScreen> {
       weeklyExpenseTrend = rollingSevenDayTrend;
       billCount = unpaidItems.length;
       upcomingBills = unpaidItems.take(3).toList();
-      recentExpenses = recentItems.take(4).toList();
+      recentActivity = recentActivityItems.take(5).toList();
+      setupChecklistDismissed = isSetupChecklistDismissed;
       loading = false;
     });
   }
 
   Future<void> openAnalytics() async {
-    await Navigator.push(
-      context,
+    final navigator = Navigator.of(context);
+    await navigator.push(
       MaterialPageRoute(
         builder: (_) => PremiumAnalyticsDashboardScreen(
           refreshKey: widget.refreshKey,
@@ -8002,7 +11895,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     switch (title) {
       case 'SweldoTrack':
-        screen = const ExpenseTrackerScreen();
+        screen = ExpenseTrackerScreen(premiumService: widget.premiumService);
         break;
       case 'Sweldo Budget':
         screen = const SweldoBudgetScreen();
@@ -8017,15 +11910,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (screen == null) return;
 
-    await Navigator.push(
-      context,
+    final navigator = Navigator.of(context);
+    final navigationState =
+        context.findAncestorStateOfType<_MainNavigationScreenState>();
+    await navigator.push(
       MaterialPageRoute(builder: (_) => screen!),
     );
 
     if (!mounted) return;
-    final navigationState =
-        context.findAncestorStateOfType<_MainNavigationScreenState>();
-    if (navigationState != null) {
+    if (navigationState != null && navigationState.mounted) {
       navigationState.refreshAll();
       return;
     }
@@ -8050,6 +11943,32 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(builder: (_) => screen!),
     );
+  }
+
+  Future<void> openInviteEarn() async {
+    final navigator = Navigator.of(context);
+    final navigationState =
+        context.findAncestorStateOfType<_MainNavigationScreenState>();
+    await navigator.push(
+      MaterialPageRoute(
+        builder: (_) => InviteEarnScreen(refreshKey: widget.refreshKey),
+      ),
+    );
+
+    if (!mounted) return;
+    if (navigationState != null && navigationState.mounted) {
+      navigationState.refreshAll();
+      return;
+    }
+    await load();
+  }
+
+  Future<void> dismissSetupChecklist() async {
+    await FinanceRepository.setSetupChecklistDismissed(true);
+    if (!mounted) return;
+    setState(() {
+      setupChecklistDismissed = true;
+    });
   }
 
   @override
@@ -8084,6 +12003,7 @@ class _HomeScreenState extends State<HomeScreen> {
       currentBalance: currentBalance,
       projectedAvailableBalance: projectedAvailableBalance,
       settledBillsTotal: settledBillsTotal,
+      todaySpending: todaySpending,
       dailyBudget: dailyBudget,
       usesManualDailyBudget: usesManualDailyBudget,
       isManualDailyBudgetSafe: isManualDailyBudgetSafe,
@@ -8092,9 +12012,10 @@ class _HomeScreenState extends State<HomeScreen> {
       weeklyExpenseTrend: weeklyExpenseTrend,
       billCount: billCount,
       upcomingBills: upcomingBills,
-      recentExpenses: recentExpenses,
+      recentActivity: recentActivity,
       healthScore: healthScore,
       healthLabel: healthLabel,
+      setupChecklistDismissed: setupChecklistDismissed,
     );
 
     return Container(
@@ -8117,8 +12038,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         onOpenBills: () => openTracker('Bills Tracker'),
                         onOpenSavings: () => openTracker('Savings Goal'),
                         onOpenExpenses: () => openTracker('SweldoTrack'),
+                        onOpenInvite: openInviteEarn,
                         onOpenCalculator: () => openTool('Calculator'),
                         onOpenTodo: () => openTool('To-Do List'),
+                        onDismissSetupChecklist: () {
+                          unawaited(dismissSetupChecklist());
+                        },
                       );
                     }
 
@@ -8129,6 +12054,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       onOpenBills: () => openTracker('Bills Tracker'),
                       onOpenSavings: () => openTracker('Savings Goal'),
                       onOpenExpenses: () => openTracker('SweldoTrack'),
+                      onOpenInvite: openInviteEarn,
+                      onDismissSetupChecklist: () {
+                        unawaited(dismissSetupChecklist());
+                      },
                     );
                   },
                 ),
@@ -8149,34 +12078,51 @@ class _PremiumBottomNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
+    final navGradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: uiStyle.isDark
+          ? [
+              uiStyle.surface.withValues(alpha: .96),
+              uiStyle.card.withValues(alpha: .95),
+              uiStyle.background.withValues(alpha: .92),
+            ]
+          : [
+              const Color(0xFFFFFFFF).withValues(alpha: .98),
+              uiStyle.background.withValues(alpha: .98),
+              uiStyle.surface.withValues(alpha: .96),
+            ],
+    );
     return Container(
-      margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+      margin: const EdgeInsets.fromLTRB(14, 0, 14, 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xE0081024),
-            Color(0xED0C1631),
-            Color(0xE9101432),
-          ],
+        gradient: navGradient,
+        border: Border.all(
+          color: uiStyle.isDark
+              ? Colors.white.withValues(alpha: .08)
+              : ui.borderColor,
         ),
-        border: Border.all(color: Colors.white.withValues(alpha: .08)),
         boxShadow: [
           BoxShadow(
-            color: _PremiumPalette.cyan.withValues(alpha: .10),
+            color: uiStyle.accent.withValues(
+              alpha: uiStyle.isDark ? .12 : .07,
+            ),
             blurRadius: 28,
             spreadRadius: 1,
           ),
           BoxShadow(
-            color: _PremiumPalette.violet.withValues(alpha: .10),
+            color: navGradient.colors.last.withValues(
+              alpha: uiStyle.isDark ? .12 : .06,
+            ),
             blurRadius: 32,
             spreadRadius: -2,
             offset: const Offset(0, 16),
           ),
           BoxShadow(
-            color: Colors.black.withValues(alpha: .28),
+            color: Colors.black.withValues(alpha: uiStyle.isDark ? .28 : .08),
             blurRadius: 30,
             offset: const Offset(0, 18),
           ),
@@ -8186,80 +12132,85 @@ class _PremiumBottomNavigationBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(30),
         child: Stack(
           children: [
-            Positioned(
-              left: -30,
-              bottom: -48,
-              child: _PremiumAmbientGlow(
-                size: 160,
-                color: _PremiumPalette.cyan.withValues(alpha: .12),
+            if (uiStyle.isDark) ...[
+              Positioned(
+                left: -30,
+                bottom: -48,
+                child: _PremiumAmbientGlow(
+                  size: 160,
+                  color: _PremiumPalette.cyan.withValues(alpha: .12),
+                ),
               ),
-            ),
-            Positioned(
-              right: -30,
-              top: -44,
-              child: _PremiumAmbientGlow(
-                size: 160,
-                color: _PremiumPalette.lilac.withValues(alpha: .12),
+              Positioned(
+                right: -30,
+                top: -44,
+                child: _PremiumAmbientGlow(
+                  size: 160,
+                  color: _PremiumPalette.lilac.withValues(alpha: .12),
+                ),
               ),
-            ),
+            ],
             SafeArea(
               top: false,
               child: SizedBox(
-                height: 82,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _PremiumNavItem(
-                        icon: Icons.home_rounded,
-                        label: 'Home',
-                        active: activeNavIndex ==
-                            _MainNavigationScreenState._navHome,
-                        onTap: () =>
-                            onNavTap(_MainNavigationScreenState._navHome),
+                height: 86,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(2, 3, 2, 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _PremiumNavItem(
+                          icon: Icons.home_rounded,
+                          label: 'Home',
+                          active: activeNavIndex ==
+                              _MainNavigationScreenState._navHome,
+                          onTap: () =>
+                              onNavTap(_MainNavigationScreenState._navHome),
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: _PremiumNavItem(
-                        icon: Icons.bar_chart_rounded,
-                        label: 'Analytics',
-                        active: activeNavIndex ==
-                            _MainNavigationScreenState._navAnalytics,
-                        onTap: () =>
-                            onNavTap(_MainNavigationScreenState._navAnalytics),
+                      Expanded(
+                        child: _PremiumNavItem(
+                          icon: Icons.bar_chart_rounded,
+                          label: 'Analytics',
+                          active: activeNavIndex ==
+                              _MainNavigationScreenState._navAnalytics,
+                          onTap: () =>
+                              onNavTap(_MainNavigationScreenState._navAnalytics),
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: _PremiumNavItem(
-                        icon: Icons.add_rounded,
-                        label: 'Track',
-                        active: false,
-                        highlight: true,
-                        iconSize: 31,
-                        onTap: () =>
-                            onNavTap(_MainNavigationScreenState._navTrack),
+                      Expanded(
+                        child: _PremiumNavItem(
+                          icon: Icons.add_rounded,
+                          label: 'Track',
+                          active: false,
+                          highlight: true,
+                          iconSize: 31,
+                          onTap: () =>
+                              onNavTap(_MainNavigationScreenState._navTrack),
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: _PremiumNavItem(
-                        icon: Icons.auto_awesome_rounded,
-                        label: 'Tools',
-                        active: activeNavIndex ==
-                            _MainNavigationScreenState._navTools,
-                        onTap: () =>
-                            onNavTap(_MainNavigationScreenState._navTools),
+                      Expanded(
+                        child: _PremiumNavItem(
+                          icon: Icons.auto_awesome_rounded,
+                          label: 'Tools',
+                          active: activeNavIndex ==
+                              _MainNavigationScreenState._navTools,
+                          onTap: () =>
+                              onNavTap(_MainNavigationScreenState._navTools),
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: _PremiumNavItem(
-                        icon: Icons.settings_rounded,
-                        label: 'Settings',
-                        active: activeNavIndex ==
-                            _MainNavigationScreenState._navSettings,
-                        onTap: () =>
-                            onNavTap(_MainNavigationScreenState._navSettings),
+                      Expanded(
+                        child: _PremiumNavItem(
+                          icon: Icons.settings_rounded,
+                          label: 'Settings',
+                          active: activeNavIndex ==
+                              _MainNavigationScreenState._navSettings,
+                          onTap: () =>
+                              onNavTap(_MainNavigationScreenState._navSettings),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -8289,11 +12240,16 @@ class _PremiumNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final themeAccent = colorScheme.primary;
+    final highlightForeground = colorScheme.onPrimary;
     final accent = highlight
-        ? _PremiumPalette.cyan
+        ? themeAccent
         : active
-            ? Colors.white
-            : _PremiumPalette.textMuted;
+            ? themeAccent
+            : ui.textMuted;
 
     return Material(
       color: Colors.transparent,
@@ -8301,25 +12257,25 @@ class _PremiumNavItem extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(24),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           child: Center(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOut,
               padding: EdgeInsets.symmetric(
                 horizontal: highlight ? 14 : 10,
-                vertical: highlight ? 11 : 10,
+                vertical: highlight ? 9 : 7,
               ),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(highlight ? 20 : 18),
                 gradient: highlight
-                    ? const LinearGradient(
+                    ? LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Color(0xFF1A3A7D),
-                          Color(0xFF2656CB),
-                          Color(0xFF6D4DFF),
+                          themeAccent.withValues(alpha: .82),
+                          themeAccent,
+                          themeAccent.withValues(alpha: .62),
                         ],
                       )
                     : active
@@ -8327,28 +12283,38 @@ class _PremiumNavItem extends StatelessWidget {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              Colors.white.withValues(alpha: .10),
-                              Colors.white.withValues(alpha: .04),
+                              themeAccent.withValues(
+                                alpha: uiStyle.isDark ? .18 : .14,
+                              ),
+                              themeAccent.withValues(
+                                alpha: uiStyle.isDark ? .07 : .05,
+                              ),
                             ],
                           )
                         : null,
                 color: !highlight && !active ? Colors.transparent : null,
                 border: Border.all(
                   color: highlight
-                      ? Colors.white.withValues(alpha: .16)
+                      ? Colors.white.withValues(
+                          alpha: uiStyle.isDark ? .16 : .24,
+                        )
                       : active
-                          ? Colors.white.withValues(alpha: .08)
+                          ? themeAccent.withValues(alpha: .14)
                           : Colors.transparent,
                 ),
                 boxShadow: highlight
                     ? [
                         BoxShadow(
-                          color: _PremiumPalette.cyan.withValues(alpha: .22),
+                          color: themeAccent.withValues(
+                            alpha: uiStyle.isDark ? .22 : .16,
+                          ),
                           blurRadius: 20,
                           spreadRadius: -2,
                         ),
                         BoxShadow(
-                          color: _PremiumPalette.violet.withValues(alpha: .22),
+                          color: themeAccent.withValues(
+                            alpha: uiStyle.isDark ? .16 : .10,
+                          ),
                           blurRadius: 22,
                           spreadRadius: -4,
                           offset: const Offset(0, 10),
@@ -8357,7 +12323,7 @@ class _PremiumNavItem extends StatelessWidget {
                     : active
                         ? [
                             BoxShadow(
-                              color: Colors.white.withValues(alpha: .05),
+                              color: themeAccent.withValues(alpha: .12),
                               blurRadius: 14,
                               spreadRadius: -4,
                             ),
@@ -8369,17 +12335,17 @@ class _PremiumNavItem extends StatelessWidget {
                 children: [
                   Icon(
                     icon,
-                    color: highlight ? Colors.white : accent,
+                    color: highlight ? highlightForeground : accent,
                     size: iconSize,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: highlight ? Colors.white : accent,
-                      fontSize: 10.5,
+                      color: highlight ? highlightForeground : accent,
+                      fontSize: 10,
                       fontWeight: active || highlight
                           ? FontWeight.w700
                           : FontWeight.w600,
@@ -8409,6 +12375,7 @@ class _HomeDashboardData {
   final double currentBalance;
   final double projectedAvailableBalance;
   final double settledBillsTotal;
+  final double todaySpending;
   final double dailyBudget;
   final bool usesManualDailyBudget;
   final bool isManualDailyBudgetSafe;
@@ -8417,9 +12384,10 @@ class _HomeDashboardData {
   final List<double> weeklyExpenseTrend;
   final int billCount;
   final List<BillItem> upcomingBills;
-  final List<ExpenseItem> recentExpenses;
+  final List<_HomeActivityItem> recentActivity;
   final double healthScore;
   final String healthLabel;
+  final bool setupChecklistDismissed;
 
   const _HomeDashboardData({
     required this.preferredName,
@@ -8433,6 +12401,7 @@ class _HomeDashboardData {
     required this.currentBalance,
     required this.projectedAvailableBalance,
     required this.settledBillsTotal,
+    required this.todaySpending,
     required this.dailyBudget,
     required this.usesManualDailyBudget,
     required this.isManualDailyBudgetSafe,
@@ -8441,10 +12410,557 @@ class _HomeDashboardData {
     required this.weeklyExpenseTrend,
     required this.billCount,
     required this.upcomingBills,
-    required this.recentExpenses,
+    required this.recentActivity,
     required this.healthScore,
     required this.healthLabel,
+    required this.setupChecklistDismissed,
   });
+}
+
+enum _HomeActivityType { income, expense, bill }
+
+@immutable
+class _HomeActivityItem {
+  final _HomeActivityType type;
+  final String title;
+  final String subtitle;
+  final double amount;
+  final DateTime occurredAt;
+
+  const _HomeActivityItem({
+    required this.type,
+    required this.title,
+    required this.subtitle,
+    required this.amount,
+    required this.occurredAt,
+  });
+
+  bool get isPositive => type == _HomeActivityType.income;
+}
+
+class _SetupChecklistStep {
+  final String title;
+  final String helper;
+  final bool completed;
+  final VoidCallback onTap;
+
+  const _SetupChecklistStep({
+    required this.title,
+    required this.helper,
+    required this.completed,
+    required this.onTap,
+  });
+}
+
+class _TodayStatusData {
+  final String label;
+  final Color accent;
+  final String insight;
+
+  const _TodayStatusData({
+    required this.label,
+    required this.accent,
+    required this.insight,
+  });
+}
+
+_TodayStatusData _resolveHomeDashboardStatus(_HomeDashboardData data) {
+  final hasGuidance = data.startingBalance > 0 ||
+      data.totalIncomeAdded > 0 ||
+      data.remainingSweldoDays > 0 ||
+      data.upcomingBills.isNotEmpty;
+  if (!hasGuidance) {
+    return const _TodayStatusData(
+      label: 'Needs Setup',
+      accent: Color(0xFF6C8CFF),
+      insight: 'Add your balance and payday to unlock daily budget guidance.',
+    );
+  }
+
+  final safeToSpend = max(0.0, data.dailyBudget);
+  if (data.currentBalance < 0 || data.projectedAvailableBalance < 0) {
+    return const _TodayStatusData(
+      label: 'Needs Attention',
+      accent: Color(0xFFFF7A9C),
+      insight:
+          'Your balance is under pressure. Focus on essentials and review upcoming bills before payday.',
+    );
+  }
+  if (safeToSpend <= 0) {
+    return const _TodayStatusData(
+      label: 'Tight Budget',
+      accent: Color(0xFFFFC857),
+      insight:
+          'Your remaining plan is tight. Hold spending where possible until the next cutoff.',
+    );
+  }
+  if (data.todaySpending > safeToSpend) {
+    return _TodayStatusData(
+      label: 'Watch Spending',
+      accent: const Color(0xFFFFC857),
+      insight:
+          'You already spent ${formatMoney(data.todaySpending)} today, which is above today\'s safe pace.',
+    );
+  }
+  if (data.todaySpending >= safeToSpend * .8) {
+    return _TodayStatusData(
+      label: 'Tight Budget',
+      accent: const Color(0xFFFFC857),
+      insight:
+          'You can still spend around ${formatMoney(max(0.0, safeToSpend - data.todaySpending))} today, but stay mindful until payday.',
+    );
+  }
+  return _TodayStatusData(
+    label: 'On Track',
+    accent: const Color(0xFF57E9C3),
+    insight:
+        'You can spend around ${formatMoney(safeToSpend)} today and stay on track until payday.',
+  );
+}
+
+class _TodayDashboardCard extends StatelessWidget {
+  final _HomeDashboardData data;
+  final VoidCallback onOpenSweldo;
+  final VoidCallback onOpenBills;
+  final VoidCallback onOpenExpenses;
+
+  const _TodayDashboardCard({
+    required this.data,
+    required this.onOpenSweldo,
+    required this.onOpenBills,
+    required this.onOpenExpenses,
+  });
+
+  bool get _hasGuidance {
+    return data.startingBalance > 0 ||
+        data.totalIncomeAdded > 0 ||
+        data.remainingSweldoDays > 0 ||
+        data.upcomingBills.isNotEmpty;
+  }
+
+  _TodayStatusData _resolveStatus() {
+    return _resolveHomeDashboardStatus(data);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final status = _resolveStatus();
+    final nextBill = data.upcomingBills.isEmpty ? null : data.upcomingBills.first;
+    final nextBillLabel = nextBill == null
+        ? 'No upcoming bill saved'
+        : '${nextBill.title} • ${formatMoney(nextBill.amount)}';
+    final daysLabel = data.remainingSweldoDays > 0
+        ? '${data.remainingSweldoDays} day${data.remainingSweldoDays == 1 ? '' : 's'} until cutoff'
+        : 'No cutoff date set';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: ui.sectionContainerDecoration().copyWith(
+            border: Border.all(color: status.accent.withValues(alpha: .18)),
+          ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Today',
+                      style: sweldoTitleStyle(
+                        ui,
+                        size: 24,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _hasGuidance
+                          ? 'A quick read on daily spend, upcoming bills, and your cutoff pace.'
+                          : 'Add your balance and payday to unlock daily budget guidance.',
+                      style: sweldoHelperStyle(
+                        ui,
+                        size: 12.8,
+                        color: ui.textSecondary,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: ui.iconChipBackground(status.accent, radius: 18)
+                    .copyWith(
+                  border: Border.all(color: status.accent.withValues(alpha: .24)),
+                ),
+                child: Text(
+                  status.label,
+                  style: TextStyle(
+                    color: status.accent,
+                    fontSize: 12.2,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 420;
+              final tiles = [
+                _TodayMetricTile(
+                  title: 'Safe to Spend Today',
+                  value: formatMoney(max(0.0, data.dailyBudget)),
+                  helper: data.usesManualDailyBudget
+                      ? 'Manual safe-to-spend limit'
+                      : 'Recommended daily pace',
+                  accent: status.accent,
+                  icon: Icons.today_rounded,
+                ),
+                _TodayMetricTile(
+                  title: 'Today\'s Spending',
+                  value: formatMoney(data.todaySpending),
+                  helper: 'Logged today',
+                  accent: intelliumPink,
+                  icon: Icons.receipt_long_rounded,
+                  onTap: onOpenExpenses,
+                ),
+                _TodayMetricTile(
+                  title: nextBill == null ? 'Upcoming Bills' : 'Next Bill',
+                  value: nextBill == null
+                      ? formatMoney(data.totalBills)
+                      : formatMoney(nextBill.amount),
+                  helper: nextBill == null
+                      ? 'No bill due soon'
+                      : formatCalendarDate(resolveUpcomingBillDate(nextBill) ?? nextBill.dueDate),
+                  accent: const Color(0xFFFFC857),
+                  icon: Icons.event_note_rounded,
+                  onTap: onOpenBills,
+                ),
+                _TodayMetricTile(
+                  title: 'Cutoff Pace',
+                  value: daysLabel,
+                  helper: data.projectedAvailableBalance >= 0
+                      ? '${formatMoney(data.projectedAvailableBalance)} expected balance'
+                      : 'Projected balance needs attention',
+                  accent: const Color(0xFF6C8CFF),
+                  icon: Icons.schedule_rounded,
+                  onTap: onOpenSweldo,
+                ),
+              ];
+
+              if (compact) {
+                return Column(
+                  children: [
+                    for (var index = 0; index < tiles.length; index++) ...[
+                      tiles[index],
+                      if (index != tiles.length - 1) const SizedBox(height: 10),
+                    ],
+                  ],
+                );
+              }
+
+              return Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  for (final tile in tiles)
+                    SizedBox(
+                      width: (constraints.maxWidth - 10) / 2,
+                      child: tile,
+                    ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: ui.cardDecoration(radius: 22).copyWith(
+                  border: Border.all(
+                    color: status.accent.withValues(alpha: .14),
+                  ),
+                ),
+            child: Text(
+              _hasGuidance
+                  ? status.insight
+                  : 'Add your balance and payday to unlock daily budget guidance.',
+              style: TextStyle(
+                color: ui.textSecondary,
+                fontSize: 12.8,
+                height: 1.45,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          if (nextBill != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Coming up: $nextBillLabel',
+              style: TextStyle(
+                color: ui.textMuted,
+                fontSize: 12.2,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TodayMetricTile extends StatelessWidget {
+  final String title;
+  final String value;
+  final String helper;
+  final Color accent;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _TodayMetricTile({
+    required this.title,
+    required this.value,
+    required this.helper,
+    required this.accent,
+    required this.icon,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final content = Container(
+      padding: const EdgeInsets.all(14),
+      decoration: ui.cardDecoration(radius: 22).copyWith(
+            border: Border.all(color: accent.withValues(alpha: .16)),
+          ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 40,
+            width: 40,
+            decoration: ui.iconChipBackground(accent, radius: 14),
+            child: Icon(icon, color: accent, size: 19),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: sweldoLabelStyle(
+                    ui,
+                    size: 12.4,
+                    color: ui.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  value,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: sweldoAmountStyle(
+                    ui,
+                    size: 20,
+                    weight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  helper,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: sweldoHelperStyle(
+                    ui,
+                    size: 12,
+                    color: ui.textMuted,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (onTap == null) {
+      return content;
+    }
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: content,
+      ),
+    );
+  }
+}
+
+class _SetupChecklistCard extends StatelessWidget {
+  final List<_SetupChecklistStep> steps;
+  final VoidCallback onSkip;
+
+  const _SetupChecklistCard({
+    required this.steps,
+    required this.onSkip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final completedCount = steps.where((step) => step.completed).length;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: ui.sectionContainerDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Set up your money tracker',
+                      style: TextStyle(
+                        color: ui.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Complete these quick steps so SweldoTrack can give better daily budget insights.',
+                      style: TextStyle(
+                        color: ui.textSecondary,
+                        fontSize: 12.5,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              TextButton(
+                onPressed: onSkip,
+                child: const Text('Skip'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: ui.cardDecoration(radius: 20),
+            child: Text(
+              '$completedCount of ${steps.length} setup steps completed.',
+              style: TextStyle(
+                color: ui.textSecondary,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          ...List.generate(steps.length, (index) {
+            final step = steps[index];
+            final accent = step.completed
+                ? const Color(0xFF57E9C3)
+                : const Color(0xFF6C8CFF);
+            return Padding(
+              padding: EdgeInsets.only(bottom: index == steps.length - 1 ? 0 : 10),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: step.onTap,
+                  borderRadius: BorderRadius.circular(22),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: ui.cardDecoration(radius: 22).copyWith(
+                          border: Border.all(
+                            color: accent.withValues(alpha: .16),
+                          ),
+                        ),
+                    child: Row(
+                      children: [
+                        Container(
+                          height: 42,
+                          width: 42,
+                          decoration: ui.iconChipBackground(accent, radius: 14),
+                          child: Icon(
+                            step.completed
+                                ? Icons.check_circle_rounded
+                                : Icons.radio_button_unchecked_rounded,
+                            color: accent,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                step.title,
+                                style: TextStyle(
+                                  color: ui.textPrimary,
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                step.helper,
+                                style: TextStyle(
+                                  color: ui.textSecondary,
+                                  fontSize: 12.2,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: ui.textMuted,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
 }
 
 class _FreeHomeDashboard extends StatelessWidget {
@@ -8454,6 +12970,8 @@ class _FreeHomeDashboard extends StatelessWidget {
   final VoidCallback onOpenBills;
   final VoidCallback onOpenSavings;
   final VoidCallback onOpenExpenses;
+  final Future<void> Function() onOpenInvite;
+  final VoidCallback onDismissSetupChecklist;
 
   const _FreeHomeDashboard({
     required this.data,
@@ -8462,282 +12980,274 @@ class _FreeHomeDashboard extends StatelessWidget {
     required this.onOpenBills,
     required this.onOpenSavings,
     required this.onOpenExpenses,
+    required this.onOpenInvite,
+    required this.onDismissSetupChecklist,
   });
 
   @override
   Widget build(BuildContext context) {
-    final ui = SweldoVisualStyle.fromContext(context);
+    final setupSteps = <_SetupChecklistStep>[
+      _SetupChecklistStep(
+        title: 'Add starting balance',
+        helper: 'Set the amount you already have available.',
+        completed: data.startingBalance > 0 || data.totalIncomeAdded > 0,
+        onTap: onOpenSweldo,
+      ),
+      _SetupChecklistStep(
+        title: 'Set payday / cutoff',
+        helper: 'Tell SweldoTrack when this budget cycle ends.',
+        completed: data.remainingSweldoDays > 0,
+        onTap: onOpenSweldo,
+      ),
+      _SetupChecklistStep(
+        title: 'Choose main goal',
+        helper: 'Set a savings goal so progress has context.',
+        completed: data.targetSavings > 0,
+        onTap: onOpenSavings,
+      ),
+      _SetupChecklistStep(
+        title: 'Add first bill',
+        helper: 'Track upcoming bills before they surprise you.',
+        completed: data.billCount > 0 || data.totalBills > 0,
+        onTap: onOpenBills,
+      ),
+      _SetupChecklistStep(
+        title: 'Add first expense',
+        helper: 'Log one spending entry to start your daily insights.',
+        completed: data.expenseCount > 0 || data.totalExpenses > 0,
+        onTap: onOpenExpenses,
+      ),
+    ];
+    final showSetupChecklist = !data.setupChecklistDismissed &&
+        setupSteps.any((step) => !step.completed);
+    final dailyProgress = data.dailyBudget <= 0
+        ? null
+        : (data.todaySpending / max(data.dailyBudget, 1))
+            .clamp(0.0, 1.0)
+            .toDouble();
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
-      child: Stack(
+      padding: _pageContentPadding(context, top: 20, bottom: 110),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Positioned(
-            top: 8,
-            right: -32,
-            child: Container(
-              height: 150,
-              width: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: ui.isJade
-                    ? const Color(0xFF2EE6A6).withValues(alpha: .12)
-                    : intelliumPurple.withValues(alpha: .16),
-                boxShadow: [
-                  BoxShadow(
-                    color: ui.isJade
-                        ? const Color(0xFF2EE6A6).withValues(alpha: .24)
-                        : intelliumPurple.withValues(alpha: .28),
-                    blurRadius: 90,
-                    spreadRadius: 16,
-                  ),
-                ],
-              ),
-            ),
+          _PremiumDashboardHeader(
+            data: data,
+            hasPremium: false,
           ),
-          Positioned(
-            top: 176,
-            left: -46,
-            child: Container(
-              height: 140,
-              width: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: ui.isJade
-                    ? const Color(0xFF9DFFE0).withValues(alpha: .10)
-                    : intelliumCyan.withValues(alpha: .14),
-                boxShadow: [
-                  BoxShadow(
-                    color: ui.isJade
-                        ? const Color(0xFF45F5B6).withValues(alpha: .18)
-                        : intelliumCyan.withValues(alpha: .22),
-                    blurRadius: 88,
-                    spreadRadius: 14,
-                  ),
-                ],
-              ),
-            ),
+          const SizedBox(height: 18),
+          _PremiumDashboardHero(
+            data: data,
+            onOpenSweldo: onOpenSweldo,
+            onOpenBills: onOpenBills,
+            onOpenSavings: onOpenSavings,
+            onOpenExpenses: onOpenExpenses,
+            onOpenInvite: onOpenInvite,
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              IntelliumTopHeader(
-                preferredName: data.preferredName,
-                currentDateTime: data.currentDateTime,
-              ),
-              const SizedBox(height: 22),
-              IntelliumBalanceCard(
-                startingBalance: data.startingBalance,
-                totalIncomeAdded: data.totalIncomeAdded,
-                availableBalance: data.currentBalance,
-                savingsBalance: data.savingsSaved,
-                projectedAvailableBalance: data.projectedAvailableBalance,
-                upcomingBillsAmount: data.totalBills,
-                onStartingBalanceTap: onOpenSweldo,
-                onIncomeTap: onOpenSweldo,
-                onSavingsTap: onOpenSavings,
-                onBillsTap: onOpenBills,
-              ),
-              const SizedBox(height: 18),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final useWrap = constraints.maxWidth < 380;
-                  final buttons = [
-                    HomeQuickActionButton(
-                      label: 'Budget',
-                      icon: Icons.payments_rounded,
-                      color: intelliumBlue,
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked = constraints.maxWidth < 420;
+              final anticipatedCard = _DashboardSupportCard(
+                title: 'Expected Balance',
+                value: formatMoney(data.projectedAvailableBalance),
+                subtitle: data.remainingSweldoDays > 0
+                    ? '${data.remainingSweldoDays} day${data.remainingSweldoDays == 1 ? '' : 's'} until cutoff'
+                    : 'No cutoff date set yet',
+                icon: Icons.calendar_month_rounded,
+                accent: const Color(0xFF2D6BFF),
+                onTap: onOpenBills,
+              );
+              final dailyLimitCard = _DashboardSupportCard(
+                title: 'Safe to Spend Today',
+                value: formatMoney(data.dailyBudget),
+                subtitle: data.usesManualDailyBudget
+                    ? '${formatMoney(data.todaySpending)} spent today'
+                    : '${formatMoney(data.todaySpending)} of today\'s pace used',
+                icon: Icons.speed_rounded,
+                accent: const Color(0xFF12B8D9),
+                progress: dailyProgress,
+                onTap: onOpenSweldo,
+              );
+              if (stacked) {
+                return Column(
+                  children: [
+                    anticipatedCard,
+                    const SizedBox(height: 12),
+                    dailyLimitCard,
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: anticipatedCard),
+                  const SizedBox(width: 12),
+                  Expanded(child: dailyLimitCard),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 18),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final useWrap = constraints.maxWidth < 380;
+              final buttons = [
+                HomeQuickActionButton(
+                  label: 'Budget',
+                  icon: Icons.payments_rounded,
+                  color: intelliumBlue,
+                  onTap: onOpenSweldo,
+                ),
+                HomeQuickActionButton(
+                  label: 'Bills',
+                  icon: Icons.receipt_long_rounded,
+                  color: const Color(0xFFFF8A5B),
+                  onTap: onOpenBills,
+                ),
+                HomeQuickActionButton(
+                  label: 'Savings',
+                  icon: Icons.savings_rounded,
+                  color: const Color(0xFF5B6CFF),
+                  onTap: onOpenSavings,
+                ),
+                HomeQuickActionButton(
+                  label: 'Spending',
+                  icon: Icons.wallet_rounded,
+                  color: intelliumCyan,
+                  onTap: onOpenExpenses,
+                ),
+              ];
+              if (useWrap) {
+                final cardWidth = (constraints.maxWidth - 12) / 2;
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    for (final button in buttons)
+                      SizedBox(width: cardWidth, child: button),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  for (var index = 0; index < buttons.length; index++) ...[
+                    if (index > 0) const SizedBox(width: 12),
+                    Expanded(child: buttons[index]),
+                  ],
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 26),
+          const HomeSectionHeader(
+            title: 'Overview',
+            subtitle: 'Income, spending, savings, and upcoming bills at a glance',
+          ),
+          const SizedBox(height: 14),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final cardWidth = (constraints.maxWidth - 12) / 2;
+              final cardHeight = constraints.maxWidth < 380 ? 176.0 : 168.0;
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  SizedBox(
+                    width: cardWidth,
+                    height: cardHeight,
+                    child: HomeOverviewCard(
+                      title: 'Income',
+                      value: formatMoney(data.totalIncomeAdded),
+                      subtitle: 'Total income added this cycle',
+                      icon: Icons.trending_up_rounded,
+                      color: const Color(0xFF16A34A),
                       onTap: onOpenSweldo,
                     ),
-                    HomeQuickActionButton(
-                      label: 'Upcoming Bills',
-                      icon: Icons.receipt_long_rounded,
-                      color: intelliumPink,
-                      onTap: onOpenBills,
-                    ),
-                    HomeQuickActionButton(
-                      label: 'Savings',
-                      icon: Icons.savings_rounded,
-                      color: intelliumPurple,
-                      onTap: onOpenSavings,
-                    ),
-                    HomeQuickActionButton(
-                      label: 'Spending',
-                      icon: Icons.wallet_rounded,
-                      color: intelliumCyan,
+                  ),
+                  SizedBox(
+                    width: cardWidth,
+                    height: cardHeight,
+                    child: HomeOverviewCard(
+                      title: 'Spending',
+                      value: formatMoney(data.totalExpenses),
+                      subtitle: data.expenseCount == 0
+                          ? 'No spending recorded yet'
+                          : '${data.expenseCount} spending entr${data.expenseCount == 1 ? 'y' : 'ies'} logged',
+                      icon: Icons.trending_down_rounded,
+                      color: const Color(0xFFFF4D6D),
                       onTap: onOpenExpenses,
                     ),
-                  ];
-                  if (useWrap) {
-                    final cardWidth = (constraints.maxWidth - 12) / 2;
-                    return Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        for (final button in buttons)
-                          SizedBox(width: cardWidth, child: button),
-                      ],
-                    );
-                  }
-                  return Row(
-                    children: [
-                      for (var index = 0; index < buttons.length; index++) ...[
-                        if (index > 0) const SizedBox(width: 12),
-                        Expanded(child: buttons[index]),
-                      ],
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 26),
-              const HomeSectionHeader(
-                title: 'Overview',
-                subtitle: 'Live snapshot from your local data',
-              ),
-              const SizedBox(height: 14),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final cardWidth = (constraints.maxWidth - 14) / 2;
-                  final cardHeight = constraints.maxWidth < 380 ? 172.0 : 164.0;
-
-                  return Wrap(
-                    spacing: 14,
-                    runSpacing: 14,
-                    children: [
-                      SizedBox(
-                        width: cardWidth,
-                        height: cardHeight,
-                        child: HomeOverviewCard(
-                          title: 'Opening Balance',
-                          value: formatPhp(data.startingBalance),
-                          subtitle: 'Money available before recorded income',
-                          icon: Icons.payments_rounded,
-                          color: intelliumBlue,
-                          onTap: onOpenSweldo,
-                        ),
-                      ),
-                      SizedBox(
-                        width: cardWidth,
-                        height: cardHeight,
-                        child: HomeOverviewCard(
-                          title: 'Upcoming Bills',
-                          value: formatPhp(data.totalBills),
-                          subtitle: data.billCount == 0
-                              ? 'No upcoming bills saved yet'
-                              : '${data.billCount} unpaid bill items before the next cutoff',
-                          icon: Icons.receipt_long_rounded,
-                          color: intelliumPink,
-                          onTap: onOpenBills,
-                        ),
-                      ),
-                      SizedBox(
-                        width: cardWidth,
-                        height: cardHeight,
-                        child: HomeOverviewCard(
-                          title: 'Savings Balance',
-                          value: formatPhp(data.savingsSaved),
-                          subtitle: 'Money set aside',
-                          icon: Icons.savings_rounded,
-                          color: intelliumCyan,
-                          onTap: onOpenSavings,
-                        ),
-                      ),
-                      SizedBox(
-                        width: cardWidth,
-                        height: cardHeight,
-                        child: HomeOverviewCard(
-                          title: 'Income',
-                          value: formatPhp(data.totalIncomeAdded),
-                          subtitle: 'Total income added',
-                          icon: Icons.payments_rounded,
-                          color: intelliumPurple,
-                          onTap: onOpenSweldo,
-                        ),
-                      ),
-                      SizedBox(
-                        width: cardWidth,
-                        height: cardHeight,
-                        child: HomeOverviewCard(
-                          title: 'Spending',
-                          value: formatPhp(data.totalExpenses),
-                          subtitle: data.expenseCount == 0
-                              ? 'No spending recorded in this cycle'
-                              : '${data.expenseCount} spending entries in this cycle',
-                          icon: Icons.wallet_rounded,
-                          color: intelliumPink,
-                          onTap: onOpenExpenses,
-                        ),
-                      ),
-                      SizedBox(
-                        width: cardWidth,
-                        height: cardHeight,
-                        child: HomeOverviewCard(
-                          title: 'Daily Spending Limit',
-                          value: formatPhp(data.dailyBudget),
-                          subtitle: data.usesManualDailyBudget
-                              ? (data.isManualDailyBudgetSafe
-                                  ? 'Manual daily spending limit is on track'
-                                  : 'Manual daily spending limit is above safe cutoff pace')
-                              : (data.remainingSweldoDays > 0
-                                  ? '${data.remainingSweldoDays} days until next cutoff'
-                                  : 'No cutoff date set'),
-                          icon: Icons.today_rounded,
-                          color: intelliumCyan,
-                          onTap: onOpenSweldo,
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 24),
-              PremiumFeatureLockCard(
-                title: '7-Day Analysis',
-                subtitle:
-                    'Unlock 7-day analysis and custom themes with SweldoTrack Premium.',
-                premiumService: premiumService,
-              ),
-              const SizedBox(height: 24),
-              const HomeSectionHeader(
-                title: 'Premium Tools',
-                subtitle:
-                    'Upgrade to unlock Calculator and To-Do List in your premium workspace',
-              ),
-              const SizedBox(height: 14),
-              PremiumFeatureLockCard(
-                title: 'Premium Tools',
-                subtitle:
-                    'Unlock Calculator and To-Do List with SweldoTrack Premium.',
-                premiumService: premiumService,
-              ),
-              const SizedBox(height: 20),
-              IntelliumFinancialHealthCard(
-                score: data.healthScore,
-                label: data.healthLabel,
-                message: financialHealthMessage(data.healthLabel),
-              ),
-              const SizedBox(height: 24),
-              const HomeSectionHeader(
-                title: 'Upcoming Bills',
-                subtitle: 'Your next unpaid schedules',
-              ),
-              const SizedBox(height: 14),
-              UpcomingBillsCard(
-                bills: data.upcomingBills,
-                onTap: onOpenBills,
-              ),
-              const SizedBox(height: 24),
-              const HomeSectionHeader(
-                title: 'Recent Activity',
-                subtitle: 'Latest spending entries from the active cutoff',
-              ),
-              const SizedBox(height: 14),
-              RecentActivityCard(
-                expenses: data.recentExpenses,
-                onTap: onOpenExpenses,
-              ),
-            ],
+                  ),
+                  SizedBox(
+                    width: cardWidth,
+                    height: cardHeight,
+                    child: HomeOverviewCard(
+                      title: 'Savings',
+                      value: formatMoney(data.savingsSaved),
+                      subtitle: 'Current tracked savings balance',
+                      icon: Icons.savings_rounded,
+                      color: const Color(0xFF3B82F6),
+                      onTap: onOpenSavings,
+                    ),
+                  ),
+                  SizedBox(
+                    width: cardWidth,
+                    height: cardHeight,
+                    child: HomeOverviewCard(
+                      title: 'Upcoming Bills',
+                      value: formatMoney(data.totalBills),
+                      subtitle: data.billCount == 0
+                          ? 'No unpaid bills scheduled'
+                          : '${data.billCount} bill${data.billCount == 1 ? '' : 's'} due soon',
+                      icon: Icons.receipt_long_rounded,
+                      color: const Color(0xFFFF8A00),
+                      onTap: onOpenBills,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          if (showSetupChecklist) ...[
+            const SizedBox(height: 18),
+            _SetupChecklistCard(
+              steps: setupSteps,
+              onSkip: onDismissSetupChecklist,
+            ),
+          ],
+          const SizedBox(height: 24),
+          const HomeSectionHeader(
+            title: 'This Month',
+            subtitle: 'Recent income, spending, and bill activity from your saved data',
+          ),
+          const SizedBox(height: 14),
+          _RecentActivityCard(
+            activities: data.recentActivity,
+            onTap: onOpenExpenses,
+          ),
+          const SizedBox(height: 24),
+          const HomeSectionHeader(
+            title: 'Upcoming Bills',
+            subtitle: 'Your next unpaid schedules',
+          ),
+          const SizedBox(height: 14),
+          UpcomingBillsCard(
+            bills: data.upcomingBills,
+            onTap: onOpenBills,
+          ),
+          const SizedBox(height: 24),
+          PremiumFeatureLockCard(
+            title: 'Premium Appearances',
+            subtitle:
+                'Light, Dark, and Intellium Digital are free. Unlock Premium Neon and Premium Executive with SweldoTrack Premium.',
+            premiumService: premiumService,
+          ),
+          const SizedBox(height: 20),
+          IntelliumFinancialHealthCard(
+            score: data.healthScore,
+            label: data.healthLabel,
+            message: financialHealthMessage(data.healthLabel),
           ),
         ],
       ),
@@ -8752,8 +13262,10 @@ class _PremiumHomeDashboard extends StatelessWidget {
   final VoidCallback onOpenBills;
   final VoidCallback onOpenSavings;
   final VoidCallback onOpenExpenses;
+  final Future<void> Function() onOpenInvite;
   final VoidCallback onOpenCalculator;
   final VoidCallback onOpenTodo;
+  final VoidCallback onDismissSetupChecklist;
 
   const _PremiumHomeDashboard({
     required this.data,
@@ -8762,15 +13274,57 @@ class _PremiumHomeDashboard extends StatelessWidget {
     required this.onOpenBills,
     required this.onOpenSavings,
     required this.onOpenExpenses,
+    required this.onOpenInvite,
     required this.onOpenCalculator,
     required this.onOpenTodo,
+    required this.onDismissSetupChecklist,
   });
 
   @override
   Widget build(BuildContext context) {
+    final setupSteps = <_SetupChecklistStep>[
+      _SetupChecklistStep(
+        title: 'Add starting balance',
+        helper: 'Set the amount you already have available.',
+        completed: data.startingBalance > 0 || data.totalIncomeAdded > 0,
+        onTap: onOpenSweldo,
+      ),
+      _SetupChecklistStep(
+        title: 'Set payday / cutoff',
+        helper: 'Tell SweldoTrack when this budget cycle ends.',
+        completed: data.remainingSweldoDays > 0,
+        onTap: onOpenSweldo,
+      ),
+      _SetupChecklistStep(
+        title: 'Choose main goal',
+        helper: 'Set a savings goal so progress has context.',
+        completed: data.targetSavings > 0,
+        onTap: onOpenSavings,
+      ),
+      _SetupChecklistStep(
+        title: 'Add first bill',
+        helper: 'Track upcoming bills before they surprise you.',
+        completed: data.billCount > 0 || data.totalBills > 0,
+        onTap: onOpenBills,
+      ),
+      _SetupChecklistStep(
+        title: 'Add first expense',
+        helper: 'Log one spending entry to start your daily insights.',
+        completed: data.expenseCount > 0 || data.totalExpenses > 0,
+        onTap: onOpenExpenses,
+      ),
+    ];
+    final showSetupChecklist = !data.setupChecklistDismissed &&
+        setupSteps.any((step) => !step.completed);
+    final dailyProgress = data.dailyBudget <= 0
+        ? null
+        : (data.todaySpending / max(data.dailyBudget, 1))
+            .clamp(0.0, 1.0)
+            .toDouble();
+
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 110),
+      padding: _pageContentPadding(context, top: 18, bottom: 110),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -8793,7 +13347,10 @@ class _PremiumHomeDashboard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _PremiumDashboardHeader(data: data),
+              _PremiumDashboardHeader(
+                data: data,
+                hasPremium: true,
+              ),
               const SizedBox(height: 18),
               _PremiumDashboardHero(
                 data: data,
@@ -8801,12 +13358,63 @@ class _PremiumHomeDashboard extends StatelessWidget {
                 onOpenBills: onOpenBills,
                 onOpenSavings: onOpenSavings,
                 onOpenExpenses: onOpenExpenses,
+                onOpenInvite: onOpenInvite,
               ),
+              const SizedBox(height: 16),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final stacked = constraints.maxWidth < 420;
+                  final anticipatedCard = _DashboardSupportCard(
+                    title: 'Expected Balance',
+                    value: formatMoney(data.projectedAvailableBalance),
+                    subtitle: data.remainingSweldoDays > 0
+                        ? '${data.remainingSweldoDays} day${data.remainingSweldoDays == 1 ? '' : 's'} until cutoff'
+                        : 'No cutoff date set yet',
+                    icon: Icons.calendar_month_rounded,
+                    accent: _PremiumPalette.sky,
+                    onTap: onOpenBills,
+                  );
+                  final dailyLimitCard = _DashboardSupportCard(
+                    title: 'Safe to Spend Today',
+                    value: formatMoney(data.dailyBudget),
+                    subtitle: data.usesManualDailyBudget
+                        ? '${formatMoney(data.todaySpending)} spent today'
+                        : '${formatMoney(data.todaySpending)} of today\'s pace used',
+                    icon: Icons.speed_rounded,
+                    accent: _PremiumPalette.cyan,
+                    progress: dailyProgress,
+                    onTap: onOpenSweldo,
+                  );
+                  if (stacked) {
+                    return Column(
+                      children: [
+                        anticipatedCard,
+                        const SizedBox(height: 12),
+                        dailyLimitCard,
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(child: anticipatedCard),
+                      const SizedBox(width: 12),
+                      Expanded(child: dailyLimitCard),
+                    ],
+                  );
+                },
+              ),
+              if (showSetupChecklist) ...[
+                const SizedBox(height: 18),
+                _SetupChecklistCard(
+                  steps: setupSteps,
+                  onSkip: onDismissSetupChecklist,
+                ),
+              ],
               const SizedBox(height: 24),
               _PremiumDashboardSection(
                 title: 'Overview',
                 subtitle:
-                    'Premium cutoff snapshot with the same saved SweldoTrack data',
+                    'A premium view of your income, spending, savings, and upcoming bills',
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final cardWidth = constraints.maxWidth >= 920
@@ -8822,33 +13430,33 @@ class _PremiumHomeDashboard extends StatelessWidget {
                         SizedBox(
                           width: cardWidth,
                           child: _PremiumDashboardMetricCard(
-                            title: 'Opening Balance',
-                            value: formatPhp(data.startingBalance),
-                            subtitle: 'Starting amount for the active cycle',
-                            accent: _PremiumPalette.cyan,
-                            icon: Icons.payments_rounded,
+                            title: 'Income',
+                            value: formatMoney(data.totalIncomeAdded),
+                            subtitle: 'Total income added this cycle',
+                            accent: const Color(0xFF57E9C3),
+                            icon: Icons.trending_up_rounded,
                             onTap: onOpenSweldo,
                           ),
                         ),
                         SizedBox(
                           width: cardWidth,
                           child: _PremiumDashboardMetricCard(
-                            title: 'Upcoming Bills',
-                            value: formatPhp(data.totalBills),
-                            subtitle: data.billCount == 0
-                                ? 'No upcoming bills saved'
-                                : '${data.billCount} unpaid bill items',
-                            accent: _PremiumPalette.sky,
-                            icon: Icons.receipt_long_rounded,
-                            onTap: onOpenBills,
+                            title: 'Spending',
+                            value: formatMoney(data.totalExpenses),
+                            subtitle: data.expenseCount == 0
+                                ? 'No spending recorded yet'
+                                : '${data.expenseCount} spending entries logged',
+                            accent: const Color(0xFFFF7A9C),
+                            icon: Icons.trending_down_rounded,
+                            onTap: onOpenExpenses,
                           ),
                         ),
                         SizedBox(
                           width: cardWidth,
                           child: _PremiumDashboardMetricCard(
-                            title: 'Savings Balance',
-                            value: formatPhp(data.savingsSaved),
-                            subtitle: 'Money set aside',
+                            title: 'Savings',
+                            value: formatMoney(data.savingsSaved),
+                            subtitle: 'Current tracked savings balance',
                             accent: _PremiumPalette.lilac,
                             icon: Icons.savings_rounded,
                             onTap: onOpenSavings,
@@ -8857,36 +13465,48 @@ class _PremiumHomeDashboard extends StatelessWidget {
                         SizedBox(
                           width: cardWidth,
                           child: _PremiumDashboardMetricCard(
-                            title: 'Spending',
-                            value: formatPhp(data.totalExpenses),
-                            subtitle: data.expenseCount == 0
-                                ? 'No spending recorded yet'
-                                : '${data.expenseCount} spending entries logged',
-                            accent: _PremiumPalette.violet,
-                            icon: Icons.wallet_rounded,
-                            onTap: onOpenExpenses,
-                          ),
-                        ),
-                        SizedBox(
-                          width: cardWidth,
-                          child: _PremiumDashboardMetricCard(
-                            title: 'Daily Spending Limit',
-                            value: formatPhp(data.dailyBudget),
-                            subtitle: data.usesManualDailyBudget
-                                ? (data.isManualDailyBudgetSafe
-                                    ? 'Manual daily spending limit is on track'
-                                    : 'Manual daily spending limit is above safe pace')
-                                : (data.remainingSweldoDays > 0
-                                    ? '${data.remainingSweldoDays} days until next cutoff'
-                                    : 'No cutoff date set'),
-                            accent: _PremiumPalette.cyan,
-                            icon: Icons.today_rounded,
-                            onTap: onOpenSweldo,
+                            title: 'Upcoming Bills',
+                            value: formatMoney(data.totalBills),
+                            subtitle: data.billCount == 0
+                                ? 'No unpaid bills scheduled'
+                                : '${data.billCount} bill${data.billCount == 1 ? '' : 's'} due soon',
+                            accent: const Color(0xFFFFB347),
+                            icon: Icons.receipt_long_rounded,
+                            onTap: onOpenBills,
                           ),
                         ),
                       ],
                     );
                   },
+                ),
+              ),
+              const SizedBox(height: 24),
+              _PremiumDashboardSection(
+                title: 'Daily Guidance',
+                subtitle: 'Your safe pace, spending pressure, and next bill outlook',
+                child: _TodayDashboardCard(
+                  data: data,
+                  onOpenSweldo: onOpenSweldo,
+                  onOpenBills: onOpenBills,
+                  onOpenExpenses: onOpenExpenses,
+                ),
+              ),
+              const SizedBox(height: 24),
+              _PremiumDashboardSection(
+                title: 'This Month',
+                subtitle: 'Recent income, spending, and bill activity from your saved data',
+                child: _RecentActivityCard(
+                  activities: data.recentActivity,
+                  onTap: onOpenExpenses,
+                ),
+              ),
+              const SizedBox(height: 24),
+              _PremiumDashboardSection(
+                title: 'Upcoming Bills',
+                subtitle: 'Your next unpaid schedules',
+                child: UpcomingBillsCard(
+                  bills: data.upcomingBills,
+                  onTap: onOpenBills,
                 ),
               ),
               const SizedBox(height: 24),
@@ -8897,47 +13517,6 @@ class _PremiumHomeDashboard extends StatelessWidget {
                   values: data.weeklyExpenseTrend,
                   onTap: onOpenAnalytics,
                 ),
-              ),
-              const SizedBox(height: 24),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final stacked = constraints.maxWidth < 760;
-                  final upcoming = _PremiumDashboardSection(
-                    title: 'Upcoming Bills',
-                    subtitle: 'Your next unpaid schedules',
-                    child: UpcomingBillsCard(
-                      bills: data.upcomingBills,
-                      onTap: onOpenBills,
-                    ),
-                  );
-                  final recent = _PremiumDashboardSection(
-                    title: 'Recent Activity',
-                    subtitle: 'Latest spending entries from this active cutoff',
-                    child: RecentActivityCard(
-                      expenses: data.recentExpenses,
-                      onTap: onOpenExpenses,
-                    ),
-                  );
-
-                  if (stacked) {
-                    return Column(
-                      children: [
-                        upcoming,
-                        const SizedBox(height: 24),
-                        recent,
-                      ],
-                    );
-                  }
-
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: upcoming),
-                      const SizedBox(width: 16),
-                      Expanded(child: recent),
-                    ],
-                  );
-                },
               ),
               const SizedBox(height: 24),
               _PremiumDashboardSection(
@@ -8990,9 +13569,11 @@ class _PremiumHomeDashboard extends StatelessWidget {
 
 class _PremiumDashboardHeader extends StatelessWidget {
   final _HomeDashboardData data;
+  final bool hasPremium;
 
   const _PremiumDashboardHeader({
     required this.data,
+    required this.hasPremium,
   });
 
   Color _healthAccent(String label) {
@@ -9012,39 +13593,36 @@ class _PremiumDashboardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final greeting = data.preferredName.isEmpty
-        ? greetingForTime(data.currentDateTime)
-        : '${greetingForTime(data.currentDateTime)}, ${data.preferredName}';
+    final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
+    final badgeAccent = hasPremium
+        ? Theme.of(context).colorScheme.primary
+        : uiStyle.mode == SweldoUiMode.light
+            ? const Color(0xFF2563EB)
+            : uiStyle.mode == SweldoUiMode.dark
+                ? const Color(0xFF67E8F9)
+                : intelliumCyan;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
-            Expanded(child: _PremiumBrandLockup()),
+            Expanded(child: _PremiumBrandLockup(hasPremium: hasPremium)),
             _PremiumStatusBadge(
-              label: 'Premium',
-              accent: _PremiumPalette.lilac,
+              label: hasPremium ? 'Premium' : 'Free',
+              accent: badgeAccent,
             ),
           ],
         ),
         const SizedBox(height: 18),
         Text(
-          greeting,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 26,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.6,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'A refined cutoff view built from your local SweldoTrack data.',
-          style: TextStyle(
-            color: _PremiumPalette.textSoft.withValues(alpha: .92),
-            fontSize: 13.5,
-            height: 1.45,
+          'Track your money with clarity',
+          style: sweldoHelperStyle(
+            ui,
+            size: 13.5,
+            color: ui.textSecondary,
+            height: 1.4,
           ),
         ),
         const SizedBox(height: 14),
@@ -9062,6 +13640,12 @@ class _PremiumDashboardHeader extends StatelessWidget {
               label: formatHeaderTime(data.currentDateTime),
               accent: _PremiumPalette.cyan,
             ),
+            if (data.preferredName.trim().isNotEmpty)
+              _PremiumInfoChip(
+                icon: Icons.waving_hand_rounded,
+                label: data.preferredName.trim(),
+                accent: _PremiumPalette.lilac,
+              ),
             _PremiumInfoChip(
               icon: Icons.favorite_rounded,
               label: data.healthLabel,
@@ -9080,6 +13664,7 @@ class _PremiumDashboardHero extends StatelessWidget {
   final VoidCallback onOpenBills;
   final VoidCallback onOpenSavings;
   final VoidCallback onOpenExpenses;
+  final Future<void> Function() onOpenInvite;
 
   const _PremiumDashboardHero({
     required this.data,
@@ -9087,10 +13672,17 @@ class _PremiumDashboardHero extends StatelessWidget {
     required this.onOpenBills,
     required this.onOpenSavings,
     required this.onOpenExpenses,
+    required this.onOpenInvite,
   });
 
   @override
   Widget build(BuildContext context) {
+    final uiStyle = sweldoUiStyleOf(context);
+    final ui = SweldoVisualStyle.fromContext(context);
+    final usesShowcaseGlass = uiStyle.isPremiumStyle ||
+        uiStyle.mode == SweldoUiMode.intelliumDigital ||
+        uiStyle.mode == SweldoUiMode.dark;
+    final status = _resolveHomeDashboardStatus(data);
     final daysLeftLabel = data.remainingSweldoDays > 0
         ? '${data.remainingSweldoDays} days left'
         : 'No cutoff set';
@@ -9101,43 +13693,31 @@ class _PremiumDashboardHero extends StatelessWidget {
     final balanceProgress = progressBase <= 0
         ? 0.0
         : (data.currentBalance / progressBase).clamp(0.0, 1.0).toDouble();
-    final remainingLabel = data.currentBalance >= 0
-        ? 'Real spendable money available right now'
-        : 'Available balance is below zero right now';
+    final remainingLabel = status.insight;
+    final heroPrimaryTextColor =
+        usesShowcaseGlass ? const Color(0xFFF8FCFF) : ui.textPrimary;
+    final heroSecondaryTextColor = usesShowcaseGlass
+        ? Colors.white.withValues(alpha: .86)
+        : ui.textSecondary;
+    final heroTertiaryTextColor = usesShowcaseGlass
+        ? Colors.white.withValues(alpha: .74)
+        : ui.textMuted;
+    final heroNegativeAmountColor =
+        usesShowcaseGlass ? const Color(0xFFFFE6EF) : sweldoDangerColor;
+    final heroProgressColor = uiStyle.mode == SweldoUiMode.premiumExecutive
+        ? const Color(0xFFF3E6BF)
+        : usesShowcaseGlass
+            ? const Color(0xFFF3E8FF)
+            : Theme.of(context).colorScheme.primary;
 
     return _PremiumShowcaseShell(
+      backgroundGradient: uiStyle.heroGradient,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final wide = constraints.maxWidth >= 860;
-          final actions = Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _PremiumQuickLink(
-                icon: Icons.payments_rounded,
-                label: 'Income',
-                accent: _PremiumPalette.cyan,
-                onTap: onOpenSweldo,
-              ),
-              _PremiumQuickLink(
-                icon: Icons.receipt_long_rounded,
-                label: 'Upcoming',
-                accent: _PremiumPalette.sky,
-                onTap: onOpenBills,
-              ),
-              _PremiumQuickLink(
-                icon: Icons.savings_rounded,
-                label: 'Savings',
-                accent: _PremiumPalette.lilac,
-                onTap: onOpenSavings,
-              ),
-              _PremiumQuickLink(
-                icon: Icons.wallet_rounded,
-                label: 'Spending',
-                accent: _PremiumPalette.violet,
-                onTap: onOpenExpenses,
-              ),
-            ],
+          final referralCard = _PremiumReferralShortcutCard(
+            showcaseStyle: usesShowcaseGlass,
+            onTap: onOpenInvite,
           );
 
           final balanceCopy = Column(
@@ -9145,48 +13725,48 @@ class _PremiumDashboardHero extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const _PremiumInfoChip(
+                  _PremiumInfoChip(
                     icon: Icons.event_repeat_rounded,
-                    label: 'Active Cutoff',
+                    label: 'Available Balance',
                     accent: _PremiumPalette.lilac,
+                    showcaseStyle: usesShowcaseGlass,
                   ),
                   const SizedBox(width: 10),
                   _PremiumStatusBadge(
                     label: daysLeftLabel,
-                    accent: _PremiumPalette.cyan,
+                    accent: uiStyle.mode == SweldoUiMode.premiumExecutive
+                        ? const Color(0xFFF3E6BF)
+                        : uiStyle.mode == SweldoUiMode.light
+                            ? Theme.of(context).colorScheme.primary
+                            : sweldoPremiumSoftSurface,
+                    showcaseStyle: usesShowcaseGlass,
                   ),
                 ],
               ),
               const SizedBox(height: 22),
-              const Text(
-                'Available Balance',
-                style: TextStyle(
-                  color: _PremiumPalette.textSoft,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 10),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  formatPhp(data.currentBalance),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 44,
-                    fontWeight: FontWeight.w800,
-                    height: 1,
+                  formatMoney(data.currentBalance),
+                  style: sweldoAmountStyle(
+                    ui,
+                    size: 44,
+                    weight: FontWeight.w800,
                     letterSpacing: -1.6,
+                    color: data.currentBalance < 0
+                        ? heroNegativeAmountColor
+                        : heroPrimaryTextColor,
                   ),
                 ),
               ),
               const SizedBox(height: 10),
               Text(
                 remainingLabel,
-                style: const TextStyle(
-                  color: _PremiumPalette.textSoft,
-                  fontSize: 13.5,
+                style: sweldoHelperStyle(
+                  ui,
+                  size: 13.5,
+                  color: heroSecondaryTextColor,
                   height: 1.5,
                 ),
               ),
@@ -9196,10 +13776,10 @@ class _PremiumDashboardHero extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: balanceProgress,
                   minHeight: 8,
-                  backgroundColor: Colors.white.withValues(alpha: .08),
-                  valueColor: const AlwaysStoppedAnimation<Color>(
-                    _PremiumPalette.cyan,
+                  backgroundColor: Colors.white.withValues(
+                    alpha: usesShowcaseGlass ? .18 : .08,
                   ),
+                  valueColor: AlwaysStoppedAnimation<Color>(heroProgressColor),
                 ),
               ),
               const SizedBox(height: 10),
@@ -9207,20 +13787,22 @@ class _PremiumDashboardHero extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      '${formatPhp(data.totalExpenses)} spending',
-                      style: const TextStyle(
-                        color: _PremiumPalette.textMuted,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
+                      '${formatMoney(data.totalExpenses)} spending',
+                      style: sweldoHelperStyle(
+                        ui,
+                        size: 11.8,
+                        color: heroTertiaryTextColor,
+                        height: 1.35,
                       ),
                     ),
                   ),
                   Text(
-                    '${formatPhp(data.projectedAvailableBalance)} anticipated balance',
-                    style: const TextStyle(
-                      color: _PremiumPalette.textMuted,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
+                    '${formatMoney(data.projectedAvailableBalance)} expected balance',
+                    style: sweldoHelperStyle(
+                      ui,
+                      size: 11.8,
+                      color: heroTertiaryTextColor,
+                      height: 1.35,
                     ),
                   ),
                 ],
@@ -9242,7 +13824,7 @@ class _PremiumDashboardHero extends StatelessWidget {
                         width: statWidth,
                         child: _PremiumHeroStatCard(
                           label: 'Opening',
-                          value: formatPhp(data.salary),
+                          value: formatMoney(data.salary),
                           accent: _PremiumPalette.cyan,
                         ),
                       ),
@@ -9250,7 +13832,7 @@ class _PremiumDashboardHero extends StatelessWidget {
                         width: statWidth,
                         child: _PremiumHeroStatCard(
                           label: 'Upcoming Bills',
-                          value: formatPhp(data.totalBills),
+                          value: formatMoney(data.totalBills),
                           accent: _PremiumPalette.sky,
                         ),
                       ),
@@ -9258,7 +13840,7 @@ class _PremiumDashboardHero extends StatelessWidget {
                         width: statWidth,
                         child: _PremiumHeroStatCard(
                           label: 'Savings Balance',
-                          value: formatPhp(data.savingsSaved),
+                          value: formatMoney(data.savingsSaved),
                           accent: _PremiumPalette.lilac,
                         ),
                       ),
@@ -9267,7 +13849,23 @@ class _PremiumDashboardHero extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 20),
-              actions,
+              referralCard,
+              if (uiStyle.isPremiumStyle) ...[
+                const SizedBox(height: 18),
+                Text(
+                  uiStyle.mode == SweldoUiMode.premiumExecutive
+                      ? 'Executive keeps your dashboard polished with luxury contrast and restrained highlights.'
+                      : 'Neon keeps the same balance logic while pushing a stronger fintech presentation.',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: sweldoHelperStyle(
+                    ui,
+                    size: 12.2,
+                    color: heroSecondaryTextColor,
+                    height: 1.35,
+                  ),
+                ),
+              ],
             ],
           );
 
@@ -9306,29 +13904,19 @@ class _PremiumDashboardSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: _PremiumPalette.panelGlass.withValues(alpha: .74),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: _PremiumPalette.edge),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: .22),
-            blurRadius: 28,
-            offset: const Offset(0, 18),
-          ),
-        ],
-      ),
+      decoration: ui.sectionContainerDecoration(radius: 30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Cutoff Summary',
-            style: TextStyle(
-              color: _PremiumPalette.textSoft,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+            style: sweldoLabelStyle(
+              ui,
+              size: 13,
+              color: ui.textPrimary,
             ),
           ),
           const SizedBox(height: 14),
@@ -9336,16 +13924,16 @@ class _PremiumDashboardSummaryCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _PremiumPhoneStatTile(
-                  label: 'Anticipated',
-                  value: formatPhp(data.projectedAvailableBalance),
+                  label: 'Expected Balance',
+                  value: formatMoney(data.projectedAvailableBalance),
                   accent: _PremiumPalette.cyan,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _PremiumPhoneStatTile(
-                  label: 'Daily Limit',
-                  value: formatPhp(data.dailyBudget),
+                  label: 'Safe to Spend Today',
+                  value: formatMoney(data.dailyBudget),
                   accent: _PremiumPalette.violet,
                 ),
               ),
@@ -9357,7 +13945,7 @@ class _PremiumDashboardSummaryCard extends StatelessWidget {
               Expanded(
                 child: _PremiumPhoneStatTile(
                   label: 'Income',
-                  value: formatPhp(data.totalIncomeAdded),
+                  value: formatMoney(data.totalIncomeAdded),
                   accent: _PremiumPalette.cyan,
                 ),
               ),
@@ -9365,7 +13953,7 @@ class _PremiumDashboardSummaryCard extends StatelessWidget {
               Expanded(
                 child: _PremiumPhoneStatTile(
                   label: 'Paid Bills',
-                  value: formatPhp(data.settledBillsTotal),
+                  value: formatMoney(data.settledBillsTotal),
                   accent: _PremiumPalette.sky,
                 ),
               ),
@@ -9377,7 +13965,7 @@ class _PremiumDashboardSummaryCard extends StatelessWidget {
               Expanded(
                 child: _PremiumPhoneStatTile(
                   label: 'Opening Balance',
-                  value: formatPhp(data.salary),
+                  value: formatMoney(data.salary),
                   accent: _PremiumPalette.cyan,
                 ),
               ),
@@ -9385,7 +13973,7 @@ class _PremiumDashboardSummaryCard extends StatelessWidget {
               Expanded(
                 child: _PremiumPhoneStatTile(
                   label: 'Savings Balance',
-                  value: formatPhp(data.savingsSaved),
+                  value: formatMoney(data.savingsSaved),
                   accent: _PremiumPalette.sky,
                 ),
               ),
@@ -9431,39 +14019,29 @@ class _PremiumDashboardSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: _PremiumPalette.panelGlass.withValues(alpha: .74),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: _PremiumPalette.edge),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: .18),
-            blurRadius: 24,
-            offset: const Offset(0, 16),
-          ),
-        ],
-      ),
+      decoration: ui.sectionContainerDecoration(radius: 30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
+            style: sweldoTitleStyle(
+              ui,
+              size: 24,
+              letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: const TextStyle(
-              color: _PremiumPalette.textMuted,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
+            style: sweldoHelperStyle(
+              ui,
+              size: 12.5,
+              color: ui.textSecondary,
             ),
           ),
           const SizedBox(height: 16),
@@ -9493,33 +14071,31 @@ class _PremiumDashboardMetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final displayAccent = sweldoUiModeUsesSurfaceAccent(
+      sweldoUiStyleOf(context).mode,
+    )
+        ? Theme.of(context).colorScheme.primary
+        : accent;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(24),
         child: Container(
+          constraints: const BoxConstraints(minHeight: 164),
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                _PremiumPalette.panel.withValues(alpha: .92),
-                _PremiumPalette.panelStrong.withValues(alpha: .88),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: _PremiumPalette.edge),
-            boxShadow: [
-              BoxShadow(
-                color: accent.withValues(alpha: .08),
-                blurRadius: 18,
-                spreadRadius: -8,
-                offset: const Offset(0, 10),
+          decoration: ui.cardDecoration(radius: 24).copyWith(
+                border: Border.all(color: displayAccent.withValues(alpha: .22)),
+                boxShadow: [
+                  BoxShadow(
+                    color: displayAccent.withValues(alpha: .10),
+                    blurRadius: 20,
+                    spreadRadius: -8,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
-            ],
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -9527,19 +14103,19 @@ class _PremiumDashboardMetricCard extends StatelessWidget {
                 height: 42,
                 width: 42,
                 decoration: BoxDecoration(
-                  color: accent.withValues(alpha: .12),
+                  color: displayAccent.withValues(alpha: .12),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: accent.withValues(alpha: .32)),
+                  border: Border.all(color: displayAccent.withValues(alpha: .32)),
                 ),
-                child: Icon(icon, color: accent, size: 22),
+                child: Icon(icon, color: displayAccent, size: 22),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Text(
                 title,
-                style: const TextStyle(
-                  color: _PremiumPalette.textSoft,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
+                style: sweldoLabelStyle(
+                  ui,
+                  size: 12.5,
+                  color: ui.textSecondary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -9548,21 +14124,24 @@ class _PremiumDashboardMetricCard extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   value,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
+                  style: sweldoAmountStyle(
+                    ui,
+                    size: 24,
+                    weight: FontWeight.w800,
+                    letterSpacing: -0.6,
                   ),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  color: _PremiumPalette.textMuted,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  height: 1.35,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: sweldoHelperStyle(
+                  ui,
+                  size: 12,
+                  color: ui.textSecondary,
+                  height: 1.4,
                 ),
               ),
             ],
@@ -9573,58 +14152,123 @@ class _PremiumDashboardMetricCard extends StatelessWidget {
   }
 }
 
-class _PremiumQuickLink extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color accent;
-  final VoidCallback onTap;
+class _PremiumReferralShortcutCard extends StatelessWidget {
+  final bool showcaseStyle;
+  final Future<void> Function() onTap;
 
-  const _PremiumQuickLink({
-    required this.icon,
-    required this.label,
-    required this.accent,
+  const _PremiumReferralShortcutCard({
+    this.showcaseStyle = false,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
+    final visual = SweldoVisualStyle.fromContext(context);
+    final ui = sweldoUiStyleOf(context);
+    final accent = ui.mode == SweldoUiMode.premiumExecutive
+        ? _PremiumPalette.gold
+        : ui.mode == SweldoUiMode.premiumNeon
+            ? intelliumPink
+            : ui.mode == SweldoUiMode.intelliumDigital ||
+                    ui.mode == SweldoUiMode.dark
+                ? intelliumCyan
+                : Theme.of(context).colorScheme.primary;
+    final decoration = showcaseStyle
+        ? BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                _PremiumPalette.panelStrong.withValues(alpha: .94),
-                _PremiumPalette.panel.withValues(alpha: .88),
+                Colors.white.withValues(alpha: .12),
+                Colors.white.withValues(alpha: .05),
               ],
             ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _PremiumPalette.edge),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: .14),
+            ),
+          )
+        : visual.cardDecoration(radius: 24).copyWith(
+            border: Border.all(color: accent.withValues(alpha: .18)),
             boxShadow: [
               BoxShadow(
                 color: accent.withValues(alpha: .10),
-                blurRadius: 14,
-                spreadRadius: -8,
+                blurRadius: 18,
+                spreadRadius: -10,
+                offset: const Offset(0, 12),
               ),
             ],
-          ),
+          );
+    final titleColor =
+        showcaseStyle ? const Color(0xFFF8FCFF) : visual.textPrimary;
+    final subtitleColor = showcaseStyle
+        ? Colors.white.withValues(alpha: .82)
+        : visual.textSecondary;
+    final actionColor = showcaseStyle ? Colors.white : accent;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          unawaited(onTap());
+        },
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: decoration,
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: accent, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
+              Container(
+                height: 46,
+                width: 46,
+                decoration: visual.iconChipBackground(accent, radius: 16),
+                child: Icon(
+                  Icons.card_giftcard_rounded,
+                  color: accent,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Invite Friends',
+                      style: TextStyle(
+                        color: titleColor,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Share your code, track rewards, and monitor verified Premium referral activity.',
+                      style: TextStyle(
+                        color: subtitleColor,
+                        fontSize: 12.5,
+                        height: 1.4,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
+                decoration: visual.iconChipBackground(accent, radius: 999),
+                child: Text(
+                  'Open',
+                  style: TextStyle(
+                    color: actionColor,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
@@ -9668,38 +14312,58 @@ class _PremiumInfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color accent;
+  final bool showcaseStyle;
 
   const _PremiumInfoChip({
     required this.icon,
     required this.label,
     required this.accent,
+    this.showcaseStyle = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final onShowcaseSurface = showcaseStyle;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            accent.withValues(alpha: .12),
-            Colors.white.withValues(alpha: .03),
-          ],
-        ),
+        gradient: onShowcaseSurface
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: .18),
+                  accent.withValues(alpha: .12),
+                ],
+              )
+            : LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  accent.withValues(alpha: .12),
+                  Colors.white.withValues(alpha: .03),
+                ],
+              ),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: accent.withValues(alpha: .22)),
+        border: Border.all(
+          color: onShowcaseSurface
+              ? Colors.white.withValues(alpha: .22)
+              : accent.withValues(alpha: .22),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: accent, size: 15),
+          Icon(
+            icon,
+            color: onShowcaseSurface ? Colors.white : accent,
+            size: 15,
+          ),
           const SizedBox(width: 7),
           Text(
             label,
             style: TextStyle(
-              color: accent,
+              color: onShowcaseSurface ? Colors.white : accent,
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
             ),
@@ -9723,22 +14387,43 @@ class _PremiumHeroStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
+    final onShowcaseSurface = uiStyle.isPremiumStyle ||
+        uiStyle.mode == SweldoUiMode.intelliumDigital ||
+        uiStyle.mode == SweldoUiMode.dark;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .055),
+        gradient: onShowcaseSurface
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: .18),
+                  accent.withValues(alpha: .08),
+                ],
+              )
+            : null,
+        color: onShowcaseSurface
+            ? null
+            : Colors.white.withValues(alpha: .055),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: .09)),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: onShowcaseSurface ? .20 : .09),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: const TextStyle(
-              color: _PremiumPalette.textSoft,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
+            style: sweldoLabelStyle(
+              ui,
+              size: 11.8,
+              color: onShowcaseSurface
+                  ? Colors.white.withValues(alpha: .82)
+                  : ui.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -9747,10 +14432,12 @@ class _PremiumHeroStatCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               value,
-              style: TextStyle(
-                color: accent,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
+              style: sweldoAmountStyle(
+                ui,
+                size: 18,
+                weight: FontWeight.w800,
+                letterSpacing: -0.4,
+                color: onShowcaseSurface ? Colors.white : null,
               ),
             ),
           ),
@@ -9775,6 +14462,7 @@ class _PremiumInsightRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
     return Row(
       children: [
         Container(
@@ -9790,19 +14478,19 @@ class _PremiumInsightRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
-              color: _PremiumPalette.textSoft,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
+            style: sweldoLabelStyle(
+              ui,
+              size: 12.4,
+              color: ui.textSecondary,
             ),
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12.5,
-            fontWeight: FontWeight.w700,
+          style: sweldoLabelStyle(
+            ui,
+            size: 12.4,
+            color: ui.textPrimary,
           ),
         ),
       ],
@@ -9822,107 +14510,60 @@ class IntelliumTopHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final uiStyle = sweldoUiStyleOf(context);
     final ui = SweldoVisualStyle.fromContext(context);
-    final greeting = greetingForTime(currentDateTime);
-    final title =
-        preferredName.isEmpty ? greeting : '$greeting, $preferredName';
-
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          height: 58,
-          width: 58,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF16233F),
-                Color(0xFF2E6BFF),
-                Color(0xFF6E56FF),
-              ],
-              stops: [0.0, 0.54, 1.0],
-            ),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: .10),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF64E8FF).withValues(alpha: .18),
-                blurRadius: 22,
-                spreadRadius: 1,
-                offset: const Offset(0, 8),
-              ),
-              BoxShadow(
-                color: const Color(0xFF8B5CFF).withValues(alpha: .16),
-                blurRadius: 28,
-                spreadRadius: -1,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white.withValues(alpha: .16),
-                        Colors.white.withValues(alpha: .03),
-                        Colors.transparent,
-                      ],
-                      stops: const [0.0, 0.34, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-              Center(
-                child: Container(
-                  height: 36,
-                  width: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .08),
-                    borderRadius: BorderRadius.circular(13),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: .12),
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.account_balance_wallet_rounded,
-                    color: Colors.white.withValues(alpha: .94),
-                    size: 20,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title,
+                'SweldoTrack',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: ui.textPrimary,
-                  fontSize: 24,
+                  fontSize: 32,
                   fontWeight: FontWeight.w800,
+                  letterSpacing: -.9,
                 ),
               ),
               const SizedBox(height: 6),
+              Text(
+                'Track your money with clarity',
+                style: TextStyle(
+                  color: ui.textSecondary,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 12),
               Wrap(
                 spacing: 10,
                 runSpacing: 8,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
+                  if (preferredName.trim().isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: ui.iconChipBackground(
+                        Theme.of(context).colorScheme.primary,
+                        radius: 999,
+                      ),
+                      child: Text(
+                        'Welcome, ${preferredName.trim()}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontSize: 11.8,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
                   Text(
                     formatHeaderDate(currentDateTime),
                     style: TextStyle(
@@ -9954,6 +14595,32 @@ class IntelliumTopHeader extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(width: 14),
+        Container(
+          height: 56,
+          width: 56,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: uiStyle.heroGradient,
+            border: Border.all(
+              color: uiStyle.isDark
+                  ? Colors.white.withValues(alpha: .10)
+                  : uiStyle.accent.withValues(alpha: .16),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: uiStyle.accent.withValues(alpha: uiStyle.isDark ? .18 : .10),
+                blurRadius: 24,
+                spreadRadius: -4,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Icon(
+            Icons.account_balance_wallet_rounded,
+            color: Colors.white.withValues(alpha: .96),
+          ),
+        ),
       ],
     );
   }
@@ -9966,245 +14633,275 @@ extension _HomeDashboardDataLegacyAliases on _HomeDashboardData {
 }
 
 class IntelliumBalanceCard extends StatelessWidget {
-  final double startingBalance;
-  final double totalIncomeAdded;
   final double availableBalance;
-  final double savingsBalance;
-  final double projectedAvailableBalance;
-  final double upcomingBillsAmount;
-  final VoidCallback onStartingBalanceTap;
-  final VoidCallback onIncomeTap;
-  final VoidCallback onSavingsTap;
-  final VoidCallback onBillsTap;
+  final String statusLabel;
+  final String statusMessage;
+  final Color statusAccent;
+  final VoidCallback onTap;
 
   const IntelliumBalanceCard({
     super.key,
-    required this.startingBalance,
-    required this.totalIncomeAdded,
     required this.availableBalance,
-    required this.savingsBalance,
-    required this.projectedAvailableBalance,
-    required this.upcomingBillsAmount,
-    required this.onStartingBalanceTap,
-    required this.onIncomeTap,
-    required this.onSavingsTap,
-    required this.onBillsTap,
+    required this.statusLabel,
+    required this.statusMessage,
+    required this.statusAccent,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final ui = SweldoVisualStyle.fromContext(context);
-    final overview = availableBalance;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
+    final uiStyle = sweldoUiStyleOf(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(30),
-        gradient: ui.isJade
-            ? const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF133627),
-                  Color(0xFF0C2218),
-                  Color(0xFF091611)
-                ],
-                stops: [0.0, 0.52, 1.0],
-              )
-            : const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF1A2551),
-                  intelliumBlue,
-                  intelliumPurple,
-                  intelliumPink
-                ],
-                stops: [0.0, 0.28, 0.68, 1.0],
-              ),
-        boxShadow: [
-          BoxShadow(
-            color: ui.isJade
-                ? const Color(0xFF2EE6A6).withValues(alpha: .22)
-                : intelliumBlue.withValues(alpha: .18),
-            blurRadius: 34,
-            spreadRadius: 4,
-          ),
-          BoxShadow(
-            color: ui.isJade
-                ? const Color(0xFF9DFFE0).withValues(alpha: .12)
-                : intelliumPink.withValues(alpha: .12),
-            blurRadius: 48,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: ui.isJade ? .10 : .14),
-                  borderRadius: BorderRadius.circular(999),
-                  border: ui.isJade
-                      ? Border.all(color: const Color(0x442EE6A6))
-                      : null,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            gradient: uiStyle.heroGradient,
+            border: Border.all(
+              color: uiStyle.isDark
+                  ? Colors.white.withValues(alpha: .10)
+                  : Colors.white.withValues(alpha: .18),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: uiStyle.accent.withValues(
+                  alpha: uiStyle.isDark ? .18 : .16,
                 ),
-                child: Text(
-                  'Balance Overview',
-                  style: TextStyle(
-                    color: ui.textPrimary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12.5,
+                blurRadius: 32,
+                spreadRadius: -6,
+                offset: const Offset(0, 16),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -16,
+                top: -10,
+                child: Icon(
+                  Icons.account_balance_wallet_rounded,
+                  size: 118,
+                  color: Colors.white.withValues(alpha: .10),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Available Balance',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: .96),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Icon(
+                        Icons.visibility_outlined,
+                        color: Colors.white.withValues(alpha: .88),
+                        size: 20,
+                      ),
+                      const Spacer(),
+                      Container(
+                        height: 46,
+                        width: 46,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: .18),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-              const Spacer(),
-              Icon(Icons.auto_awesome_rounded, color: ui.textPrimary, size: 18),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'Available Balance',
-            style: TextStyle(
-              color: ui.isJade ? ui.textSecondary : const Color(0xE6F6F7FF),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 10),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              formatPhp(overview),
-              style: TextStyle(
-                color: ui.textPrimary,
-                fontSize: 36,
-                fontWeight: FontWeight.w800,
-                height: 1,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Money you can use now: Opening Balance plus Income, minus Spending, Paid Bills, and net savings transfers.',
-            style: TextStyle(
-              color: ui.isJade ? ui.textSecondary : const Color(0xD9F6F7FF),
-              fontSize: 13.5,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                child: _IntelliumBalanceMiniStat(
-                  label: 'Opening Balance',
-                  value: formatPhp(startingBalance),
-                  onTap: onStartingBalanceTap,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _IntelliumBalanceMiniStat(
-                  label: 'Anticipated Balance',
-                  value: formatPhp(projectedAvailableBalance),
-                  onTap: onIncomeTap,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _IntelliumBalanceMiniStat(
-                  label: 'Savings Balance',
-                  value: formatPhp(savingsBalance),
-                  onTap: onSavingsTap,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _IntelliumBalanceMiniStat(
-                  label: 'Upcoming Bills',
-                  value: formatPhp(upcomingBillsAmount),
-                  onTap: onBillsTap,
-                ),
+                  const SizedBox(height: 18),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      formatMoney(availableBalance),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 52,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -1.8,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.verified_user_rounded,
+                        color: statusAccent,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              statusLabel,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: .96),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              statusMessage,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: .82),
+                                fontSize: 12.3,
+                                height: 1.35,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _IntelliumBalanceMiniStat extends StatelessWidget {
-  final String label;
+class _DashboardSupportCard extends StatelessWidget {
+  final String title;
   final String value;
+  final String subtitle;
+  final IconData icon;
+  final Color accent;
+  final double? progress;
   final VoidCallback? onTap;
 
-  const _IntelliumBalanceMiniStat({
-    required this.label,
+  const _DashboardSupportCard({
+    required this.title,
     required this.value,
+    required this.subtitle,
+    required this.icon,
+    required this.accent,
+    this.progress,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: ui.isJade ? .08 : .12),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: ui.isJade
-                  ? const Color(0x442EE6A6)
-                  : Colors.white.withValues(alpha: .08),
-            ),
+    final displayAccent = sweldoUiModeUsesSurfaceAccent(
+      sweldoUiStyleOf(context).mode,
+    )
+        ? Theme.of(context).colorScheme.primary
+        : accent;
+    final content = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: ui.cardDecoration(radius: 24).copyWith(
+            border: Border.all(color: displayAccent.withValues(alpha: .18)),
           ),
-          child: Column(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: ui.isJade ? ui.textSecondary : const Color(0xCCF6F7FF),
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                ),
+              Container(
+                height: 44,
+                width: 44,
+                decoration: ui.iconChipBackground(displayAccent, radius: 16),
+                child: Icon(icon, color: displayAccent, size: 22),
               ),
-              const SizedBox(height: 4),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  value,
-                  style: TextStyle(
-                    color: ui.textPrimary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                  ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: ui.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        value,
+                        style: TextStyle(
+                          color: displayAccent,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -.4,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 10),
+          Text(
+            subtitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: ui.textSecondary,
+              fontSize: 12.8,
+              height: 1.35,
+            ),
+          ),
+          if (progress != null) ...[
+            const SizedBox(height: 14),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: progress!.clamp(0.0, 1.0),
+                minHeight: 8,
+                backgroundColor: ui.borderColor.withValues(alpha: .35),
+                valueColor: AlwaysStoppedAnimation<Color>(accent),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+
+    if (onTap == null) return content;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: content,
       ),
     );
   }
@@ -10227,6 +14924,11 @@ class HomeQuickActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final displayColor = sweldoUiModeUsesSurfaceAccent(
+      sweldoUiStyleOf(context).mode,
+    )
+        ? Theme.of(context).colorScheme.primary
+        : color;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -10240,8 +14942,8 @@ class HomeQuickActionButton extends StatelessWidget {
               Container(
                 height: 42,
                 width: 42,
-                decoration: ui.iconChipBackground(color, radius: 14),
-                child: Icon(icon, color: color, size: 22),
+                decoration: ui.iconChipBackground(displayColor, radius: 14),
+                child: Icon(icon, color: displayColor, size: 22),
               ),
               const SizedBox(height: 10),
               Text(
@@ -10281,19 +14983,19 @@ class HomeSectionHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: TextStyle(
-            color: ui.textPrimary,
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
+          style: sweldoTitleStyle(
+            ui,
+            size: 24,
+            letterSpacing: -0.5,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           subtitle,
-          style: TextStyle(
-            color: ui.textMuted,
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
+          style: sweldoHelperStyle(
+            ui,
+            size: 12.5,
+            color: ui.textSecondary,
           ),
         ),
       ],
@@ -10322,7 +15024,13 @@ class HomeOverviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final displayColor = sweldoUiModeUsesSurfaceAccent(
+      sweldoUiStyleOf(context).mode,
+    )
+        ? Theme.of(context).colorScheme.primary
+        : color;
     final content = Container(
+      constraints: const BoxConstraints(minHeight: 160),
       padding: const EdgeInsets.all(18),
       decoration: ui.cardDecoration(radius: 24),
       child: Column(
@@ -10331,18 +15039,18 @@ class HomeOverviewCard extends StatelessWidget {
           Container(
             height: 40,
             width: 40,
-            decoration: ui.iconChipBackground(color, radius: 14),
-            child: Icon(icon, color: color, size: 20),
+            decoration: ui.iconChipBackground(displayColor, radius: 14),
+            child: Icon(icon, color: displayColor, size: 20),
           ),
-          const Spacer(),
+          const SizedBox(height: 16),
           Text(
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
+            style: sweldoLabelStyle(
+              ui,
+              size: 12.6,
               color: ui.textSecondary,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 6),
@@ -10351,10 +15059,11 @@ class HomeOverviewCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               value,
-              style: TextStyle(
-                color: ui.textPrimary,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
+              style: sweldoAmountStyle(
+                ui,
+                size: 22,
+                weight: FontWeight.w800,
+                letterSpacing: -0.5,
               ),
             ),
           ),
@@ -10363,10 +15072,11 @@ class HomeOverviewCard extends StatelessWidget {
             subtitle,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: ui.textMuted,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
+            style: sweldoHelperStyle(
+              ui,
+              size: 12,
+              color: ui.textSecondary,
+              height: 1.4,
             ),
           ),
         ],
@@ -10407,6 +15117,11 @@ class HomeToolCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final displayColor = sweldoUiModeUsesSurfaceAccent(
+      sweldoUiStyleOf(context).mode,
+    )
+        ? Theme.of(context).colorScheme.primary
+        : color;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -10420,8 +15135,8 @@ class HomeToolCard extends StatelessWidget {
               Container(
                 height: 48,
                 width: 48,
-                decoration: ui.iconChipBackground(color, radius: 16),
-                child: Icon(icon, color: color, size: 24),
+                decoration: ui.iconChipBackground(displayColor, radius: 16),
+                child: Icon(icon, color: displayColor, size: 24),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -10432,10 +15147,11 @@ class HomeToolCard extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: sweldoLabelStyle(
+                        ui,
+                        size: 15.5,
                         color: ui.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                        weight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -10443,10 +15159,11 @@ class HomeToolCard extends StatelessWidget {
                       subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: sweldoHelperStyle(
+                        ui,
+                        size: 12.5,
                         color: ui.textSecondary,
-                        fontSize: 12.5,
-                        height: 1.35,
+                        height: 1.4,
                       ),
                     ),
                   ],
@@ -10493,18 +15210,20 @@ class PremiumToolScaffold extends StatelessWidget {
           children: [
             Text(
               title,
-              style: TextStyle(
-                  color: ui.textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800),
+              style: sweldoTitleStyle(
+                ui,
+                size: 24,
+                letterSpacing: -0.5,
+              ),
             ),
             const SizedBox(height: 2),
             Text(
               subtitle,
-              style: TextStyle(
-                  color: ui.textMuted,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600),
+              style: sweldoHelperStyle(
+                ui,
+                size: 12.5,
+                color: ui.textSecondary,
+              ),
             ),
           ],
         ),
@@ -11037,7 +15756,7 @@ class SpendingTrendCard extends StatelessWidget {
                   radius: 14,
                 ),
                 child: Text(
-                  hasData ? formatPhp(total) : 'No recent data',
+                  hasData ? formatMoney(total) : 'No recent data',
                   style: TextStyle(
                       color: ui.textPrimary,
                       fontWeight: FontWeight.w700,
@@ -11070,7 +15789,7 @@ class SpendingTrendCard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Text(
-                            value <= 0 ? '-' : formatPhp(value),
+                            value <= 0 ? '-' : formatMoney(value),
                             style: TextStyle(
                               color:
                                   value <= 0 ? ui.textMuted : ui.textSecondary,
@@ -11165,7 +15884,7 @@ class MonthlySpendingTrendCard extends StatelessWidget {
                   radius: 14,
                 ),
                 child: Text(
-                  hasData ? formatPhp(total) : 'No yearly spending yet',
+                  hasData ? formatMoney(total) : 'No yearly spending yet',
                   style: TextStyle(
                       color: ui.textPrimary,
                       fontWeight: FontWeight.w700,
@@ -11198,7 +15917,7 @@ class MonthlySpendingTrendCard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Text(
-                            value <= 0 ? '-' : formatPhp(value),
+                            value <= 0 ? '-' : formatMoney(value),
                             style: TextStyle(
                               color:
                                   value <= 0 ? ui.textMuted : ui.textSecondary,
@@ -11363,7 +16082,7 @@ class IntelliumAnalyticsCard extends StatelessWidget {
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          formatPhp(total),
+                          formatMoney(total),
                           style: TextStyle(
                             color: ui.textPrimary,
                             fontSize: 24,
@@ -11398,7 +16117,7 @@ class IntelliumAnalyticsCard extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               Text(
-                                value <= 0 ? '-' : formatPhp(value),
+                                value <= 0 ? '-' : formatMoney(value),
                                 style: TextStyle(
                                   color: value <= 0
                                       ? ui.textMuted
@@ -11467,409 +16186,522 @@ class PremiumPlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const isComingSoon = !premiumLaunchEnabled;
-    final canStartPurchase = !isComingSoon && premiumService.canPurchasePremium;
-    final statusLabel = isComingSoon
-        ? premiumTemporarilyUnavailableLabel
-        : premiumService.premiumStatusLabel;
-    final actionLabel = isComingSoon
-        ? premiumTemporarilyUnavailableActionLabel
-        : premiumService.premiumActionLabel;
-    final supportingNote = isComingSoon
-        ? premiumPurchasesUnavailableMessage
-        : premiumService.isPremium
-            ? 'Premium benefits are active on this device.'
-            : premiumService.premiumStatusDetail;
-    final statusAccent = premiumService.isPremium
-        ? _PremiumPalette.cyan
-        : premiumService.isPurchasePending
-            ? _PremiumPalette.gold
-            : premiumService.requiresBackendVerificationSetup ||
-                    !canStartPurchase
-                ? _PremiumPalette.sky
-                : _PremiumPalette.lilac;
+    final displayPrice = premiumService.premiumDisplayPriceLabel;
+    final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
+    const primaryTextColor = Colors.white;
+    final secondaryTextColor = Colors.white.withValues(alpha: .84);
+    final pendingLikeState = premiumService.isPurchasePending ||
+        premiumService.isRestorePending ||
+        premiumService.hasPaymentDetectedButNotVerified;
+    final actionLabel = premiumService.isPremium
+        ? 'Manage / Restore Premium'
+        : pendingLikeState
+            ? 'Restore Purchase'
+            : 'Upgrade to Premium';
+    final note = premiumService.isPremium
+        ? 'Premium appearance modes, analytics, and tools are already unlocked on this device.'
+        : pendingLikeState
+            ? 'Google Play is still processing your purchase. Restore Purchase stays available while verification finishes.'
+        : premiumService.isLoadingProduct
+            ? 'Checking the latest Google Play pricing and availability.'
+            : 'Only ₱120/month. Cancel anytime. No hidden fees.';
 
-    return _PremiumShowcaseShell(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 920;
-          final narrow = constraints.maxWidth < 540;
-          final benefitColumns = constraints.maxWidth < 520
-              ? 1
-              : constraints.maxWidth < 840
-                  ? 2
-                  : 3;
-          const orbitChips = [
-            _PremiumOrbitChip(
-              icon: Icons.auto_graph_rounded,
-              label: 'Insights',
-              accent: _PremiumPalette.cyan,
-            ),
-            _PremiumOrbitChip(
-              icon: Icons.psychology_alt_rounded,
-              label: 'Smart Tools',
-              accent: _PremiumPalette.sky,
-            ),
-            _PremiumOrbitChip(
-              icon: Icons.palette_outlined,
-              label: 'Themes',
-              accent: _PremiumPalette.lilac,
-            ),
-            _PremiumOrbitChip(
-              icon: Icons.track_changes_rounded,
-              label: 'Daily Limit',
-              accent: _PremiumPalette.violet,
-            ),
-          ];
+    Future<void> handlePrimaryAction() async {
+      if (premiumService.isPremium) {
+        await premiumService.restorePurchases();
+        return;
+      }
+      if (pendingLikeState) {
+        if (premiumService.canRestorePremium) {
+          await premiumService.restorePurchases();
+        } else {
+          await premiumService.refreshStoreState();
+        }
+        return;
+      }
+      await premiumService.startPremiumUpgradeFlow();
+    }
 
-          final copyColumn = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (narrow)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _PremiumHeaderLockup(
-                      subtitle: premiumService.isPremium
-                          ? 'Verified premium access is ready on this device'
-                          : 'Release-ready premium access through Google Play',
-                    ),
-                    const SizedBox(height: 12),
-                    _PremiumStatusBadge(
-                      label: statusLabel,
-                      accent: statusAccent,
-                    ),
-                  ],
-                )
-              else
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _PremiumHeaderLockup(
-                        subtitle: premiumService.isPremium
-                            ? 'Verified premium access is ready on this device'
-                            : 'Release-ready premium access through Google Play',
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    _PremiumStatusBadge(
-                      label: statusLabel,
-                      accent: statusAccent,
-                    ),
-                  ],
-                ),
-              const SizedBox(height: 28),
-              Text(
-                'SweldoTrack Premium',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: .90),
-                  fontSize: wide ? 18 : 16,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: .3,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Smarter budget tracking for ${premiumService.priceLabel}',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: wide
-                      ? 40
-                      : narrow
-                          ? 28
-                          : 34,
-                  fontWeight: FontWeight.w900,
-                  height: 1.02,
-                  letterSpacing: -1.2,
-                ),
-              ),
-              const SizedBox(height: 14),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
-                child: const Text(
-                  'Track your spending deeper, unlock premium insights, personalize your theme, and use smarter tools designed for Filipino payday budgeting.',
-                  style: TextStyle(
-                    color: _PremiumPalette.textSoft,
-                    fontSize: 15,
-                    height: 1.6,
-                    fontWeight: FontWeight.w500,
+    final canTapPrimaryAction = premiumService.isPremium ||
+        pendingLikeState ||
+        premiumService.canStartPremiumUpgradeFlow;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        gradient: ui.premiumCtaGradient,
+        border: Border.all(
+          color: uiStyle.isDark
+              ? Colors.white.withValues(alpha: .08)
+              : ui.borderColor,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: ui.accentGradient.colors.first.withValues(
+              alpha: ui.isJade ? .16 : .10,
+            ),
+            blurRadius: 30,
+            spreadRadius: -8,
+            offset: const Offset(0, 16),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: uiStyle.isDark ? .26 : .14),
+            blurRadius: 28,
+            spreadRadius: -12,
+            offset: const Offset(0, 18),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -48,
+              top: -44,
+              child: Container(
+                height: 150,
+                width: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      Colors.white.withValues(alpha: uiStyle.isDark ? .18 : .24),
+                      Colors.white.withValues(alpha: 0),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(narrow ? 18 : 22),
+            ),
+            Positioned(
+              left: -60,
+              bottom: -80,
+              child: Container(
+                height: 180,
+                width: 180,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .06),
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      ui.accentGradient.colors.first.withValues(alpha: .20),
+                      ui.accentGradient.colors.first.withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(2),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(28),
-                  border:
-                      Border.all(color: Colors.white.withValues(alpha: .08)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _PremiumPalette.cyan.withValues(alpha: .08),
-                      blurRadius: 28,
-                      spreadRadius: -8,
-                    ),
-                  ],
+                  color: uiStyle.isDark
+                      ? Colors.black.withValues(alpha: .12)
+                      : Colors.white.withValues(alpha: .20),
+                  border: Border.all(
+                    color: uiStyle.isDark
+                        ? Colors.white.withValues(alpha: .05)
+                        : Colors.white.withValues(alpha: .30),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      crossAxisAlignment: WrapCrossAlignment.center,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
+                          height: 46,
+                          width: 46,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                Color(0x1FFFFFFF),
-                                Color(0x12FFFFFF),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: .08),
-                            ),
+                            color: Colors.white.withValues(alpha: .16),
+                            borderRadius: BorderRadius.circular(16),
                           ),
+                          child: const Icon(
+                            Icons.workspace_premium_rounded,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                premiumService.priceLabel,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: -.5,
+                                'SweldoTrack Premium',
+                                style: sweldoTitleStyle(
+                                  ui,
+                                  size: 22,
+                                  letterSpacing: -0.4,
+                                  color: primaryTextColor,
                                 ),
                               ),
-                              const SizedBox(height: 2),
-                              const Text(
-                                'Monthly subscription',
+                              const SizedBox(height: 6),
+                              Text(
+                                'Light, Dark, and Intellium Digital are free. Premium unlocks Neon and Executive appearances, advanced analytics, backup, and smarter tools.',
                                 style: TextStyle(
-                                  color: _PremiumPalette.textSoft,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
+                                  color: secondaryTextColor,
+                                  fontSize: 12.8,
+                                  height: 1.4,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const _PremiumFeaturePill(
-                          icon: Icons.workspace_premium_rounded,
-                          label: 'Verified premium access',
-                        ),
-                        const _PremiumFeaturePill(
-                          icon: Icons.lock_clock_rounded,
-                          label: 'Monthly, flexible billing',
-                        ),
                       ],
                     ),
-                    if (!isComingSoon && premiumService.isLoadingProduct) ...[
-                      const SizedBox(height: 16),
-                      const _PremiumInlineNotice(
-                        icon: Icons.sync_rounded,
-                        message: 'Loading the latest Google Play pricing...',
-                        accent: _PremiumPalette.cyan,
-                      ),
-                    ],
-                    if (!isComingSoon && premiumService.isPurchasePending) ...[
-                      const SizedBox(height: 16),
-                      const _PremiumInlineNotice(
-                        icon: Icons.hourglass_top_rounded,
-                        message: 'Your purchase is pending in Google Play.',
-                        accent: _PremiumPalette.gold,
-                      ),
-                    ],
-                    if (!isComingSoon &&
-                        premiumService.errorMessage != null) ...[
-                      const SizedBox(height: 16),
-                      _PremiumInlineNotice(
-                        icon: Icons.info_outline_rounded,
-                        message: premiumService.errorMessage!,
-                        accent: const Color(0xFFFF9DB0),
-                      ),
-                    ],
                     const SizedBox(height: 18),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: canStartPurchase
-                            ? () async {
-                                await premiumService.buyPremium();
-                              }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: canStartPurchase
-                              ? Colors.white
-                              : Colors.white.withValues(alpha: .08),
-                          foregroundColor: canStartPurchase
-                              ? _PremiumPalette.background
-                              : Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 17),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(22),
-                            side: BorderSide(
-                              color: canStartPurchase
-                                  ? Colors.white
-                                  : Colors.white.withValues(alpha: .10),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          displayPrice,
+                          style: sweldoAmountStyle(
+                            ui,
+                            size: 30,
+                            weight: FontWeight.w900,
+                            letterSpacing: -.9,
+                            color: primaryTextColor,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: .12),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            'Google Play monthly plan',
+                            style: TextStyle(
+                              color: secondaryTextColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          actionLabel,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        _PremiumTrustBadge(
-                          icon: Icons.verified_user_rounded,
-                          label: 'Secure checkout by Google Play',
-                        ),
-                        _PremiumTrustBadge(
-                          icon: Icons.event_repeat_rounded,
-                          label: 'Cancel anytime through Google Play',
-                        ),
-                        _PremiumTrustBadge(
-                          icon: Icons.restore_rounded,
-                          label: 'Restore purchase anytime',
-                        ),
-                        _PremiumTrustBadge(
-                          icon: Icons.shield_rounded,
-                          label: 'Premium activates after verification',
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 18),
+                    _PremiumPrimaryActionButton(
+                      label: actionLabel,
+                      enabled: canTapPrimaryAction,
+                      onTap: canTapPrimaryAction ? handlePrimaryAction : null,
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      supportingNote,
-                      style: const TextStyle(
-                        color: _PremiumPalette.textMuted,
-                        fontSize: 12.5,
-                        height: 1.5,
-                        fontWeight: FontWeight.w600,
+                      note,
+                      style: sweldoHelperStyle(
+                        ui,
+                        size: 12.4,
+                        color: secondaryTextColor,
+                        height: 1.4,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-              Text(
-                'What you unlock',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: .94),
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PremiumPrimaryActionButton extends StatelessWidget {
+  final String label;
+  final bool enabled;
+  final Future<void> Function()? onTap;
+
+  const _PremiumPrimaryActionButton({
+    required this.label,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
+    final usesLightButton = !uiStyle.isDark;
+    final titleColor = enabled
+        ? usesLightButton
+            ? const Color(0xFF0F172A)
+            : Colors.white
+        : usesLightButton
+            ? ui.textSecondary
+            : Colors.white.withValues(alpha: .92);
+    final decoration = enabled
+        ? usesLightButton
+            ? BoxDecoration(
+                color: Colors.white.withValues(alpha: .98),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: uiStyle.accent.withValues(alpha: .24),
                 ),
-              ),
-              const SizedBox(height: 12),
-              GridView.count(
-                crossAxisCount: benefitColumns,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: benefitColumns == 1
-                    ? 4.6
-                    : benefitColumns == 2
-                        ? 2.45
-                        : 2.05,
-                children: const [
-                  _PremiumBenefitCard(
-                    icon: Icons.auto_graph_rounded,
-                    label: 'Premium Analytics',
-                    accent: _PremiumPalette.cyan,
-                  ),
-                  _PremiumBenefitCard(
-                    icon: Icons.psychology_alt_rounded,
-                    label: 'Smart Expense Detection',
-                    accent: _PremiumPalette.sky,
-                  ),
-                  _PremiumBenefitCard(
-                    icon: Icons.tune_rounded,
-                    label: 'Advanced Budget Tools',
-                    accent: _PremiumPalette.violet,
-                  ),
-                  _PremiumBenefitCard(
-                    icon: Icons.palette_rounded,
-                    label: 'Extra Themes',
-                    accent: _PremiumPalette.lilac,
-                  ),
-                  _PremiumBenefitCard(
-                    icon: Icons.groups_rounded,
-                    label: 'Referral Tools',
-                    accent: _PremiumPalette.gold,
-                  ),
-                  _PremiumBenefitCard(
-                    icon: Icons.bolt_rounded,
-                    label: 'Priority Updates',
-                    accent: _PremiumPalette.cyan,
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x140F172A),
+                    blurRadius: 20,
+                    spreadRadius: -8,
+                    offset: Offset(0, 12),
                   ),
                 ],
+              )
+            : ui.premiumCtaDecoration(radius: 20)
+        : usesLightButton
+            ? BoxDecoration(
+                color: Colors.white.withValues(alpha: .74),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: ui.borderColor),
+              )
+            : ui.cardDecoration(radius: 20);
+    return Container(
+      width: double.infinity,
+      decoration: decoration,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: !enabled || onTap == null ? null : () => onTap!(),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: titleColor,
+                fontSize: 14.5,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PremiumStatusCard extends StatelessWidget {
+  final String badgeLabel;
+  final String message;
+  final String lastVerifiedLabel;
+  final String? supportingText;
+  final Color accent;
+
+  const _PremiumStatusCard({
+    required this.badgeLabel,
+    required this.message,
+    required this.lastVerifiedLabel,
+    required this.accent,
+    this.supportingText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: ui.sectionContainerDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Premium Status',
+                      style: sweldoLabelStyle(
+                        ui,
+                        size: 15.5,
+                        color: ui.textPrimary,
+                        weight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      message,
+                      style: sweldoHelperStyle(
+                        ui,
+                        size: 12.8,
+                        color: ui.textSecondary,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
+                decoration: ui.iconChipBackground(accent, radius: 18).copyWith(
+                      border: Border.all(color: accent.withValues(alpha: .28)),
+                    ),
+                child: Text(
+                  badgeLabel,
+                  style: TextStyle(
+                    color: accent,
+                    fontSize: 12.3,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
             ],
-          );
-
-          if (wide) {
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: ui.cardDecoration(radius: 22),
+            child: Row(
               children: [
-                Expanded(flex: 12, child: copyColumn),
-                const SizedBox(width: 24),
-                const Expanded(
-                  flex: 7,
+                Container(
+                  height: 38,
+                  width: 38,
+                  decoration: ui.iconChipBackground(accent, radius: 12),
+                  child: Icon(
+                    Icons.schedule_rounded,
+                    color: accent,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Center(child: _PremiumPhonePreviewCard()),
-                      SizedBox(height: 18),
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: orbitChips,
+                      Text(
+                        'Last Premium Check',
+                        style: sweldoLabelStyle(
+                          ui,
+                          size: 12.2,
+                          color: ui.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        lastVerifiedLabel,
+                        style: sweldoAmountStyle(
+                          ui,
+                          size: 14,
+                          weight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
-            );
-          }
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              copyColumn,
-              const SizedBox(height: 26),
-              const Center(child: _PremiumPhonePreviewCard()),
-              const SizedBox(height: 16),
-              const Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 12,
-                runSpacing: 12,
-                children: orbitChips,
+            ),
+          ),
+          if (supportingText != null && supportingText!.trim().isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              supportingText!,
+              style: sweldoHelperStyle(
+                ui,
+                size: 12.3,
+                color: accent == const Color(0xFFFFC857)
+                    ? const Color(0xFFFFD98A)
+                    : ui.textMuted,
+                height: 1.4,
               ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PremiumBenefitTile extends StatelessWidget {
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color accent;
+  final bool unlocked;
+
+  const _PremiumBenefitTile({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.accent,
+    this.unlocked = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    return Container(
+      constraints: const BoxConstraints(minHeight: 148),
+      padding: const EdgeInsets.all(16),
+      decoration: ui.cardDecoration(radius: 22).copyWith(
+            border: Border.all(
+              color: unlocked
+                  ? accent.withValues(alpha: .26)
+                  : ui.borderColor.withValues(alpha: .9),
+            ),
+          ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: ui.iconChipBackground(accent, radius: 14),
+                child: Icon(icon, color: accent, size: 18),
+              ),
+              const Spacer(),
+              if (unlocked)
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: accent,
+                  size: 18,
+                ),
             ],
-          );
-        },
+          ),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            style: sweldoLabelStyle(
+              ui,
+              size: 13.5,
+              color: ui.textPrimary,
+              weight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            description,
+            style: sweldoHelperStyle(
+              ui,
+              size: 12,
+              color: ui.textSecondary,
+              height: 1.4,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -11889,59 +16721,83 @@ class PremiumFeatureLockCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const isComingSoon = !premiumLaunchEnabled;
-    final canStartPurchase = !isComingSoon && premiumService.canPurchasePremium;
-    final planLabel = isComingSoon
-        ? premiumTemporarilyUnavailableLabel
-        : premiumService.isPremium
-            ? 'Premium is active'
-            : premiumService.requiresBackendVerificationSetup
-                ? premiumTemporarilyUnavailableLabel
-                : premiumService.premiumStatusLabel == 'Free'
-                    ? 'Upgrade to unlock premium features.'
-                    : premiumService.premiumStatusLabel;
-    final badgeLabel = isComingSoon
-        ? 'Preview'
-        : premiumService.requiresBackendVerificationSetup
-            ? 'Unavailable'
-            : 'Locked';
-    final badgeAccent = isComingSoon
-        ? _PremiumPalette.gold
-        : premiumService.requiresBackendVerificationSetup
+    final ui = SweldoVisualStyle.fromContext(context);
+    final canStartPurchase = premiumService.canStartPremiumUpgradeFlow;
+    final statusLabel = premiumService.premiumStatusLabel;
+    final actionLabel = premiumService.isPremium
+        ? 'Premium Active'
+        : 'Unlock Premium • ${premiumService.premiumDisplayPriceLabel}';
+    final displayPrice = premiumService.premiumDisplayPriceLabel;
+    final badgeLabel = premiumService.isPremium ? 'Premium' : 'Locked';
+    final badgeAccent = premiumService.isPremium
+        ? _PremiumPalette.cyan
+        : premiumService.isStoreUnavailable
             ? _PremiumPalette.sky
             : _PremiumPalette.lilac;
+    const primaryTextColor = Colors.white;
+    final secondaryTextColor = Colors.white.withValues(alpha: .84);
+    final tertiaryTextColor = Colors.white.withValues(alpha: .72);
 
     return _PremiumShowcaseShell(
       padding: const EdgeInsets.all(20),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 720;
-          const previewTiles = Wrap(
+          final wide = constraints.maxWidth >= 760;
+          final isAnalyticsCard = title == 'Premium Analytics';
+          final isAppearanceCard = title == 'Premium Appearances';
+          final previewTiles = Wrap(
             spacing: 10,
             runSpacing: 10,
             children: [
-              _PremiumMiniPreviewTile(
+              const _PremiumMiniPreviewTile(
                 label: 'Weekly View',
                 value: '7 days',
                 accent: _PremiumPalette.cyan,
               ),
-              _PremiumMiniPreviewTile(
-                label: 'Theme Pack',
-                value: '2 styles',
+              const _PremiumMiniPreviewTile(
+                label: 'Appearance',
+                value: '5 looks',
                 accent: _PremiumPalette.sky,
               ),
-              _PremiumMiniPreviewTile(
-                label: 'Tool Access',
-                value: 'Launch',
-                accent: _PremiumPalette.lilac,
-              ),
+              if (!isAppearanceCard)
+                const _PremiumMiniPreviewTile(
+                  label: 'Tools Unlock',
+                  value: '2 tools',
+                  accent: _PremiumPalette.lilac,
+                ),
             ],
           );
+          final featurePills = Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              const _PremiumFeaturePill(
+                icon: Icons.auto_graph_rounded,
+                label: '7-day insight',
+              ),
+              const _PremiumFeaturePill(
+                icon: Icons.palette_outlined,
+                label: 'Premium themes',
+              ),
+              if (!isAppearanceCard)
+                const _PremiumFeaturePill(
+                  icon: Icons.widgets_outlined,
+                  label: 'Tools unlock',
+                ),
+            ],
+          );
+          final resolvedSubtitle = isAnalyticsCard
+              ? 'Unlock deeper reports, weekly insights, and premium dashboard views.'
+              : isAppearanceCard
+                  ? 'Light, Dark, and Intellium Digital are free. Premium unlocks Neon and Executive appearances.'
+                  : subtitle;
 
           final content = Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
                     height: 48,
@@ -11965,18 +16821,20 @@ class PremiumFeatureLockCard extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
+                          style: sweldoTitleStyle(
+                            ui,
+                            size: 22,
                             letterSpacing: -0.4,
+                            color: primaryTextColor,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          planLabel,
-                          style: const TextStyle(
-                            color: _PremiumPalette.cyan,
+                          premiumService.isPremium
+                              ? 'Premium Active'
+                              : 'SweldoTrack Premium • $displayPrice',
+                          style: TextStyle(
+                            color: tertiaryTextColor,
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                           ),
@@ -11992,67 +16850,36 @@ class PremiumFeatureLockCard extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                subtitle,
-                style: const TextStyle(
-                  color: _PremiumPalette.textSoft,
+                resolvedSubtitle,
+                style: TextStyle(
+                  color: secondaryTextColor,
                   fontSize: 13,
+                  fontWeight: FontWeight.w500,
                   height: 1.5,
                 ),
               ),
               const SizedBox(height: 18),
-              const Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  _PremiumFeaturePill(
-                    icon: Icons.auto_graph_rounded,
-                    label: '7-day insight',
-                  ),
-                  _PremiumFeaturePill(
-                    icon: Icons.palette_outlined,
-                    label: 'Custom themes',
-                  ),
-                  _PremiumFeaturePill(
-                    icon: Icons.widgets_outlined,
-                    label: 'Premium tools',
-                  ),
-                ],
-              ),
+              featurePills,
               const SizedBox(height: 18),
               previewTiles,
               const SizedBox(height: 16),
-              if (!isComingSoon && premiumService.isLoadingProduct)
-                const Text(
-                  'Loading pricing...',
-                  style: TextStyle(
-                    color: _PremiumPalette.textSoft,
-                    fontSize: 12.5,
-                  ),
-                )
-              else if (!isComingSoon && !premiumService.isAvailable)
-                const Text(
-                  'Google Play Billing is unavailable on this device.',
-                  style: TextStyle(
-                    color: _PremiumPalette.textSoft,
-                    fontSize: 12.5,
-                  ),
-                )
-              else
-                Text(
-                  planLabel,
-                  style: const TextStyle(
-                    color: _PremiumPalette.textSoft,
-                    fontSize: 12.5,
-                  ),
+              Text(
+                statusLabel,
+                style: TextStyle(
+                  color: tertiaryTextColor,
+                  fontSize: 12.3,
+                  fontWeight: FontWeight.w600,
+                  height: 1.4,
                 ),
-              if (!isComingSoon && premiumService.errorMessage != null) ...[
+              ),
+              if (premiumService.errorMessage != null) ...[
                 const SizedBox(height: 10),
                 Text(
                   premiumService.errorMessage!,
-                  style: const TextStyle(
-                    color: Color(0xFFFF9DB0),
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
+                  style: sweldoHelperStyle(
+                    ui,
+                    size: 12.5,
+                    color: sweldoDangerColor,
                   ),
                 ),
               ],
@@ -12060,14 +16887,26 @@ class PremiumFeatureLockCard extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: canStartPurchase
+                  onPressed: premiumService.isPremium
+                      ? null
+                      : canStartPurchase
                       ? () async {
-                          await premiumService.buyPremium();
+                          await premiumService.startPremiumUpgradeFlow();
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: _PremiumPalette.background,
+                    backgroundColor: premiumService.isPremium
+                        ? Colors.white.withValues(alpha: .12)
+                        : canStartPurchase
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: .08),
+                    foregroundColor: premiumService.isPremium
+                        ? primaryTextColor
+                        : canStartPurchase
+                            ? _PremiumPalette.background
+                            : Colors.white,
+                    disabledBackgroundColor: Colors.white.withValues(alpha: .12),
+                    disabledForegroundColor: primaryTextColor,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(18),
@@ -12075,8 +16914,12 @@ class PremiumFeatureLockCard extends StatelessWidget {
                     elevation: 0,
                   ),
                   child: Text(
-                    premiumService.premiumActionLabel,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                    actionLabel,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),
@@ -12088,28 +16931,26 @@ class PremiumFeatureLockCard extends StatelessWidget {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(flex: 10, child: content),
+              Expanded(flex: 12, child: content),
               const SizedBox(width: 18),
-              const Expanded(
+              Expanded(
                 flex: 5,
                 child: Column(
                   children: [
                     _PremiumOrbitChip(
                       icon: Icons.track_changes_rounded,
-                      label: 'Planning',
-                      accent: _PremiumPalette.violet,
+                      label: isAppearanceCard ? '3 Free' : 'Planning',
+                      accent: isAppearanceCard
+                          ? _PremiumPalette.sky
+                          : _PremiumPalette.violet,
                     ),
-                    SizedBox(height: 14),
+                    const SizedBox(height: 14),
                     _PremiumOrbitChip(
-                      icon: Icons.savings_outlined,
-                      label: 'Savings Target',
+                      icon: isAppearanceCard
+                          ? Icons.dark_mode_rounded
+                          : Icons.savings_outlined,
+                      label: isAppearanceCard ? '2 Premium' : 'Savings Target',
                       accent: _PremiumPalette.cyan,
-                    ),
-                    SizedBox(height: 14),
-                    _PremiumOrbitChip(
-                      icon: Icons.palette_outlined,
-                      label: 'Themes',
-                      accent: _PremiumPalette.lilac,
                     ),
                   ],
                 ),
@@ -12124,12 +16965,6 @@ class PremiumFeatureLockCard extends StatelessWidget {
 
 class _PremiumPalette {
   static const Color background = Color(0xFF050917);
-  static const Color backgroundSoft = Color(0xFF0A1024);
-  static const Color panel = Color(0xFF0E1630);
-  static const Color panelStrong = Color(0xFF151D3A);
-  static const Color panelGlass = Color(0xCC111A36);
-  static const Color edge = Color(0x26FFFFFF);
-  static const Color textMuted = Color(0xFF8993BF);
   static const Color textSoft = Color(0xFFC9D0EB);
   static const Color cyan = Color(0xFF46D4FF);
   static const Color sky = Color(0xFF68A6FF);
@@ -12141,43 +16976,49 @@ class _PremiumPalette {
 class _PremiumShowcaseShell extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
+  final Gradient? backgroundGradient;
 
   const _PremiumShowcaseShell({
     required this.child,
     this.padding = const EdgeInsets.all(24),
+    this.backgroundGradient,
   });
 
   @override
   Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
+    final resolvedGradient = backgroundGradient ?? ui.premiumCtaGradient;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(36),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            _PremiumPalette.background,
-            _PremiumPalette.backgroundSoft,
-            Color(0xFF120F2D),
-          ],
+        gradient: resolvedGradient,
+        border: Border.all(
+          color: uiStyle.isDark
+              ? Colors.white.withValues(alpha: .07)
+              : backgroundGradient != null &&
+                      uiStyle.mode != SweldoUiMode.light
+                  ? Colors.white.withValues(alpha: .20)
+                  : ui.borderColor,
         ),
-        border: Border.all(color: Colors.white.withValues(alpha: .07)),
         boxShadow: [
           BoxShadow(
-            color: _PremiumPalette.cyan.withValues(alpha: .10),
+            color: uiStyle.accent.withValues(alpha: uiStyle.isDark ? .10 : .05),
             blurRadius: 40,
             spreadRadius: -3,
             offset: const Offset(0, 14),
           ),
           BoxShadow(
-            color: _PremiumPalette.violet.withValues(alpha: .10),
+            color: resolvedGradient.colors.last.withValues(
+              alpha: uiStyle.isDark ? .10 : .04,
+            ),
             blurRadius: 42,
             spreadRadius: -8,
             offset: const Offset(0, 18),
           ),
           BoxShadow(
-            color: Colors.black.withValues(alpha: .34),
+            color: Colors.black.withValues(alpha: uiStyle.isDark ? .34 : .14),
             blurRadius: 36,
             offset: const Offset(0, 24),
           ),
@@ -12197,8 +17038,8 @@ class _PremiumShowcaseShell extends StatelessWidget {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      _PremiumPalette.cyan.withValues(alpha: .24),
-                      _PremiumPalette.cyan.withValues(alpha: 0),
+                      uiStyle.accent.withValues(alpha: uiStyle.isDark ? .24 : .08),
+                      uiStyle.accent.withValues(alpha: 0),
                     ],
                   ),
                 ),
@@ -12214,34 +17055,11 @@ class _PremiumShowcaseShell extends StatelessWidget {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      _PremiumPalette.lilac.withValues(alpha: .22),
-                      _PremiumPalette.lilac.withValues(alpha: 0),
+                      ui.premiumCtaGradient.colors.last.withValues(
+                        alpha: uiStyle.isDark ? .22 : .06,
+                      ),
+                      ui.premiumCtaGradient.colors.last.withValues(alpha: 0),
                     ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: -60,
-              right: -40,
-              bottom: 120,
-              child: Transform.rotate(
-                angle: -0.18,
-                child: Container(
-                  height: 128,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(120),
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.transparent,
-                        _PremiumPalette.cyan.withValues(alpha: .08),
-                        _PremiumPalette.lilac.withValues(alpha: .14),
-                        Colors.transparent,
-                      ],
-                    ),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: .04),
-                    ),
                   ),
                 ),
               ),
@@ -12253,9 +17071,9 @@ class _PremiumShowcaseShell extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.white.withValues(alpha: .03),
+                      Colors.white.withValues(alpha: uiStyle.isDark ? .03 : .06),
                       Colors.transparent,
-                      Colors.black.withValues(alpha: .06),
+                      Colors.black.withValues(alpha: uiStyle.isDark ? .06 : .02),
                     ],
                     stops: const [0, .22, 1],
                   ),
@@ -12274,10 +17092,20 @@ class _PremiumShowcaseShell extends StatelessWidget {
 }
 
 class _PremiumBrandLockup extends StatelessWidget {
-  const _PremiumBrandLockup();
+  final bool hasPremium;
+
+  const _PremiumBrandLockup({
+    required this.hasPremium,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
+    final planLabel = hasPremium ? 'SweldoTrack Premium' : 'SweldoTrack Free';
+    final planIcon = hasPremium
+        ? Icons.workspace_premium_rounded
+        : Icons.verified_rounded;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -12285,23 +17113,15 @@ class _PremiumBrandLockup extends StatelessWidget {
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF29489A),
-                _PremiumPalette.cyan,
-                _PremiumPalette.violet,
-              ],
-            ),
+            gradient: uiStyle.heroGradient,
             boxShadow: [
               BoxShadow(
-                color: _PremiumPalette.cyan.withValues(alpha: .18),
+                color: uiStyle.accent.withValues(alpha: .18),
                 blurRadius: 20,
                 spreadRadius: -3,
               ),
               BoxShadow(
-                color: _PremiumPalette.violet.withValues(alpha: .18),
+                color: uiStyle.heroGradient.colors.last.withValues(alpha: .18),
                 blurRadius: 26,
                 spreadRadius: -6,
                 offset: const Offset(0, 10),
@@ -12324,15 +17144,18 @@ class _PremiumBrandLockup extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'SweldoTrack',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 29,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -1.1,
+                  color: uiStyle.isDark ? Colors.white : ui.textPrimary,
+                  fontSize: uiStyle.mode == SweldoUiMode.premiumExecutive ? 30 : 29,
+                  fontWeight: uiStyle.mode == SweldoUiMode.premiumExecutive
+                      ? FontWeight.w700
+                      : FontWeight.w800,
+                  letterSpacing:
+                      uiStyle.mode == SweldoUiMode.premiumExecutive ? -0.7 : -1.1,
                 ),
               ),
               const SizedBox(height: 8),
@@ -12342,28 +17165,34 @@ class _PremiumBrandLockup extends StatelessWidget {
                   vertical: 7,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .06),
+                  color: uiStyle.isDark
+                      ? Colors.white.withValues(alpha: .06)
+                      : Colors.white.withValues(alpha: .56),
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: .08),
+                    color: uiStyle.isDark
+                        ? Colors.white.withValues(alpha: .08)
+                        : ui.borderColor,
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.workspace_premium_rounded,
+                      planIcon,
                       size: 14,
-                      color: _PremiumPalette.cyan,
+                      color: uiStyle.accent,
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        'SweldoTrack Premium',
+                        planLabel,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: _PremiumPalette.textSoft,
+                          color: uiStyle.isDark
+                              ? _PremiumPalette.textSoft
+                              : ui.textSecondary,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                           letterSpacing: .2,
@@ -12381,107 +17210,46 @@ class _PremiumBrandLockup extends StatelessWidget {
   }
 }
 
-class _PremiumHeaderLockup extends StatelessWidget {
-  final String subtitle;
-
-  const _PremiumHeaderLockup({
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF29489A),
-                _PremiumPalette.cyan,
-                _PremiumPalette.violet,
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: _PremiumPalette.cyan.withValues(alpha: .16),
-                blurRadius: 22,
-                spreadRadius: -4,
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: Image.asset(
-              'assets/icon/sweldotrack_icon.png',
-              width: 52,
-              height: 52,
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'SweldoTrack',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 25,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.8,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  color: _PremiumPalette.textSoft,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _PremiumStatusBadge extends StatelessWidget {
   final String label;
   final Color accent;
+  final bool showcaseStyle;
 
   const _PremiumStatusBadge({
     required this.label,
     required this.accent,
+    this.showcaseStyle = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final onShowcaseSurface = showcaseStyle;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            accent.withValues(alpha: .16),
-            accent.withValues(alpha: .08),
-          ],
-        ),
+        gradient: onShowcaseSurface
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: .20),
+                  accent.withValues(alpha: .14),
+                ],
+              )
+            : LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  accent.withValues(alpha: .16),
+                  accent.withValues(alpha: .08),
+                ],
+              ),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: accent.withValues(alpha: .28)),
+        border: Border.all(
+          color: onShowcaseSurface
+              ? Colors.white.withValues(alpha: .24)
+              : accent.withValues(alpha: .28),
+        ),
         boxShadow: [
           BoxShadow(
             color: accent.withValues(alpha: .12),
@@ -12493,113 +17261,11 @@ class _PremiumStatusBadge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          color: accent,
+          color: onShowcaseSurface ? Colors.white : accent,
           fontSize: 11,
           fontWeight: FontWeight.w800,
           letterSpacing: .2,
         ),
-      ),
-    );
-  }
-}
-
-class _PremiumInlineNotice extends StatelessWidget {
-  final IconData icon;
-  final String message;
-  final Color accent;
-
-  const _PremiumInlineNotice({
-    required this.icon,
-    required this.message,
-    required this.accent,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: .10),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: accent.withValues(alpha: .20)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: accent, size: 18),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(
-                color: accent == const Color(0xFFFF9DB0)
-                    ? accent
-                    : Colors.white.withValues(alpha: .90),
-                fontSize: 12.5,
-                height: 1.45,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PremiumBenefitCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color accent;
-
-  const _PremiumBenefitCard({
-    required this.icon,
-    required this.label,
-    required this.accent,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            _PremiumPalette.panelStrong,
-            _PremiumPalette.panel,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _PremiumPalette.edge),
-      ),
-      child: Row(
-        children: [
-          Container(
-            height: 42,
-            width: 42,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: .14),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: accent.withValues(alpha: .26)),
-            ),
-            child: Icon(icon, color: accent, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w700,
-                height: 1.3,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -12619,9 +17285,9 @@ class _PremiumFeaturePill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .06),
+        color: Colors.white.withValues(alpha: .08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: .08)),
+        border: Border.all(color: Colors.white.withValues(alpha: .10)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -12634,353 +17300,6 @@ class _PremiumFeaturePill extends StatelessWidget {
               color: Colors.white,
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PremiumTrustBadge extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _PremiumTrustBadge({
-    required this.icon,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 240),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .04),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: .08)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: _PremiumPalette.cyan, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: _PremiumPalette.textSoft,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w700,
-                height: 1.3,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PremiumPhonePreviewCard extends StatelessWidget {
-  const _PremiumPhonePreviewCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 320),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF050814),
-          borderRadius: BorderRadius.circular(34),
-          border: Border.all(color: Colors.white.withValues(alpha: .14)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: .34),
-              blurRadius: 34,
-              offset: const Offset(0, 20),
-            ),
-            BoxShadow(
-              color: _PremiumPalette.cyan.withValues(alpha: .10),
-              blurRadius: 20,
-              spreadRadius: -8,
-            ),
-          ],
-        ),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0A0E20),
-            borderRadius: BorderRadius.circular(26),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Center(
-                child: Container(
-                  width: 88,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: .45),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Premium Dashboard',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.6,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'A quick look at your smarter budget view',
-                          style: TextStyle(
-                            color: _PremiumPalette.textSoft,
-                            fontSize: 11.5,
-                            height: 1.35,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    height: 38,
-                    width: 38,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: .05),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: .08),
-                      ),
-                    ),
-                    child: const Icon(
-                      Icons.workspace_premium_rounded,
-                      color: _PremiumPalette.lilac,
-                      size: 20,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF122048),
-                      Color(0xFF191B44),
-                      Color(0xFF2A1B57),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(22),
-                  border:
-                      Border.all(color: Colors.white.withValues(alpha: .08)),
-                ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'This cutoff',
-                            style: TextStyle(
-                              color: _PremiumPalette.textSoft,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        _PremiumStatusBadge(
-                          label: 'Verified',
-                          accent: _PremiumPalette.cyan,
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Weekly Trend',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        _PremiumSparkBar(
-                            height: 24, accent: _PremiumPalette.sky),
-                        SizedBox(width: 6),
-                        _PremiumSparkBar(
-                            height: 42, accent: _PremiumPalette.cyan),
-                        SizedBox(width: 6),
-                        _PremiumSparkBar(
-                            height: 30, accent: _PremiumPalette.lilac),
-                        SizedBox(width: 6),
-                        _PremiumSparkBar(
-                            height: 54, accent: _PremiumPalette.cyan),
-                        SizedBox(width: 6),
-                        _PremiumSparkBar(
-                            height: 38, accent: _PremiumPalette.sky),
-                        SizedBox(width: 6),
-                        _PremiumSparkBar(
-                            height: 50, accent: _PremiumPalette.violet),
-                        SizedBox(width: 6),
-                        _PremiumSparkBar(
-                            height: 34, accent: _PremiumPalette.cyan),
-                      ],
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Your last 7 days are easier to compare at a glance.',
-                      style: TextStyle(
-                        color: _PremiumPalette.textSoft,
-                        fontSize: 11,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Row(
-                children: [
-                  Expanded(
-                    child: _PremiumPreviewMetricCard(
-                      title: 'Smart Detection',
-                      value: '2 suggested',
-                      subtitle: 'GCash transfer and Grab order spotted',
-                      accent: _PremiumPalette.sky,
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: _PremiumPreviewMetricCard(
-                      title: 'Safe Daily Limit',
-                      value: '\u20B1690/day',
-                      subtitle: 'Stays on track for the next 4 days',
-                      accent: _PremiumPalette.violet,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const _PremiumPreviewMetricCard(
-                title: 'Premium Dashboard',
-                value: 'Spending, trends, and insights in one view',
-                subtitle:
-                    'Built to feel fast, clear, and reliable on payday weeks.',
-                accent: _PremiumPalette.gold,
-                compactValue: false,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PremiumSparkBar extends StatelessWidget {
-  final double height;
-  final Color accent;
-
-  const _PremiumSparkBar({
-    required this.height,
-    required this.accent,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        height: height,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-            colors: [
-              accent.withValues(alpha: .45),
-              accent,
-            ],
-          ),
-          borderRadius: BorderRadius.circular(999),
-        ),
-      ),
-    );
-  }
-}
-
-class _PremiumPreviewMetricCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String subtitle;
-  final Color accent;
-  final bool compactValue;
-
-  const _PremiumPreviewMetricCard({
-    required this.title,
-    required this.value,
-    required this.subtitle,
-    required this.accent,
-    this.compactValue = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: _PremiumPalette.panel,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: .06)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: accent,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: compactValue ? 17 : 14.5,
-              height: compactValue ? 1.15 : 1.35,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: _PremiumPalette.textSoft,
-              fontSize: 10.5,
-              height: 1.35,
             ),
           ),
         ],
@@ -13002,29 +17321,19 @@ class _PremiumPhoneStatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            _PremiumPalette.panelStrong,
-            _PremiumPalette.panel,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _PremiumPalette.edge),
-      ),
+      decoration: ui.cardDecoration(radius: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: TextStyle(
-              color: accent,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+            style: sweldoLabelStyle(
+              ui,
+              size: 12.2,
+              color: ui.textSecondary,
             ),
           ),
           const SizedBox(height: 6),
@@ -13033,10 +17342,11 @@ class _PremiumPhoneStatTile extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
+              style: sweldoAmountStyle(
+                ui,
+                size: 18,
+                weight: FontWeight.w800,
+                letterSpacing: -0.4,
               ),
             ),
           ),
@@ -13101,12 +17411,12 @@ class _PremiumMiniPreviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 122,
+      width: 128,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .06),
+        color: Colors.white.withValues(alpha: .08),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: .08)),
+        border: Border.all(color: Colors.white.withValues(alpha: .10)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -13114,16 +17424,16 @@ class _PremiumMiniPreviewTile extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              color: _PremiumPalette.textSoft,
+              color: Color(0xFFD9E5FF),
               fontSize: 11.5,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(
-              color: accent,
+            style: const TextStyle(
+              color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
@@ -13147,6 +17457,7 @@ class ThemeSelectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final selectedMode = themeController.effectiveUiMode(hasPremium: hasPremium);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -13155,7 +17466,7 @@ class ThemeSelectionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Choose Theme',
+            'Appearance',
             style: TextStyle(
                 color: ui.textPrimary,
                 fontSize: 16,
@@ -13163,68 +17474,74 @@ class ThemeSelectionCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Your selected theme is saved locally and applied instantly.',
+            'Light, Dark, and Intellium Digital are free.',
             style: TextStyle(color: ui.textSecondary, fontSize: 12.5),
           ),
           const SizedBox(height: 16),
-          ...sweldoThemeDefinitions.map<Widget>((theme) {
-            final isFreeTheme = isFreeSweldoTheme(theme.preset);
-            final isLocked = !hasPremium && !isFreeTheme;
-            final isSelected =
-                themeController.effectivePreset(hasPremium: hasPremium) ==
-                    theme.preset;
-            final subtitle = switch (theme.preset) {
-              SweldoThemePreset.emerald => 'Current Intellium default',
-              SweldoThemePreset.jade => 'Alternate free green style',
-              SweldoThemePreset.ocean ||
-              SweldoThemePreset.sunset =>
-                'Premium custom theme',
-            };
+          ...SweldoUiMode.values.map<Widget>((mode) {
+            final modeStyle = sweldoUiStyleFor(mode);
+            final isLocked = !hasPremium && isPremiumSweldoUiMode(mode);
+            final isSelected = selectedMode == mode;
+            final availabilityLabel = isPremiumSweldoUiMode(mode)
+                ? 'Premium'
+                : 'Free';
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(20),
-                  onTap: isLocked
-                      ? null
-                      : () {
-                          unawaited(themeController.setTheme(theme.preset));
-                        },
+                  onTap: () {
+                    if (isLocked) {
+                      showAppMessage(
+                        context,
+                        'Premium unlocks Neon and Executive appearances.',
+                      );
+                      return;
+                    }
+                    unawaited(
+                      themeController.setUiMode(
+                        mode,
+                        hasPremium: hasPremium,
+                      ),
+                    );
+                  },
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: ui.cardDecoration(radius: 20).copyWith(
                           border: Border.all(
-                            color:
-                                isSelected ? theme.seedColor : ui.borderColor,
+                            color: isSelected ? modeStyle.accent : ui.borderColor,
                             width: isSelected ? 1.4 : 1,
                           ),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: modeStyle.accent.withValues(alpha: .16),
+                                    blurRadius: 22,
+                                    spreadRadius: -2,
+                                  ),
+                                ]
+                              : null,
                         ),
                     child: Row(
                       children: [
-                        Container(
-                          height: 44,
-                          width: 44,
-                          decoration: BoxDecoration(
-                            gradient:
-                                LinearGradient(colors: theme.previewColors),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
+                        _ThemeSelectionPreview(modeStyle: modeStyle),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                theme.label,
+                                sweldoUiModeLabel(mode),
                                 style: TextStyle(
                                     color: ui.textPrimary,
                                     fontWeight: FontWeight.w800),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                subtitle,
+                                sweldoUiModeDescription(mode),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                     color: ui.textSecondary, fontSize: 12.5),
                               ),
@@ -13240,24 +17557,51 @@ class ThemeSelectionCard extends StatelessWidget {
                               color: ui.cardFill.withValues(alpha: .8),
                               borderRadius: BorderRadius.circular(999),
                             ),
-                            child: Text(
-                              'Premium',
-                              style: TextStyle(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.lock_rounded,
+                                  size: 13,
                                   color: ui.textSecondary,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 12),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Premium',
+                                  style: TextStyle(
+                                      color: ui.textSecondary,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 12),
+                                ),
+                              ],
                             ),
                           )
                         else if (isSelected)
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 6),
-                            decoration: ui.iconChipBackground(theme.seedColor,
+                            decoration: ui.iconChipBackground(modeStyle.accent,
                                 radius: 999),
                             child: Text(
                               'Selected',
                               style: TextStyle(
-                                  color: theme.seedColor,
+                                  color: modeStyle.accent,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 12),
+                            ),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: ui.cardFill.withValues(alpha: .8),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              availabilityLabel,
+                              style: TextStyle(
+                                  color: ui.textSecondary,
                                   fontWeight: FontWeight.w800,
                                   fontSize: 12),
                             ),
@@ -13269,6 +17613,81 @@ class ThemeSelectionCard extends StatelessWidget {
               ),
             );
           }),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeSelectionPreview extends StatelessWidget {
+  final SweldoUiStyle modeStyle;
+
+  const _ThemeSelectionPreview({required this.modeStyle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      width: 54,
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        gradient: modeStyle.heroGradient,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: modeStyle.isDark
+              ? Colors.white.withValues(alpha: .14)
+              : modeStyle.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 7,
+            width: 22,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: modeStyle.isDark ? .74 : .92),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+          const Spacer(),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: modeStyle.card.withValues(
+                      alpha: modeStyle.isDark ? .72 : 1,
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Container(
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: modeStyle.surface.withValues(
+                      alpha: modeStyle.isDark ? .68 : .96,
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Container(
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: modeStyle.accent.withValues(alpha: .92),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -13393,7 +17812,7 @@ class UpcomingBillsCard extends StatelessWidget {
                   children: [
                     const _HomeEmptyIcon(
                       icon: Icons.receipt_long_rounded,
-                      color: intelliumPink,
+                      color: Color(0xFFFF8A00),
                     ),
                     const SizedBox(height: 10),
                     Text(
@@ -13433,10 +17852,10 @@ class UpcomingBillsCard extends StatelessWidget {
                             Container(
                               height: 42,
                               width: 42,
-                              decoration: ui.iconChipBackground(intelliumPink,
+                              decoration: ui.iconChipBackground(const Color(0xFFFF8A00),
                                   radius: 14),
                               child: const Icon(Icons.calendar_month_rounded,
-                                  color: intelliumPink),
+                                  color: Color(0xFFFF8A00)),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -13473,7 +17892,7 @@ class UpcomingBillsCard extends StatelessWidget {
                                 fit: BoxFit.scaleDown,
                                 alignment: Alignment.centerRight,
                                 child: Text(
-                                  formatPhp(bill.amount),
+                                  formatMoney(bill.amount),
                                   style: TextStyle(
                                     color: ui.textPrimary,
                                     fontSize: 14,
@@ -13494,15 +17913,36 @@ class UpcomingBillsCard extends StatelessWidget {
   }
 }
 
-class RecentActivityCard extends StatelessWidget {
-  final List<ExpenseItem> expenses;
+class _RecentActivityCard extends StatelessWidget {
+  final List<_HomeActivityItem> activities;
   final VoidCallback onTap;
 
-  const RecentActivityCard({
-    super.key,
-    required this.expenses,
+  const _RecentActivityCard({
+    required this.activities,
     required this.onTap,
   });
+
+  Color _accentFor(_HomeActivityItem item) {
+    switch (item.type) {
+      case _HomeActivityType.income:
+        return const Color(0xFF22C55E);
+      case _HomeActivityType.expense:
+        return const Color(0xFFFF4D6D);
+      case _HomeActivityType.bill:
+        return const Color(0xFFFF8A00);
+    }
+  }
+
+  IconData _iconFor(_HomeActivityItem item) {
+    switch (item.type) {
+      case _HomeActivityType.income:
+        return Icons.work_rounded;
+      case _HomeActivityType.expense:
+        return Icons.shopping_cart_rounded;
+      case _HomeActivityType.bill:
+        return Icons.receipt_long_rounded;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13516,7 +17956,7 @@ class RecentActivityCard extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: ui.sectionContainerDecoration(),
-          child: expenses.isEmpty
+          child: activities.isEmpty
               ? Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -13534,7 +17974,7 @@ class RecentActivityCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Your latest spending entries will show here after you start tracking.',
+                      'Start tracking to see your monthly activity here.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: ui.textSecondary, fontSize: 12.5),
                     ),
@@ -13550,7 +17990,10 @@ class RecentActivityCard extends StatelessWidget {
                   ],
                 )
               : Column(
-                  children: expenses.map((expense) {
+                  children: activities.map((activity) {
+                    final accent = _accentFor(activity);
+                    final amountLabel =
+                        '${activity.isPositive ? '+' : '-'}${formatMoney(activity.amount)}';
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Container(
@@ -13561,10 +18004,9 @@ class RecentActivityCard extends StatelessWidget {
                             Container(
                               height: 42,
                               width: 42,
-                              decoration: ui.iconChipBackground(intelliumCyan,
-                                  radius: 14),
-                              child: const Icon(Icons.wallet_rounded,
-                                  color: intelliumCyan),
+                              decoration:
+                                  ui.iconChipBackground(accent, radius: 14),
+                              child: Icon(_iconFor(activity), color: accent),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -13572,7 +18014,7 @@ class RecentActivityCard extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    expense.title,
+                                    activity.title,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -13583,7 +18025,7 @@ class RecentActivityCard extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${expense.category} | ${formatMonthDay(expense.createdAt)}',
+                                    activity.subtitle,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -13601,9 +18043,9 @@ class RecentActivityCard extends StatelessWidget {
                                 fit: BoxFit.scaleDown,
                                 alignment: Alignment.centerRight,
                                 child: Text(
-                                  formatPhp(expense.amount),
-                                  style: const TextStyle(
-                                    color: intelliumTextPrimary,
+                                  amountLabel,
+                                  style: TextStyle(
+                                    color: accent,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w800,
                                   ),
@@ -13774,53 +18216,52 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final ui = SweldoVisualStyle.fromContext(context);
 
     return Container(
+      constraints: const BoxConstraints(minHeight: 168),
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: ui.sectionFill,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: .06)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: .08),
-            blurRadius: 18,
-            spreadRadius: 1,
+      decoration: ui.cardDecoration(radius: 24).copyWith(
+            border: Border.all(color: color.withValues(alpha: .16)),
           ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 46,
-            width: 46,
-            decoration: ui.iconChipBackground(color, radius: 16),
-            child: Icon(icon, color: color),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 44,
+                width: 44,
+                decoration: ui.iconChipBackground(color, radius: 15),
+                child: Icon(icon, color: color, size: 20),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Text(
             title,
-            style: TextStyle(
-              color: ui.textPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
+            style: sweldoLabelStyle(
+              ui,
+              size: 13,
+              color: ui.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(
-              color: color,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
+            style: sweldoAmountStyle(
+              ui,
+              size: 20,
+              weight: FontWeight.w800,
+              letterSpacing: -0.4,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             subtitle,
-            style: TextStyle(
+            style: sweldoHelperStyle(
+              ui,
+              size: 12.2,
               color: ui.textMuted,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
+              height: 1.42,
             ),
           ),
         ],
@@ -13839,29 +18280,25 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: ui.sectionFill,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withValues(alpha: .05)),
-      ),
+      decoration: ui.sectionContainerDecoration(radius: 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: TextStyle(
-              color: ui.textPrimary,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
+            style: sweldoTitleStyle(
+              ui,
+              size: 24,
+              letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: TextStyle(
-              color: ui.textMuted,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
+            style: sweldoHelperStyle(
+              ui,
+              size: 12.5,
+              color: ui.textSecondary,
             ),
           ),
           const SizedBox(height: 18),
@@ -13874,13 +18311,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
     final items = categoryTotals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: uiStyle.background,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: uiStyle.background,
         surfaceTintColor: Colors.transparent,
         titleSpacing: 20,
         toolbarHeight: 72,
@@ -13889,18 +18327,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           children: [
             Text(
               'Analytics',
-              style: TextStyle(
-                  color: ui.textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800),
+              style: sweldoTitleStyle(
+                ui,
+                size: 24,
+                letterSpacing: -0.5,
+              ),
             ),
             const SizedBox(height: 2),
             Text(
               'Here\'s your financial overview',
-              style: TextStyle(
-                  color: ui.textMuted,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600),
+              style: sweldoHelperStyle(
+                ui,
+                size: 12.5,
+                color: ui.textSecondary,
+              ),
             ),
           ],
         ),
@@ -13910,26 +18350,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ? buildPageLoadingState(
                 'Loading your spending and balance insights...')
             : RefreshIndicator(
-                color: intelliumCyan,
+                color: Theme.of(context).colorScheme.primary,
                 backgroundColor: ui.sectionFill,
                 onRefresh: load,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
+                  padding: _pageContentPadding(context, top: 16, bottom: 110),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       HeroCard(
-                        colors: const [
-                          Color(0xFF153048),
-                          intelliumBlue,
-                          intelliumPurple
-                        ],
+                        colors: uiStyle.heroGradient.colors,
                         title: 'Available Balance',
-                        value: formatPhp(availableBalance),
+                        value: formatMoney(availableBalance),
                         badge: remainingSweldoDays > 0
-                            ? '${formatPhp(projectedAvailableBalance)} anticipated balance | $remainingSweldoDays days until cutoff'
-                            : '${formatPhp(projectedAvailableBalance)} anticipated balance',
+                            ? '${formatMoney(projectedAvailableBalance)} expected balance | $remainingSweldoDays days until cutoff'
+                            : '${formatMoney(projectedAvailableBalance)} expected balance',
                       ),
                       const SizedBox(height: 18),
                       LayoutBuilder(
@@ -13949,7 +18385,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 child: _buildAnalyticsMetricCard(
                                   context: context,
                                   title: 'Savings Balance',
-                                  value: formatPhp(savingsBalance),
+                                  value: formatMoney(savingsBalance),
                                   subtitle: 'Money set aside',
                                   color: intelliumCyan,
                                   icon: Icons.savings_rounded,
@@ -13959,8 +18395,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 width: cardWidth,
                                 child: _buildAnalyticsMetricCard(
                                   context: context,
-                                  title: 'Anticipated Balance',
-                                  value: formatPhp(projectedAvailableBalance),
+                                  title: 'Expected Balance',
+                                  value: formatMoney(projectedAvailableBalance),
                                   subtitle:
                                       'Estimated balance after upcoming unpaid bills',
                                   color: const Color(0xFF00C896),
@@ -13971,13 +18407,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 width: cardWidth,
                                 child: _buildAnalyticsMetricCard(
                                   context: context,
-                                  title: 'Daily Spending Limit',
-                                  value: formatPhp(dailyBudget),
+                                  title: 'Safe to Spend Today',
+                                  value: formatMoney(dailyBudget),
                                   subtitle: usesManualDailyBudget
                                       ? (isManualDailyBudgetSafe
                                           ? 'Manual limit is on track'
                                           : 'Manual limit is above safe pace')
-                                      : 'Auto-calculated from Anticipated Balance',
+                                      : 'Auto-calculated from Expected Balance',
                                   color: intelliumPurple,
                                   icon: Icons.today_rounded,
                                 ),
@@ -13987,7 +18423,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 child: _buildAnalyticsMetricCard(
                                   context: context,
                                   title: 'Upcoming Bills',
-                                  value: formatPhp(billsAmount),
+                                  value: formatMoney(billsAmount),
                                   subtitle: 'Due before the next cutoff',
                                   color: const Color(0xFFFFA62B),
                                   icon: Icons.receipt_long_rounded,
@@ -14013,7 +18449,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 width: cardWidth,
                                 child: HomeOverviewCard(
                                   title: 'Opening Balance',
-                                  value: formatPhp(openingBalance),
+                                  value: formatMoney(openingBalance),
                                   subtitle: 'Starting amount',
                                   color: intelliumCyan,
                                   icon: Icons.payments_rounded,
@@ -14023,7 +18459,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 width: cardWidth,
                                 child: HomeOverviewCard(
                                   title: 'Income',
-                                  value: formatPhp(totalIncomeAdded),
+                                  value: formatMoney(totalIncomeAdded),
                                   subtitle: 'Recorded income',
                                   color: intelliumBlue,
                                   icon: Icons.account_balance_wallet_rounded,
@@ -14033,7 +18469,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 width: cardWidth,
                                 child: HomeOverviewCard(
                                   title: 'Paid Bills',
-                                  value: formatPhp(settledBillsAmount),
+                                  value: formatMoney(settledBillsAmount),
                                   subtitle: 'Already paid once',
                                   color: intelliumPurple,
                                   icon: Icons.check_circle_rounded,
@@ -14043,12 +18479,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                 width: cardWidth,
                                 child: HomeOverviewCard(
                                   title: 'Net Savings Transfers',
-                                  value: formatPhp(
+                                  value: formatMoney(
                                     savingsContributionsAmount -
                                         savingsWithdrawalsAmount,
                                   ),
                                   subtitle:
-                                      '${formatPhp(savingsContributionsAmount)} in | ${formatPhp(savingsWithdrawalsAmount)} out',
+                                      '${formatMoney(savingsContributionsAmount)} in | ${formatMoney(savingsWithdrawalsAmount)} out',
                                   color: intelliumPink,
                                   icon: Icons.swap_horiz_rounded,
                                 ),
@@ -14080,7 +18516,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             return PremiumFeatureLockCard(
                               title: 'Premium Weekly Analysis',
                               subtitle:
-                                  'See your last 7 days and last 12 months of spending activity and unlock custom themes.',
+                                  'See your last 7 days and last 12 months of spending activity with Premium dashboards.',
                               premiumService: widget.premiumService,
                             );
                           },
@@ -14161,7 +18597,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                                               fit: BoxFit.scaleDown,
                                               alignment: Alignment.centerRight,
                                               child: Text(
-                                                formatPhp(e.value),
+                                                formatMoney(e.value),
                                                 style: TextStyle(
                                                   color: ui.isJade
                                                       ? const Color(0xFF9DFFE0)
@@ -14477,9 +18913,9 @@ class _PremiumAnalyticsDashboardScreenState
           : 'This month is currently above your average monthly spending pace.';
     }
     if (_topCategoryEntry != null) {
-      return 'Current top category total: ${formatPhp(_topCategoryEntry!.value)}.';
+      return 'Current top category total: ${formatMoney(_topCategoryEntry!.value)}.';
     }
-    return 'Daily spending limit ${usesManualDailyBudget ? (isManualDailyBudgetSafe ? 'is on track.' : 'needs attention.') : 'is auto-calculated from Anticipated Balance.'}';
+    return 'Safe to Spend Today ${usesManualDailyBudget ? (isManualDailyBudgetSafe ? 'is on track.' : 'needs attention.') : 'is auto-calculated from Expected Balance.'}';
   }
 
   void _setRange(_PremiumAnalyticsDashboardRange range) {
@@ -14526,7 +18962,7 @@ class _PremiumAnalyticsDashboardScreenState
                   width: cardWidth,
                   child: _PremiumAnalyticsMetricCardV2(
                     title: 'Savings Balance',
-                    value: formatPhp(savingsBalance),
+                    value: formatMoney(savingsBalance),
                     subtitle: 'Money set aside',
                     color: intelliumCyan,
                     icon: Icons.savings_rounded,
@@ -14535,8 +18971,8 @@ class _PremiumAnalyticsDashboardScreenState
                 SizedBox(
                   width: cardWidth,
                   child: _PremiumAnalyticsMetricCardV2(
-                    title: 'Anticipated Balance',
-                    value: formatPhp(projectedAvailableBalance),
+                    title: 'Expected Balance',
+                    value: formatMoney(projectedAvailableBalance),
                     subtitle: 'Estimated balance after upcoming unpaid bills',
                     color: const Color(0xFF00C896),
                     icon: Icons.shield_outlined,
@@ -14545,13 +18981,13 @@ class _PremiumAnalyticsDashboardScreenState
                 SizedBox(
                   width: cardWidth,
                   child: _PremiumAnalyticsMetricCardV2(
-                    title: 'Daily Spending Limit',
-                    value: formatPhp(dailyBudget),
+                    title: 'Safe to Spend Today',
+                    value: formatMoney(dailyBudget),
                     subtitle: usesManualDailyBudget
                         ? (isManualDailyBudgetSafe
                             ? 'Manual limit is on track'
                             : 'Manual limit is above safe pace')
-                        : 'Auto-calculated from Anticipated Balance',
+                        : 'Auto-calculated from Expected Balance',
                     color: intelliumPurple,
                     icon: Icons.today_rounded,
                   ),
@@ -14560,7 +18996,7 @@ class _PremiumAnalyticsDashboardScreenState
                   width: cardWidth,
                   child: _PremiumAnalyticsMetricCardV2(
                     title: 'Upcoming Bills',
-                    value: formatPhp(unpaidBillsTotal),
+                    value: formatMoney(unpaidBillsTotal),
                     subtitle: 'Due before the next cutoff',
                     color: const Color(0xFFFFA62B),
                     icon: Icons.receipt_long_rounded,
@@ -14570,7 +19006,7 @@ class _PremiumAnalyticsDashboardScreenState
                   width: cardWidth,
                   child: _PremiumAnalyticsMetricCardV2(
                     title: 'Paid Bills',
-                    value: formatPhp(paidBillsTotal),
+                    value: formatMoney(paidBillsTotal),
                     subtitle: 'Marked settled',
                     color: const Color(0xFFFFA62B),
                     icon: Icons.check_circle_rounded,
@@ -14580,7 +19016,7 @@ class _PremiumAnalyticsDashboardScreenState
                   width: cardWidth,
                   child: _PremiumAnalyticsMetricCardV2(
                     title: 'Savings Contributions',
-                    value: formatPhp(savingsContributionsTotal),
+                    value: formatMoney(savingsContributionsTotal),
                     subtitle: 'Added to savings',
                     color: const Color(0xFF00C896),
                     icon: Icons.south_west_rounded,
@@ -14590,7 +19026,7 @@ class _PremiumAnalyticsDashboardScreenState
                   width: cardWidth,
                   child: _PremiumAnalyticsMetricCardV2(
                     title: 'Savings Withdrawals',
-                    value: formatPhp(savingsWithdrawalsTotal),
+                    value: formatMoney(savingsWithdrawalsTotal),
                     subtitle: 'Moved back to available',
                     color: const Color(0xFFFFC857),
                     icon: Icons.north_east_rounded,
@@ -14683,6 +19119,7 @@ class _PremiumAnalyticsDashboardScreenState
 
   Widget _buildFreeDashboard(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
     final items = categoryTotals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
@@ -14690,12 +19127,12 @@ class _PremiumAnalyticsDashboardScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         HeroCard(
-          colors: const [Color(0xFF153048), intelliumBlue, intelliumPurple],
+          colors: uiStyle.heroGradient.colors,
           title: 'Available Balance',
-          value: formatPhp(currentBalance),
+          value: formatMoney(currentBalance),
           badge: remainingSweldoDays > 0
-              ? '${formatPhp(projectedAvailableBalance)} anticipated balance | $remainingSweldoDays days until cutoff'
-              : '${formatPhp(projectedAvailableBalance)} anticipated balance',
+              ? '${formatMoney(projectedAvailableBalance)} expected balance | $remainingSweldoDays days until cutoff'
+              : '${formatMoney(projectedAvailableBalance)} expected balance',
         ),
         const SizedBox(height: 18),
         Row(
@@ -14703,7 +19140,7 @@ class _PremiumAnalyticsDashboardScreenState
             Expanded(
               child: HomeOverviewCard(
                 title: 'Savings Balance',
-                value: formatPhp(savingsBalance),
+                value: formatMoney(savingsBalance),
                 subtitle: 'Money set aside',
                 color: intelliumCyan,
                 icon: Icons.savings_rounded,
@@ -14712,8 +19149,8 @@ class _PremiumAnalyticsDashboardScreenState
             const SizedBox(width: 12),
             Expanded(
               child: HomeOverviewCard(
-                title: 'Anticipated Balance',
-                value: formatPhp(projectedAvailableBalance),
+                title: 'Expected Balance',
+                value: formatMoney(projectedAvailableBalance),
                 subtitle: 'Estimated balance after upcoming unpaid bills',
                 color: intelliumBlue,
                 icon: Icons.shield_outlined,
@@ -14727,7 +19164,7 @@ class _PremiumAnalyticsDashboardScreenState
             Expanded(
               child: HomeOverviewCard(
                 title: 'Paid Bills',
-                value: formatPhp(paidBillsTotal),
+                value: formatMoney(paidBillsTotal),
                 subtitle: 'Marked settled',
                 color: intelliumPurple,
                 icon: Icons.check_circle_rounded,
@@ -14736,13 +19173,13 @@ class _PremiumAnalyticsDashboardScreenState
             const SizedBox(width: 12),
             Expanded(
               child: HomeOverviewCard(
-                title: 'Daily Spending Limit',
-                value: formatPhp(dailyBudget),
+                title: 'Safe to Spend Today',
+                value: formatMoney(dailyBudget),
                 subtitle: usesManualDailyBudget
                     ? (isManualDailyBudgetSafe
                         ? 'Manual limit is on track'
                         : 'Manual limit is above safe pace')
-                    : 'Auto-calculated from Anticipated Balance',
+                    : 'Auto-calculated from Expected Balance',
                 color: intelliumPink,
                 icon: Icons.today_rounded,
               ),
@@ -14779,7 +19216,7 @@ class _PremiumAnalyticsDashboardScreenState
                                 ),
                               ),
                               Text(
-                                formatPhp(entry.value),
+                                formatMoney(entry.value),
                                 style: TextStyle(
                                   color: ui.textPrimary,
                                   fontSize: 13.5,
@@ -14797,7 +19234,7 @@ class _PremiumAnalyticsDashboardScreenState
         const _PremiumAnalyticsPreviewCardV2(),
         const SizedBox(height: 16),
         PremiumFeatureLockCard(
-          title: 'Unlock Premium Analytics',
+          title: 'Premium Analytics',
           subtitle:
               'Get advanced dashboard insights, cash flow view, category breakdown, and activity history.',
           premiumService: widget.premiumService,
@@ -14809,11 +19246,12 @@ class _PremiumAnalyticsDashboardScreenState
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: uiStyle.background,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: uiStyle.background,
         surfaceTintColor: Colors.transparent,
         titleSpacing: 20,
         toolbarHeight: 78,
@@ -14832,7 +19270,7 @@ class _PremiumAnalyticsDashboardScreenState
             Text(
               'Here\'s your financial overview',
               style: TextStyle(
-                color: ui.textMuted,
+                color: ui.textSecondary,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
               ),
@@ -14853,12 +19291,12 @@ class _PremiumAnalyticsDashboardScreenState
         child: loading
             ? buildPageLoadingState('Loading your premium analytics...')
             : RefreshIndicator(
-                color: intelliumCyan,
+                color: Theme.of(context).colorScheme.primary,
                 backgroundColor: ui.sectionFill,
                 onRefresh: load,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
+                  padding: _pageContentPadding(context, top: 16, bottom: 110),
                   child: widget.premiumService.isPremium
                       ? _buildPremiumDashboard(context)
                       : _buildFreeDashboard(context),
@@ -14881,6 +19319,7 @@ class _PremiumAnalyticsRangeChipV2 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final accent = Theme.of(context).colorScheme.primary;
 
     return PopupMenuButton<_PremiumAnalyticsDashboardRange>(
       onSelected: onSelected,
@@ -14902,16 +19341,15 @@ class _PremiumAnalyticsRangeChipV2 extends StatelessWidget {
           .toList(),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: ui.sectionFill,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withValues(alpha: .06)),
-        ),
+        decoration: ui.cardDecoration(radius: 18),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.calendar_today_rounded,
-                color: intelliumCyan, size: 16),
+            Icon(
+              Icons.calendar_today_rounded,
+              color: accent,
+              size: 16,
+            ),
             const SizedBox(width: 10),
             Text(
               selectedRange.label,
@@ -14954,6 +19392,7 @@ class _PremiumAnalyticsHeroCardV2 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
     final belowAverage = averageMonthlySpending <= 0
         ? currentMonthSpending <= 0
         : currentMonthSpending <= averageMonthlySpending;
@@ -14963,39 +19402,45 @@ class _PremiumAnalyticsHeroCardV2 extends StatelessWidget {
         : belowAverage
             ? 'Below avg pace'
             : 'Above avg pace';
+    final usesLightSurfaceHero = !uiStyle.isDark;
+    final titleColor = usesLightSurfaceHero
+        ? ui.textPrimary
+        : Colors.white.withValues(alpha: .88);
+    final valueColor = usesLightSurfaceHero ? ui.textPrimary : Colors.white;
+    final supportingColor = usesLightSurfaceHero
+        ? ui.textSecondary
+        : Colors.white.withValues(alpha: .84);
+    final chipTextColor = usesLightSurfaceHero
+        ? ui.textPrimary
+        : Colors.white.withValues(alpha: .88);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
-        gradient: ui.isJade
-            ? const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF123526),
-                  Color(0xFF0D241B),
-                  Color(0xFF081611)
-                ],
-              )
-            : const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF132B52),
-                  Color(0xFF183B7A),
-                  Color(0xFF211A4C)
-                ],
-              ),
-        border: Border.all(color: Colors.white.withValues(alpha: .08)),
-        boxShadow: [
-          BoxShadow(
-            color: intelliumBlue.withValues(alpha: .16),
-            blurRadius: 28,
-            spreadRadius: 2,
-          ),
-        ],
+        gradient: uiStyle.heroGradient,
+        border: Border.all(
+          color: usesLightSurfaceHero
+              ? ui.borderColor
+              : Colors.white.withValues(alpha: .08),
+        ),
+        boxShadow: usesLightSurfaceHero
+            ? const [
+                BoxShadow(
+                  color: Color(0x12121A33),
+                  blurRadius: 24,
+                  spreadRadius: -10,
+                  offset: Offset(0, 14),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: uiStyle.accent.withValues(alpha: .16),
+                  blurRadius: 28,
+                  spreadRadius: 2,
+                ),
+              ],
       ),
       child: Stack(
         children: [
@@ -15007,7 +19452,7 @@ class _PremiumAnalyticsHeroCardV2 extends StatelessWidget {
               width: 128,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: intelliumCyan.withValues(alpha: .10),
+                color: uiStyle.accent.withValues(alpha: usesLightSurfaceHero ? .08 : .10),
               ),
             ),
           ),
@@ -15019,7 +19464,9 @@ class _PremiumAnalyticsHeroCardV2 extends StatelessWidget {
               width: 92,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: intelliumPurple.withValues(alpha: .10),
+                color: uiStyle.heroGradient.colors.last.withValues(
+                  alpha: usesLightSurfaceHero ? .08 : .10,
+                ),
               ),
             ),
           ),
@@ -15032,9 +19479,9 @@ class _PremiumAnalyticsHeroCardV2 extends StatelessWidget {
                     child: Text(
                       'Available Balance',
                       style: TextStyle(
-                        color: ui.textSecondary,
+                        color: titleColor,
                         fontSize: 14.5,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
@@ -15042,13 +19489,20 @@ class _PremiumAnalyticsHeroCardV2 extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: .08),
+                      color: usesLightSurfaceHero
+                          ? ui.sectionFill.withValues(alpha: .96)
+                          : Colors.white.withValues(alpha: .08),
                       borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: usesLightSurfaceHero
+                            ? ui.borderColor
+                            : Colors.white.withValues(alpha: .08),
+                      ),
                     ),
                     child: Text(
                       selectedRangeLabel,
                       style: TextStyle(
-                        color: ui.textPrimary,
+                        color: chipTextColor,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
@@ -15058,9 +19512,9 @@ class _PremiumAnalyticsHeroCardV2 extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                formatPhp(currentBalance),
+                formatMoney(currentBalance),
                 style: TextStyle(
-                  color: ui.textPrimary,
+                  color: valueColor,
                   fontSize: 34,
                   fontWeight: FontWeight.w800,
                   height: 1,
@@ -15102,10 +19556,10 @@ class _PremiumAnalyticsHeroCardV2 extends StatelessWidget {
                   Expanded(
                     child: Text(
                       daysUntilCutoff > 0
-                          ? '${formatPhp(projectedAvailableBalance)} anticipated balance | $daysUntilCutoff days until cutoff'
-                          : '${formatPhp(totalIncome)} income | ${formatPhp(savingsBalance)} savings',
+                          ? '${formatMoney(projectedAvailableBalance)} expected balance | $daysUntilCutoff days until cutoff'
+                          : '${formatMoney(totalIncome)} income | ${formatMoney(savingsBalance)} savings',
                       style: TextStyle(
-                        color: ui.textSecondary,
+                        color: supportingColor,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
                       ),
@@ -15142,18 +19596,9 @@ class _PremiumAnalyticsMetricCardV2 extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: ui.sectionFill,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: .06)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: .08),
-            blurRadius: 20,
-            spreadRadius: 1,
+      decoration: ui.cardDecoration(radius: 24).copyWith(
+            border: Border.all(color: color.withValues(alpha: .16)),
           ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -15167,7 +19612,7 @@ class _PremiumAnalyticsMetricCardV2 extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: ui.textPrimary,
+              color: ui.textSecondary,
               fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
@@ -15176,8 +19621,8 @@ class _PremiumAnalyticsMetricCardV2 extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              color: color,
-              fontSize: 16,
+              color: ui.textPrimary,
+              fontSize: 18,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -15214,11 +19659,7 @@ class _PremiumAnalyticsSectionV2 extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: ui.sectionFill,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withValues(alpha: .05)),
-      ),
+      decoration: ui.sectionContainerDecoration(radius: 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -15234,7 +19675,7 @@ class _PremiumAnalyticsSectionV2 extends StatelessWidget {
           Text(
             subtitle,
             style: TextStyle(
-              color: ui.textMuted,
+              color: ui.textSecondary,
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
             ),
@@ -15468,7 +19909,7 @@ class _PremiumAnalyticsCategoryBreakdown extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    formatPhp(total),
+                    formatMoney(total),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: ui.textPrimary,
@@ -15517,7 +19958,7 @@ class _PremiumAnalyticsCategoryBreakdown extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            formatPhp(entry.value),
+                            formatMoney(entry.value),
                             style: TextStyle(
                               color: ui.textSecondary,
                               fontSize: 12.5,
@@ -15703,7 +20144,7 @@ class _PremiumAnalyticsRecentActivityList extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '${item.isPositive ? '+' : '-'} ${formatPhp(item.amount)}',
+                        '${item.isPositive ? '+' : '-'} ${formatMoney(item.amount)}',
                         style: TextStyle(
                           color: item.isPositive
                               ? const Color(0xFF00C896)
@@ -15834,11 +20275,7 @@ class _PremiumAnalyticsEmptyStateV2 extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .02),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: .04)),
-      ),
+      decoration: ui.cardDecoration(radius: 22),
       child: Column(
         children: [
           Container(
@@ -15884,11 +20321,9 @@ class _PremiumAnalyticsPreviewCardV2 extends StatelessWidget {
       return Expanded(
         child: Container(
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: .03),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: .04)),
-          ),
+          decoration: ui.cardDecoration(radius: 20).copyWith(
+                border: Border.all(color: color.withValues(alpha: .14)),
+              ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -15912,7 +20347,7 @@ class _PremiumAnalyticsPreviewCardV2 extends StatelessWidget {
                 height: 8,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .06),
+                  color: ui.borderColor.withValues(alpha: .45),
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -16079,17 +20514,19 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
     final targetController = TextEditingController(
       text: targetAmount > 0 ? targetAmount.toStringAsFixed(2) : '',
     );
+    final uiStyle = sweldoUiStyleOf(context);
 
-    await showModalBottomSheet<void>(
+    final didSave = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: intelliumSurface,
+      backgroundColor: sweldoSheetBackgroundColor(uiStyle),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (sheetContext) {
         String? validationMessage;
         var saving = false;
+        StateSetter? modalStateSetter;
 
         Future<void> saveGoal() async {
           if (saving) return;
@@ -16099,135 +20536,151 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
           );
           final trimmedName = nameController.text.trim();
           if (trimmedName.isEmpty) {
-            setStateIfMounted(sheetContext, () {
+            modalStateSetter?.call(() {
               validationMessage = 'Enter a goal name';
             });
             return;
           }
           if (targetError != null) {
-            setStateIfMounted(sheetContext, () {
+            modalStateSetter?.call(() {
               validationMessage = targetError;
             });
             return;
           }
           final parsedTarget = parseMoneyInput(targetController.text)!;
-          setStateIfMounted(sheetContext, () {
+          modalStateSetter?.call(() {
             saving = true;
           });
           FocusScope.of(sheetContext).unfocus();
           await FinanceRepository.setSavingsGoalName(trimmedName);
           await FinanceRepository.setSavingsGoal(parsedTarget);
-          await load();
-          if (!sheetContext.mounted || !mounted) return;
-          Navigator.pop(sheetContext);
+          if (!sheetContext.mounted) return;
+          Navigator.of(sheetContext).pop(true);
         }
 
         return StatefulBuilder(
-          builder: (context, setModalState) => GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                20,
-                18,
-                20,
-                MediaQuery.of(sheetContext).viewInsets.bottom + 24,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SheetHandle(),
-                    const SizedBox(height: 20),
-                    Text(
-                      editing
-                          ? 'Edit Savings Target'
-                          : 'Set New Savings Target',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    TextField(
-                      controller: nameController,
-                      textInputAction: TextInputAction.next,
-                      style: const TextStyle(color: Colors.white),
-                      onChanged: (_) {
-                        if (validationMessage != null) {
-                          setModalState(() => validationMessage = null);
-                        }
-                      },
-                      decoration: const InputDecoration(
-                        labelText: 'Savings Target Name',
-                        hintText: 'Ex. Emergency Fund',
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    TextField(
-                      controller: targetController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      textInputAction: TextInputAction.done,
-                      style: const TextStyle(color: Colors.white),
-                      onChanged: (_) {
-                        if (validationMessage != null) {
-                          setModalState(() => validationMessage = null);
-                        }
-                      },
-                      onSubmitted: (_) {
-                        unawaited(saveGoal());
-                      },
-                      decoration: const InputDecoration(
-                        labelText: 'Savings Target Amount',
-                        hintText: 'Ex. 10000.00',
-                      ),
-                    ),
-                    if (validationMessage != null) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        validationMessage!,
-                        style: const TextStyle(
-                          color: Color(0xFFFF8A8A),
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 20),
-                    Row(
+          builder: (context, setModalState) {
+            modalStateSetter = setModalState;
+            final ui = SweldoVisualStyle.fromContext(context);
+            return SafeArea(
+              child: GestureDetector(
+                onTap: () => FocusScope.of(context).unfocus(),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    18,
+                    20,
+                    MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: TextButton(
-                            onPressed: () => Navigator.pop(sheetContext),
-                            child: const Text('Cancel'),
+                        const SheetHandle(),
+                        const SizedBox(height: 20),
+                        Text(
+                          editing
+                              ? 'Edit Savings Target'
+                              : 'Set New Savings Target',
+                          style: TextStyle(
+                            color: ui.textPrimary,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: PrimaryButton(
-                            label: 'Save',
-                            onPressed: () {
-                              if (saving) return;
-                              unawaited(saveGoal());
-                            },
+                        const SizedBox(height: 18),
+                        TextField(
+                          controller: nameController,
+                          textInputAction: TextInputAction.next,
+                          cursorColor: uiStyle.accent,
+                          style: TextStyle(color: ui.textPrimary),
+                          onChanged: (_) {
+                            if (validationMessage != null) {
+                              setModalState(() => validationMessage = null);
+                            }
+                          },
+                          decoration: sweldoInputDecoration(
+                            context,
+                            label: 'Savings Target Name',
+                            hint: 'Ex. Emergency Fund',
+                            icon: Icons.flag_rounded,
                           ),
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: targetController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          textInputAction: TextInputAction.done,
+                          cursorColor: uiStyle.accent,
+                          style: TextStyle(color: ui.textPrimary),
+                          onChanged: (_) {
+                            if (validationMessage != null) {
+                              setModalState(() => validationMessage = null);
+                            }
+                          },
+                          onSubmitted: (_) {
+                            unawaited(saveGoal());
+                          },
+                          decoration: sweldoInputDecoration(
+                            context,
+                            label: 'Savings Target Amount',
+                            hint: 'Ex. 10000.00',
+                            icon: Icons.savings_rounded,
+                          ),
+                        ),
+                        if (validationMessage != null) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            validationMessage!,
+                            style: const TextStyle(
+                              color: Color(0xFFFF8A8A),
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextButton(
+                                onPressed: () =>
+                                    Navigator.pop(sheetContext, false),
+                                child: const Text('Cancel'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: PrimaryButton(
+                                label: 'Save',
+                                onPressed: () {
+                                  if (saving) return;
+                                  unawaited(saveGoal());
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
 
     nameController.dispose();
     targetController.dispose();
+    if (didSave == true) {
+      if (!mounted) return;
+      await load();
+    }
   }
 
   Future<void> _showAddToSavingsSheet() async {
@@ -16238,17 +20691,19 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
 
     FocusScope.of(context).unfocus();
     final amountController = TextEditingController();
+    final uiStyle = sweldoUiStyleOf(context);
 
-    await showModalBottomSheet<void>(
+    final didSave = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: intelliumSurface,
+      backgroundColor: sweldoSheetBackgroundColor(uiStyle),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (sheetContext) {
         String? validationMessage;
         var saving = false;
+        StateSetter? modalStateSetter;
 
         Future<void> saveContribution() async {
           if (saving) return;
@@ -16257,20 +20712,20 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
             fieldLabel: 'savings amount',
           );
           if (amountError != null) {
-            setStateIfMounted(sheetContext, () {
+            modalStateSetter?.call(() {
               validationMessage = amountError;
             });
             return;
           }
           final parsedAmount = parseMoneyInput(amountController.text)!;
           if (parsedAmount > currentMoney + 0.001) {
-            setStateIfMounted(sheetContext, () {
+            modalStateSetter?.call(() {
               validationMessage =
                   'Not enough available balance for this transfer';
             });
             return;
           }
-          setStateIfMounted(sheetContext, () {
+          modalStateSetter?.call(() {
             saving = true;
           });
           FocusScope.of(sheetContext).unfocus();
@@ -16282,109 +20737,121 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
               type: SavingsTransferType.contribution,
             ),
           );
-          await load();
-          if (!sheetContext.mounted || !mounted) return;
-          Navigator.pop(sheetContext);
+          if (!sheetContext.mounted) return;
+          Navigator.of(sheetContext).pop(true);
         }
 
         return StatefulBuilder(
-          builder: (context, setModalState) => GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                20,
-                18,
-                20,
-                MediaQuery.of(sheetContext).viewInsets.bottom + 24,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SheetHandle(),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'How much do you want to transfer to savings?',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Available Balance: ${formatPhp(currentMoney)}',
-                      style: const TextStyle(
-                        color: intelliumTextMuted,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    TextField(
-                      controller: amountController,
-                      autofocus: true,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      textInputAction: TextInputAction.done,
-                      style: const TextStyle(color: Colors.white),
-                      onChanged: (_) {
-                        if (validationMessage != null) {
-                          setModalState(() => validationMessage = null);
-                        }
-                      },
-                      onSubmitted: (_) {
-                        unawaited(saveContribution());
-                      },
-                      decoration: const InputDecoration(
-                        labelText: 'Add to Savings',
-                        hintText: 'Ex. 1000.00',
-                      ),
-                    ),
-                    if (validationMessage != null) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        validationMessage!,
-                        style: const TextStyle(
-                          color: Color(0xFFFF8A8A),
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 20),
-                    Row(
+          builder: (context, setModalState) {
+            modalStateSetter = setModalState;
+            final ui = SweldoVisualStyle.fromContext(context);
+            return SafeArea(
+              child: GestureDetector(
+                onTap: () => FocusScope.of(context).unfocus(),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    18,
+                    20,
+                    MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: TextButton(
-                            onPressed: () => Navigator.pop(sheetContext),
-                            child: const Text('Cancel'),
+                        const SheetHandle(),
+                        const SizedBox(height: 20),
+                        Text(
+                          'How much do you want to transfer to savings?',
+                          style: TextStyle(
+                            color: ui.textPrimary,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: PrimaryButton(
-                            label: 'Save',
-                            onPressed: () {
-                              if (saving) return;
-                              unawaited(saveContribution());
-                            },
+                        const SizedBox(height: 8),
+                        Text(
+                          'Available Balance: ${formatMoney(currentMoney)}',
+                          style: TextStyle(
+                            color: ui.textSecondary,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
                           ),
+                        ),
+                        const SizedBox(height: 18),
+                        TextField(
+                          controller: amountController,
+                          autofocus: true,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          textInputAction: TextInputAction.done,
+                          cursorColor: uiStyle.accent,
+                          style: TextStyle(color: ui.textPrimary),
+                          onChanged: (_) {
+                            if (validationMessage != null) {
+                              setModalState(() => validationMessage = null);
+                            }
+                          },
+                          onSubmitted: (_) {
+                            unawaited(saveContribution());
+                          },
+                          decoration: sweldoInputDecoration(
+                            context,
+                            label: 'Add to Savings',
+                            hint: 'Ex. 1000.00',
+                            icon: Icons.savings_rounded,
+                          ),
+                        ),
+                        if (validationMessage != null) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            validationMessage!,
+                            style: const TextStyle(
+                              color: Color(0xFFFF8A8A),
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextButton(
+                                onPressed: () => Navigator.pop(sheetContext, false),
+                                child: const Text('Cancel'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: PrimaryButton(
+                                label: 'Save',
+                                onPressed: () {
+                                  if (saving) return;
+                                  unawaited(saveContribution());
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
 
     amountController.dispose();
+    if (didSave == true) {
+      if (!mounted) return;
+      await load();
+    }
   }
 
   Future<void> _showWithdrawFromSavingsSheet() async {
@@ -16395,17 +20862,19 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
 
     FocusScope.of(context).unfocus();
     final amountController = TextEditingController();
+    final uiStyle = sweldoUiStyleOf(context);
 
-    await showModalBottomSheet<void>(
+    final didSave = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: intelliumSurface,
+      backgroundColor: sweldoSheetBackgroundColor(uiStyle),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (sheetContext) {
         String? validationMessage;
         var saving = false;
+        StateSetter? modalStateSetter;
 
         Future<void> saveWithdrawal() async {
           if (saving) return;
@@ -16414,20 +20883,20 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
             fieldLabel: 'withdrawal amount',
           );
           if (amountError != null) {
-            setStateIfMounted(sheetContext, () {
+            modalStateSetter?.call(() {
               validationMessage = amountError;
             });
             return;
           }
           final parsedAmount = parseMoneyInput(amountController.text)!;
           if (parsedAmount > savedAmount + 0.001) {
-            setStateIfMounted(sheetContext, () {
+            modalStateSetter?.call(() {
               validationMessage =
                   'Not enough savings balance for this transfer';
             });
             return;
           }
-          setStateIfMounted(sheetContext, () {
+          modalStateSetter?.call(() {
             saving = true;
           });
           FocusScope.of(sheetContext).unfocus();
@@ -16439,118 +20908,140 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
               type: SavingsTransferType.withdrawal,
             ),
           );
-          await load();
-          if (!sheetContext.mounted || !mounted) return;
-          Navigator.pop(sheetContext);
+          if (!sheetContext.mounted) return;
+          Navigator.of(sheetContext).pop(true);
         }
 
         return StatefulBuilder(
-          builder: (context, setModalState) => GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                20,
-                18,
-                20,
-                MediaQuery.of(sheetContext).viewInsets.bottom + 24,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SheetHandle(),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'How much do you want to move back to available balance?',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Savings Balance: ${formatPhp(savedAmount)}',
-                      style: const TextStyle(
-                        color: intelliumTextMuted,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    TextField(
-                      controller: amountController,
-                      autofocus: true,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      textInputAction: TextInputAction.done,
-                      style: const TextStyle(color: Colors.white),
-                      onChanged: (_) {
-                        if (validationMessage != null) {
-                          setModalState(() => validationMessage = null);
-                        }
-                      },
-                      onSubmitted: (_) {
-                        unawaited(saveWithdrawal());
-                      },
-                      decoration: const InputDecoration(
-                        labelText: 'Withdraw from Savings',
-                        hintText: 'Ex. 500.00',
-                      ),
-                    ),
-                    if (validationMessage != null) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        validationMessage!,
-                        style: const TextStyle(
-                          color: Color(0xFFFF8A8A),
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 20),
-                    Row(
+          builder: (context, setModalState) {
+            modalStateSetter = setModalState;
+            final ui = SweldoVisualStyle.fromContext(context);
+            return SafeArea(
+              child: GestureDetector(
+                onTap: () => FocusScope.of(context).unfocus(),
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    18,
+                    20,
+                    MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: TextButton(
-                            onPressed: () => Navigator.pop(sheetContext),
-                            child: const Text('Cancel'),
+                        const SheetHandle(),
+                        const SizedBox(height: 20),
+                        Text(
+                          'How much do you want to move back to available balance?',
+                          style: TextStyle(
+                            color: ui.textPrimary,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: PrimaryButton(
-                            label: 'Save',
-                            onPressed: () {
-                              if (saving) return;
-                              unawaited(saveWithdrawal());
-                            },
+                        const SizedBox(height: 8),
+                        Text(
+                          'Savings Balance: ${formatMoney(savedAmount)}',
+                          style: TextStyle(
+                            color: ui.textSecondary,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
                           ),
+                        ),
+                        const SizedBox(height: 18),
+                        TextField(
+                          controller: amountController,
+                          autofocus: true,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          textInputAction: TextInputAction.done,
+                          cursorColor: uiStyle.accent,
+                          style: TextStyle(color: ui.textPrimary),
+                          onChanged: (_) {
+                            if (validationMessage != null) {
+                              setModalState(() => validationMessage = null);
+                            }
+                          },
+                          onSubmitted: (_) {
+                            unawaited(saveWithdrawal());
+                          },
+                          decoration: sweldoInputDecoration(
+                            context,
+                            label: 'Withdraw from Savings',
+                            hint: 'Ex. 500.00',
+                            icon: Icons.swap_horiz_rounded,
+                          ),
+                        ),
+                        if (validationMessage != null) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            validationMessage!,
+                            style: const TextStyle(
+                              color: Color(0xFFFF8A8A),
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextButton(
+                                onPressed: () =>
+                                    Navigator.pop(sheetContext, false),
+                                child: const Text('Cancel'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: PrimaryButton(
+                                label: 'Save',
+                                onPressed: () {
+                                  if (saving) return;
+                                  unawaited(saveWithdrawal());
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
 
     amountController.dispose();
+    if (didSave == true) {
+      if (!mounted) return;
+      await load();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
     final remainingAmount = max(0.0, targetAmount - savedAmount);
     final progress = targetAmount <= 0
         ? 0.0
         : (savedAmount / targetAmount).clamp(0.0, 1.0).toDouble();
+    final heroColors = uiStyle.heroGradient.colors;
+    final accentPrimary = Theme.of(context).colorScheme.primary;
+    final accentSecondary = uiStyle.mode == SweldoUiMode.premiumExecutive
+        ? _PremiumPalette.gold
+        : uiStyle.mode == SweldoUiMode.intelliumDigital ||
+                uiStyle.mode == SweldoUiMode.premiumNeon
+            ? intelliumCyan
+            : accentPrimary;
 
     Widget actionButton({
       required String label,
@@ -16564,11 +21055,7 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
           onTap: onTap,
           child: Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: ui.sectionFill,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: .05)),
-            ),
+            decoration: ui.cardDecoration(radius: 20),
             child: Column(
               children: [
                 Container(
@@ -16595,32 +21082,34 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: uiStyle.background,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: uiStyle.background,
         surfaceTintColor: Colors.transparent,
-        title: const Text(
+        leading: sweldoAppBarBackButton(context),
+        title: Text(
           'Savings Balance',
-          style: TextStyle(fontWeight: FontWeight.w700),
+          style: TextStyle(
+            color: ui.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
-      body: loading
-          ? buildPageLoadingState('Loading your savings overview...')
-          : SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+      body: SafeArea(
+        top: false,
+        child: loading
+            ? buildPageLoadingState('Loading your savings overview...')
+            : SingleChildScrollView(
+                padding: _pageContentPadding(context, top: 16, bottom: 110),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   HeroCard(
-                    colors: const [
-                      Color(0xFF17345F),
-                      intelliumBlue,
-                      intelliumPurple,
-                    ],
+                    colors: heroColors,
                     title: goalName,
-                    value: formatPhp(savedAmount),
+                    value: formatMoney(savedAmount),
                     badge: targetAmount > 0
-                        ? '${formatPhp(targetAmount)} target | ${formatPhp(remainingAmount)} remaining'
+                        ? '${formatMoney(targetAmount)} target | ${formatMoney(remainingAmount)} remaining'
                         : 'Set a savings target to start tracking savings transfers',
                   ),
                   const SizedBox(height: 18),
@@ -16629,14 +21118,14 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
                       actionButton(
                         label: 'Set New Savings Target',
                         icon: Icons.flag_rounded,
-                        color: intelliumCyan,
+                        color: accentSecondary,
                         onTap: () => _showGoalEditor(editing: false),
                       ),
                       const SizedBox(width: 12),
                       actionButton(
                         label: 'Edit Savings Target',
                         icon: Icons.edit_rounded,
-                        color: intelliumBlue,
+                        color: accentPrimary,
                         onTap: targetAmount > 0
                             ? () => _showGoalEditor(editing: true)
                             : () => showAppMessage(
@@ -16648,7 +21137,7 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
                       actionButton(
                         label: 'Add to Savings',
                         icon: Icons.savings_rounded,
-                        color: const Color(0xFF00C896),
+                        color: Theme.of(context).colorScheme.primary,
                         onTap: () {
                           unawaited(_showAddToSavingsSheet());
                         },
@@ -16661,7 +21150,7 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
                       actionButton(
                         label: 'Withdraw from Savings',
                         icon: Icons.swap_horiz_rounded,
-                        color: const Color(0xFFFFC857),
+                        color: Theme.of(context).colorScheme.primary,
                         onTap: () {
                           unawaited(_showWithdrawFromSavingsSheet());
                         },
@@ -16672,12 +21161,7 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: ui.sectionFill,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                          color: Colors.white.withValues(alpha: .05)),
-                    ),
+                    decoration: ui.sectionContainerDecoration(radius: 24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -16695,9 +21179,9 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
                             Expanded(
                               child: HomeOverviewCard(
                                 title: 'Target',
-                                value: formatPhp(targetAmount),
+                                value: formatMoney(targetAmount),
                                 subtitle: 'Target amount',
-                                color: intelliumBlue,
+                                color: accentPrimary,
                                 icon: Icons.flag_rounded,
                               ),
                             ),
@@ -16705,9 +21189,9 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
                             Expanded(
                               child: HomeOverviewCard(
                                 title: 'Total Saved',
-                                value: formatPhp(savedAmount),
+                                value: formatMoney(savedAmount),
                                 subtitle: 'Transferred to this target',
-                                color: const Color(0xFF00C896),
+                                color: const Color(0xFF10B981),
                                 icon: Icons.savings_rounded,
                               ),
                             ),
@@ -16719,9 +21203,9 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
                             Expanded(
                               child: HomeOverviewCard(
                                 title: 'Remaining',
-                                value: formatPhp(remainingAmount),
+                                value: formatMoney(remainingAmount),
                                 subtitle: 'Left to reach this target',
-                                color: intelliumPurple,
+                                color: accentSecondary,
                                 icon: Icons.track_changes_rounded,
                               ),
                             ),
@@ -16729,9 +21213,9 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
                             Expanded(
                               child: HomeOverviewCard(
                                 title: 'Available Balance',
-                                value: formatPhp(currentMoney),
+                                value: formatMoney(currentMoney),
                                 subtitle: 'Ready for spending or transfers',
-                                color: intelliumPink,
+                                color: sweldoDangerColor,
                                 icon: Icons.account_balance_wallet_rounded,
                               ),
                             ),
@@ -16743,10 +21227,11 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
                           child: LinearProgressIndicator(
                             value: progress,
                             minHeight: 12,
-                            backgroundColor:
-                                Colors.white.withValues(alpha: .08),
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              intelliumCyan,
+                            backgroundColor: ui.borderColor.withValues(
+                              alpha: uiStyle.isDark ? .24 : .55,
+                            ),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              accentSecondary,
                             ),
                           ),
                         ),
@@ -16769,63 +21254,24 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
                   ),
                   const SizedBox(height: 14),
                   if (history.isEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: ui.sectionFill,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: .05)),
-                      ),
-                      child: const Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _HomeEmptyIcon(
-                            icon: Icons.savings_rounded,
-                            color: intelliumPurple,
-                          ),
-                          SizedBox(height: 12),
-                          Text(
-                            'No savings activity yet',
-                            style: TextStyle(
-                              color: intelliumTextPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          SizedBox(height: 6),
-                          Text(
-                            'Use Add to Savings or Withdraw from Savings to move money between your balances.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: intelliumTextSecondary,
-                              fontSize: 12.5,
-                            ),
-                          ),
-                        ],
-                      ),
+                    const EmptyStateCard(
+                      icon: Icons.savings_rounded,
+                      title: 'No savings activity yet',
+                      subtitle:
+                          'Use Add to Savings or Withdraw from Savings to move money between your balances.',
                     )
                   else
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: ui.sectionFill,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: .05)),
-                      ),
+                      decoration: ui.sectionContainerDecoration(radius: 24),
                       child: Column(
                         children: history
                             .map(
                               (entry) => Container(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: .02),
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
+                                decoration: ui.cardDecoration(radius: 18),
                                 child: Row(
                                   children: [
                                     Container(
@@ -16833,8 +21279,8 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
                                       width: 42,
                                       decoration: ui.iconChipBackground(
                                         entry.isContribution
-                                            ? const Color(0xFF00C896)
-                                            : const Color(0xFFFFC857),
+                                            ? const Color(0xFF10B981)
+                                            : const Color(0xFFF59E0B),
                                         radius: 14,
                                       ),
                                       child: Icon(
@@ -16842,8 +21288,8 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
                                             ? Icons.south_west_rounded
                                             : Icons.north_east_rounded,
                                         color: entry.isContribution
-                                            ? const Color(0xFF00C896)
-                                            : const Color(0xFFFFC857),
+                                            ? const Color(0xFF10B981)
+                                            : const Color(0xFFF59E0B),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
@@ -16873,11 +21319,11 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
                                       ),
                                     ),
                                     Text(
-                                      formatPhp(entry.amount),
+                                      formatMoney(entry.amount),
                                       style: TextStyle(
                                         color: entry.isContribution
-                                            ? const Color(0xFF00C896)
-                                            : const Color(0xFFFFC857),
+                                            ? const Color(0xFF10B981)
+                                            : const Color(0xFFF59E0B),
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.w800,
                                       ),
@@ -16892,16 +21338,10 @@ class _UnifiedSavingsGoalScreenState extends State<UnifiedSavingsGoalScreen> {
                 ],
               ),
             ),
+          ),
     );
   }
 
-  void setStateIfMounted(BuildContext modalContext, VoidCallback fn) {
-    if (!modalContext.mounted) return;
-    fn();
-    if (modalContext is Element) {
-      modalContext.markNeedsBuild();
-    }
-  }
 }
 
 class InviteEarnScreen extends StatefulWidget {
@@ -16914,13 +21354,13 @@ class InviteEarnScreen extends StatefulWidget {
 }
 
 class _InviteEarnScreenState extends State<InviteEarnScreen> {
+  final ReferralService _referralService = ReferralService();
+  final TextEditingController _applyCodeController = TextEditingController();
   bool loading = true;
-  String code = '------';
-  int invites = 0;
-  int active = 0;
-  int paid = 0;
-  double earnings = 0;
-  List<String> history = [];
+  bool applyingReferralCode = false;
+  String _stableUserId = '';
+  String? dashboardMessage;
+  ReferralDashboardData dashboard = ReferralDashboardData.empty();
 
   @override
   void initState() {
@@ -16936,205 +21376,324 @@ class _InviteEarnScreenState extends State<InviteEarnScreen> {
     }
   }
 
-  Future<void> load() async {
-    code = await FinanceRepository.getReferralCode();
-    invites = await FinanceRepository.getReferralInvites();
-    active = await FinanceRepository.getReferralActive();
-    paid = await FinanceRepository.getReferralPaid();
-    earnings = await FinanceRepository.getReferralEarnings();
-    history = await FinanceRepository.getReferralHistory();
-    if (!mounted) return;
-    setState(() => loading = false);
+  @override
+  void dispose() {
+    _applyCodeController.dispose();
+    super.dispose();
   }
 
-  Future<void> addTestReferral() async {
-    if (mounted) {
-      setState(() => loading = true);
+  Future<void> load({bool showLoader = true}) async {
+    if (showLoader && mounted) {
+      setState(() {
+        loading = true;
+      });
     }
-    await FinanceRepository.recordSuccessfulPaidReferral(referralCode: code);
-    await load();
+
+    try {
+      final userId = await FinanceRepository.getOrCreateStableUserId();
+      final preferredName = await FinanceRepository.getPreferredName();
+
+      await _referralService.registerUser(
+        userId: userId,
+        displayName: preferredName.isEmpty ? null : preferredName,
+      );
+      final refreshedDashboard = await _referralService.loadReferralDashboard(
+        userId: userId,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _stableUserId = userId;
+        dashboard = refreshedDashboard;
+        dashboardMessage = null;
+        loading = false;
+      });
+    } on ReferralServiceException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        dashboardMessage = error.message;
+      });
+    }
+  }
+
+  Future<void> applyReferralCode() async {
+    final code = _applyCodeController.text.trim().toUpperCase();
+    if (code.isEmpty) {
+      showAppMessage(context, 'Enter a referral code.');
+      return;
+    }
+    if (dashboard.hasAppliedReferralCode) {
+      showAppMessage(context, 'A referral code is already linked to this account.');
+      return;
+    }
+
+    setState(() {
+      applyingReferralCode = true;
+    });
+
+    try {
+      final userId = _stableUserId.isNotEmpty
+          ? _stableUserId
+          : await FinanceRepository.getOrCreateStableUserId();
+      final updatedDashboard = await _referralService.applyReferralCode(
+        userId: userId,
+        code: code,
+      );
+      if (!mounted) return;
+      _applyCodeController.clear();
+      setState(() {
+        _stableUserId = userId;
+        dashboard = updatedDashboard;
+        dashboardMessage = null;
+        applyingReferralCode = false;
+      });
+      showAppMessage(context, 'Referral code applied successfully.');
+    } on ReferralServiceException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        applyingReferralCode = false;
+      });
+      showAppMessage(context, error.message);
+    }
   }
 
   Future<void> copyCode() async {
-    await Clipboard.setData(ClipboardData(text: code));
+    await Clipboard.setData(ClipboardData(text: dashboard.referralCode));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Referral code copied: $code')),
-    );
+    showAppMessage(context, 'Referral code copied: ${dashboard.referralCode}');
   }
 
   @override
   Widget build(BuildContext context) {
-    final canWithdraw = earnings >= 100;
-    final ui = SweldoVisualStyle.fromContext(context);
     const referralBlue = Color(0xFF7A9BFF);
     const referralViolet = Color(0xFF8E78FF);
     const referralMint = Color(0xFF57E9C3);
+    final ui = SweldoVisualStyle.fromContext(context);
+    final history = dashboard.activity;
 
-    return SafeArea(
-      child: loading
-          ? buildPageLoadingState('Loading your referral dashboard...')
-          : RefreshIndicator(
-              onRefresh: load,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
-                child: DefaultTextStyle.merge(
-                  style: const TextStyle(decoration: TextDecoration.none),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Invite & Earn',
-                        style: TextStyle(
-                          color: ui.textPrimary,
-                          decoration: TextDecoration.none,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.6,
-                          height: 1.08,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 520),
-                        child: Text(
-                          'Share your referral code, track paid conversions, and monitor your referral rewards in one polished premium view.',
-                          style: TextStyle(
-                            color: ui.textSecondary,
-                            decoration: TextDecoration.none,
-                            fontSize: 13.5,
-                            height: 1.55,
-                            fontWeight: FontWeight.w500,
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: ui.textPrimary,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Invite Friends',
+          style: TextStyle(
+            color: ui.textPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: loading
+            ? buildPageLoadingState('Loading your referral dashboard...')
+            : RefreshIndicator(
+                onRefresh: () => load(showLoader: false),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: _pageContentPadding(context, top: 20, bottom: 110),
+                  child: DefaultTextStyle.merge(
+                    style: TextStyle(
+                      color: ui.textPrimary,
+                      decoration: TextDecoration.none,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if ((dashboardMessage ?? '').trim().isNotEmpty) ...[
+                          _InviteInfoCard(
+                            title: 'Referral service',
+                            subtitle: dashboardMessage!,
+                            accent: intelliumPink,
+                            icon: Icons.cloud_off_rounded,
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _InviteHeroCard(
-                        title: 'Total Earnings',
-                        value: formatPhp(earnings, decimals: 2),
-                        badge:
-                            'Earn \u20B120 for every successful paid referral',
-                        primary: referralBlue,
-                        secondary: referralViolet,
-                        accent: referralMint,
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _InviteStatCard(
-                              title: 'Invites',
-                              value: '$invites',
-                              subtitle: 'People referred',
-                              color: referralBlue,
-                              icon: Icons.person_add_alt_1_rounded,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _InviteStatCard(
-                              title: 'Paid',
-                              value: '$paid',
-                              subtitle: 'Subscribers converted',
-                              color: referralMint,
-                              icon: Icons.verified_rounded,
-                            ),
-                          ),
+                          const SizedBox(height: 18),
                         ],
-                      ),
-                      const SizedBox(height: 20),
-                      _InviteCodeCard(
-                        code: code,
-                        infoCard: _InviteInfoCard(
-                          title: 'Withdrawal',
-                          subtitle: canWithdraw
-                              ? 'Minimum withdrawal: \u20B1100. Your current referral balance is ready for payout.'
-                              : 'Minimum withdrawal: \u20B1100. Keep sharing your code to reach the payout threshold.',
-                          accent: canWithdraw ? referralMint : referralViolet,
-                          icon: canWithdraw
-                              ? Icons.account_balance_wallet_rounded
-                              : Icons.info_outline_rounded,
+                        Text(
+                          'Invite Friends',
+                          style: TextStyle(
+                            color: ui.textPrimary,
+                            decoration: TextDecoration.none,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.6,
+                            height: 1.08,
+                          ),
                         ),
-                        onCopy: copyCode,
-                        onAddTestReferral: kDebugMode ? addTestReferral : null,
-                        accent: referralBlue,
-                      ),
-                      const SizedBox(height: 28),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Referral History',
+                        const SizedBox(height: 10),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 520),
+                          child: Text(
+                            'Share your code, track referral rewards, and monitor verified Premium subscription activity in one polished view.',
+                            style: TextStyle(
+                              color: ui.textSecondary,
+                              decoration: TextDecoration.none,
+                              fontSize: 13.5,
+                              height: 1.55,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        _InviteHeroCard(
+                          title: 'Total rewards',
+                          value:
+                              formatMoney(dashboard.totalEarningsPhp, decimals: 2),
+                          badge:
+                              'Referral rewards are based on verified Premium subscriptions.',
+                          primary: referralBlue,
+                          secondary: referralViolet,
+                          accent: referralMint,
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _InviteStatCard(
+                                title: 'Referrals',
+                                value: '${dashboard.totalReferrals}',
+                                subtitle: 'Total referrals',
+                                color: referralBlue,
+                                icon: Icons.person_add_alt_1_rounded,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _InviteStatCard(
+                                title: 'Pending rewards',
+                                value: '${dashboard.pendingRewards}',
+                                subtitle: 'Awaiting review',
+                                color: referralMint,
+                                icon: Icons.pending_actions_rounded,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _InviteStatCard(
+                                title: 'Paid rewards',
+                                value: '${dashboard.paidRewards}',
+                                subtitle: 'Reviewed rewards',
+                                color: referralViolet,
+                                icon: Icons.verified_rounded,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _InviteStatCard(
+                                title: 'Paid earnings',
+                                value: formatMoney(
+                                  dashboard.paidEarningsPhp,
+                                  decimals: 2,
+                                ),
+                                subtitle: 'Rewards already paid',
+                                color: referralMint,
+                                icon: Icons.account_balance_wallet_rounded,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        _InviteCodeCard(
+                          code: dashboard.referralCode,
+                          applyCodeController: _applyCodeController,
+                          onApplyCode: applyReferralCode,
+                          applyingReferralCode: applyingReferralCode,
+                          appliedReferralCode: dashboard.referredByCode,
+                          infoCard: _InviteInfoCard(
+                            title: 'Rewards policy',
+                            subtitle:
+                                'Pending rewards: ${formatMoney(dashboard.pendingEarningsPhp, decimals: 2)}. Rewards are reviewed before payout.',
+                            accent: referralViolet,
+                            icon: Icons.info_outline_rounded,
+                          ),
+                          onCopy: copyCode,
+                          onAddTestReferral: null,
+                          accent: referralBlue,
+                        ),
+                        const SizedBox(height: 28),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Recent activity',
+                                    style: TextStyle(
+                                      color: ui.textPrimary,
+                                      decoration: TextDecoration.none,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.3,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    history.isEmpty
+                                        ? 'Recent referrals and reward updates will appear here.'
+                                        : '${history.length} recent update${history.length == 1 ? '' : 's'}',
+                                    style: TextStyle(
+                                      color: ui.textSecondary,
+                                      decoration: TextDecoration.none,
+                                      fontSize: 12.5,
+                                      height: 1.45,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (history.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: referralBlue.withValues(alpha: .12),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(
+                                    color: referralBlue.withValues(alpha: .16),
+                                  ),
+                                ),
+                                child: Text(
+                                  '${history.length}',
                                   style: TextStyle(
                                     color: ui.textPrimary,
                                     decoration: TextDecoration.none,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.3,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  history.isEmpty
-                                      ? 'Your paid referral activity will appear here.'
-                                      : '${history.length} recent referral update${history.length == 1 ? '' : 's'}',
-                                  style: TextStyle(
-                                    color: ui.textSecondary,
-                                    decoration: TextDecoration.none,
                                     fontSize: 12.5,
-                                    height: 1.45,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                          if (history.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
                               ),
-                              decoration: BoxDecoration(
-                                color: referralBlue.withValues(alpha: .12),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: referralBlue.withValues(alpha: .16),
-                                ),
-                              ),
-                              child: Text(
-                                '${history.length}',
-                                style: TextStyle(
-                                  color: ui.textPrimary,
-                                  decoration: TextDecoration.none,
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      if (history.isEmpty)
-                        const EmptyStateCard(
-                          icon: Icons.card_giftcard_rounded,
-                          title: 'No referrals yet',
-                          subtitle:
-                              'Your future \u20B120 paid referral history will appear here.',
-                        )
-                      else
-                        ...history.map(
-                          (item) => _InviteHistoryCard(item: item),
+                          ],
                         ),
-                    ],
+                        const SizedBox(height: 14),
+                        if (history.isEmpty)
+                          const EmptyStateCard(
+                            icon: Icons.card_giftcard_rounded,
+                            title: 'No referral activity yet',
+                            subtitle:
+                                'Recent referrals and verified Premium reward updates will appear here.',
+                          )
+                        else
+                          ...history.map(
+                            (item) => _InviteHistoryCard(item: item.message),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
+      ),
     );
   }
 }
@@ -17159,32 +21718,50 @@ class _InviteHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
+    final usesLightSurface = !uiStyle.isDark;
+    final titleColor = usesLightSurface ? ui.textPrimary : intelliumTextPrimary;
+    final subtitleColor =
+        usesLightSurface ? ui.textSecondary : intelliumTextSecondary;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF0C1427),
-            primary.withValues(alpha: .18),
-            secondary.withValues(alpha: .14),
-            const Color(0xFF0B1020),
-          ],
-        ),
-        border: Border.all(color: Colors.white.withValues(alpha: .07)),
-        boxShadow: [
-          BoxShadow(
-            color: primary.withValues(alpha: .08),
-            blurRadius: 26,
-            spreadRadius: -12,
-            offset: const Offset(0, 16),
-          ),
-        ],
-      ),
+      decoration: usesLightSurface
+          ? ui.cardDecoration(radius: 30).copyWith(
+              border: Border.all(color: primary.withValues(alpha: .14)),
+              boxShadow: [
+                BoxShadow(
+                  color: primary.withValues(alpha: .08),
+                  blurRadius: 26,
+                  spreadRadius: -12,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            )
+          : BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF09111F),
+                  const Color(0xFF0E1628),
+                  primary.withValues(alpha: .16),
+                  secondary.withValues(alpha: .12),
+                  const Color(0xFF0A101D),
+                ],
+              ),
+              border: Border.all(color: Colors.white.withValues(alpha: .07)),
+              boxShadow: [
+                BoxShadow(
+                  color: primary.withValues(alpha: .08),
+                  blurRadius: 26,
+                  spreadRadius: -12,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -17196,15 +21773,20 @@ class _InviteHeroCard extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .08),
+                  color: usesLightSurface
+                      ? ui.sectionFill
+                      : Colors.white.withValues(alpha: .08),
                   borderRadius: BorderRadius.circular(999),
-                  border:
-                      Border.all(color: Colors.white.withValues(alpha: .08)),
+                  border: Border.all(
+                    color: usesLightSurface
+                        ? ui.borderColor
+                        : Colors.white.withValues(alpha: .08),
+                  ),
                 ),
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: titleColor,
                     decoration: TextDecoration.none,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
@@ -17235,33 +21817,38 @@ class _InviteHeroCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
-                decoration: TextDecoration.none,
-                fontSize: 34,
-                fontWeight: FontWeight.w800,
+              style: sweldoAmountStyle(
+                ui,
+                size: 34,
+                weight: FontWeight.w800,
                 letterSpacing: -0.8,
+                color: titleColor,
                 height: 1.04,
-              ),
+              ).copyWith(decoration: TextDecoration.none),
             ),
           ),
           const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: .05),
+              color: usesLightSurface
+                  ? ui.sectionFill
+                  : Colors.white.withValues(alpha: .05),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withValues(alpha: .06)),
+              border: Border.all(
+                color: usesLightSurface
+                    ? ui.borderColor
+                    : Colors.white.withValues(alpha: .06),
+              ),
             ),
             child: Text(
               badge,
-              style: TextStyle(
-                color: ui.textSecondary,
-                decoration: TextDecoration.none,
-                fontSize: 12.5,
+              style: sweldoHelperStyle(
+                ui,
+                size: 12.5,
+                color: subtitleColor,
                 height: 1.45,
-                fontWeight: FontWeight.w600,
-              ),
+              ).copyWith(decoration: TextDecoration.none),
             ),
           ),
         ],
@@ -17288,22 +21875,33 @@ class _InviteStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
+    final usesLightSurface = !uiStyle.isDark;
+    final titleColor = usesLightSurface ? ui.textPrimary : intelliumTextPrimary;
+    final subtitleColor =
+        usesLightSurface ? ui.textSecondary : intelliumTextSecondary;
+    final mutedColor = usesLightSurface ? ui.textMuted : intelliumTextMuted;
 
     return Container(
       constraints: const BoxConstraints(minHeight: 156),
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            color.withValues(alpha: .08),
-            ui.cardFill.withValues(alpha: .97),
-          ],
-        ),
-        border: Border.all(color: color.withValues(alpha: .10)),
-      ),
+      decoration: usesLightSurface
+          ? ui.cardDecoration(radius: 24).copyWith(
+              border: Border.all(color: color.withValues(alpha: .14)),
+            )
+          : BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF101726),
+                  color.withValues(alpha: .11),
+                  const Color(0xFF0B1120),
+                ],
+              ),
+              border: Border.all(color: color.withValues(alpha: .10)),
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -17321,17 +21919,18 @@ class _InviteStatCard extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .05),
+                  color: usesLightSurface
+                      ? ui.sectionFill
+                      : Colors.white.withValues(alpha: .05),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   title,
-                  style: TextStyle(
-                    color: ui.textMuted,
-                    decoration: TextDecoration.none,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: sweldoLabelStyle(
+                    ui,
+                    size: 11.5,
+                    color: mutedColor,
+                  ).copyWith(decoration: TextDecoration.none),
                 ),
               ),
             ],
@@ -17339,25 +21938,24 @@ class _InviteStatCard extends StatelessWidget {
           const SizedBox(height: 22),
           Text(
             value,
-            style: TextStyle(
-              color: ui.textPrimary,
-              decoration: TextDecoration.none,
-              fontSize: 26,
-              fontWeight: FontWeight.w800,
+            style: sweldoAmountStyle(
+              ui,
+              size: 26,
+              weight: FontWeight.w800,
               letterSpacing: -0.5,
+              color: titleColor,
               height: 1.05,
-            ),
+            ).copyWith(decoration: TextDecoration.none),
           ),
           const SizedBox(height: 6),
           Text(
             subtitle,
-            style: TextStyle(
-              color: ui.textSecondary,
-              decoration: TextDecoration.none,
-              fontSize: 12.5,
+            style: sweldoHelperStyle(
+              ui,
+              size: 12.5,
+              color: subtitleColor,
               height: 1.4,
-              fontWeight: FontWeight.w500,
-            ),
+            ).copyWith(decoration: TextDecoration.none),
           ),
         ],
       ),
@@ -17367,6 +21965,10 @@ class _InviteStatCard extends StatelessWidget {
 
 class _InviteCodeCard extends StatelessWidget {
   final String code;
+  final TextEditingController applyCodeController;
+  final VoidCallback onApplyCode;
+  final bool applyingReferralCode;
+  final String? appliedReferralCode;
   final Widget infoCard;
   final VoidCallback onCopy;
   final VoidCallback? onAddTestReferral;
@@ -17374,6 +21976,10 @@ class _InviteCodeCard extends StatelessWidget {
 
   const _InviteCodeCard({
     required this.code,
+    required this.applyCodeController,
+    required this.onApplyCode,
+    required this.applyingReferralCode,
+    required this.appliedReferralCode,
     required this.infoCard,
     required this.onCopy,
     required this.onAddTestReferral,
@@ -17383,37 +21989,51 @@ class _InviteCodeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
+    final usesLightSurface = !uiStyle.isDark;
+    final titleColor = usesLightSurface ? ui.textPrimary : intelliumTextPrimary;
+    final subtitleColor =
+        usesLightSurface ? ui.textSecondary : intelliumTextSecondary;
+    final mutedColor = usesLightSurface ? ui.textMuted : intelliumTextMuted;
+    final inputFillColor =
+        usesLightSurface
+            ? sweldoInputFillColor(uiStyle)
+            : const Color(0xFF0F1727);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            ui.cardFill.withValues(alpha: .98),
-            const Color(0xFF101726),
-          ],
-        ),
-        border: Border.all(color: Colors.white.withValues(alpha: .05)),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withValues(alpha: .05),
-            blurRadius: 22,
-            spreadRadius: -14,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
+      decoration: usesLightSurface
+          ? ui.sectionContainerDecoration(radius: 28).copyWith(
+              border: Border.all(color: accent.withValues(alpha: .14)),
+            )
+          : BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF111A2C),
+                  Color(0xFF0C1322),
+                ],
+              ),
+              border: Border.all(color: Colors.white.withValues(alpha: .05)),
+              boxShadow: [
+                BoxShadow(
+                  color: accent.withValues(alpha: .05),
+                  blurRadius: 22,
+                  spreadRadius: -14,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Your Referral Code',
+            'Share your code',
             style: TextStyle(
-              color: ui.textMuted,
+              color: mutedColor,
               decoration: TextDecoration.none,
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
@@ -17422,9 +22042,9 @@ class _InviteCodeCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Share this code with new premium users to track paid referral rewards.',
+            'Invite friends with your personal code. Referral rewards are based on verified Premium subscriptions.',
             style: TextStyle(
-              color: ui.textSecondary,
+              color: subtitleColor,
               decoration: TextDecoration.none,
               fontSize: 12.5,
               height: 1.45,
@@ -17437,23 +22057,32 @@ class _InviteCodeCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  accent.withValues(alpha: .09),
-                  const Color(0xFF0F1727),
-                ],
-              ),
+              gradient: usesLightSurface
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        accent.withValues(alpha: .10),
+                        ui.cardFill,
+                      ],
+                    )
+                  : LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        accent.withValues(alpha: .09),
+                        const Color(0xFF0F1727),
+                      ],
+                    ),
               border: Border.all(color: accent.withValues(alpha: .14)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Share Code',
+                  'Referral code',
                   style: TextStyle(
-                    color: ui.textMuted,
+                    color: mutedColor,
                     decoration: TextDecoration.none,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -17470,7 +22099,7 @@ class _InviteCodeCard extends StatelessWidget {
                         child: Text(
                           code,
                           style: TextStyle(
-                            color: ui.textPrimary,
+                            color: titleColor,
                             decoration: TextDecoration.none,
                             fontSize: 29,
                             fontWeight: FontWeight.w800,
@@ -17485,10 +22114,14 @@ class _InviteCodeCard extends StatelessWidget {
                       height: 42,
                       width: 42,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: .05),
+                        color: usesLightSurface
+                            ? ui.sectionFill
+                            : Colors.white.withValues(alpha: .05),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: .06),
+                          color: usesLightSurface
+                              ? ui.borderColor
+                              : Colors.white.withValues(alpha: .06),
                         ),
                       ),
                       child: Icon(
@@ -17503,6 +22136,101 @@ class _InviteCodeCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
+          Text(
+            'Have a referral code?',
+            style: TextStyle(
+              color: titleColor,
+              decoration: TextDecoration.none,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            appliedReferralCode == null
+                ? 'Apply a friend\'s code before your first verified Premium subscription.'
+                : 'This account is linked to code $appliedReferralCode.',
+            style: TextStyle(
+              color: subtitleColor,
+              decoration: TextDecoration.none,
+              fontSize: 12.5,
+              height: 1.45,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 14),
+          if (appliedReferralCode == null) ...[
+            TextField(
+              controller: applyCodeController,
+              textCapitalization: TextCapitalization.characters,
+              style: TextStyle(
+                color: titleColor,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+              cursorColor: accent,
+              decoration: InputDecoration(
+                hintText: 'Enter referral code',
+                hintStyle: TextStyle(
+                  color: mutedColor,
+                  fontWeight: FontWeight.w600,
+                ),
+                filled: true,
+                fillColor: inputFillColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide(
+                    color: intelliumBlue.withValues(alpha: .18),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide(
+                    color: intelliumBlue.withValues(alpha: .18),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide(
+                    color: accent,
+                  ),
+                ),
+              ),
+              onSubmitted: (_) => onApplyCode(),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: _InviteActionButton(
+                label: applyingReferralCode ? 'Applying...' : 'Apply Code',
+                icon: Icons.redeem_rounded,
+                onPressed: applyingReferralCode ? () {} : onApplyCode,
+                backgroundColor:
+                    usesLightSurface ? ui.cardFill : const Color(0xFF111A2C),
+                foregroundColor: titleColor,
+                borderColor: intelliumBlue.withValues(alpha: .18),
+              ),
+            ),
+          ] else
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: .08),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: accent.withValues(alpha: .14)),
+              ),
+              child: Text(
+                'Rewards are reviewed before payout.',
+                style: TextStyle(
+                  color: titleColor,
+                  decoration: TextDecoration.none,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          const SizedBox(height: 18),
           Row(
             children: [
               Expanded(
@@ -17511,7 +22239,9 @@ class _InviteCodeCard extends StatelessWidget {
                   icon: Icons.copy_rounded,
                   onPressed: onCopy,
                   backgroundColor: accent,
-                  foregroundColor: intelliumBackground,
+                  foregroundColor: usesLightSurface
+                      ? const Color(0xFF0F172A)
+                      : intelliumBackground,
                 ),
               ),
               if (onAddTestReferral != null) ...[
@@ -17521,9 +22251,10 @@ class _InviteCodeCard extends StatelessWidget {
                     label: 'Add Test Referral',
                     icon: Icons.science_outlined,
                     onPressed: onAddTestReferral!,
-                    backgroundColor: ui.cardFill,
-                    foregroundColor: ui.textPrimary,
-                    borderColor: Colors.white.withValues(alpha: .08),
+                    backgroundColor:
+                        usesLightSurface ? ui.cardFill : const Color(0xFF111A2C),
+                    foregroundColor: titleColor,
+                    borderColor: intelliumBlue.withValues(alpha: .18),
                   ),
                 ),
               ],
@@ -17553,22 +22284,32 @@ class _InviteInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
+    final usesLightSurface = !uiStyle.isDark;
+    final titleColor = usesLightSurface ? ui.textPrimary : intelliumTextPrimary;
+    final subtitleColor =
+        usesLightSurface ? ui.textSecondary : intelliumTextSecondary;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            accent.withValues(alpha: .07),
-            ui.cardFill.withValues(alpha: .98),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: accent.withValues(alpha: .11)),
-      ),
+      decoration: usesLightSurface
+          ? ui.cardDecoration(radius: 22).copyWith(
+              border: Border.all(color: accent.withValues(alpha: .14)),
+            )
+          : BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF101726),
+                  accent.withValues(alpha: .10),
+                  const Color(0xFF0B1120),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: accent.withValues(alpha: .11)),
+            ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -17584,23 +22325,22 @@ class _InviteInfoCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    color: ui.textPrimary,
-                    decoration: TextDecoration.none,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: sweldoLabelStyle(
+                    ui,
+                    size: 13.5,
+                    color: titleColor,
+                    weight: FontWeight.w800,
+                  ).copyWith(decoration: TextDecoration.none),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    color: ui.textSecondary,
-                    decoration: TextDecoration.none,
-                    fontSize: 12.5,
+                  style: sweldoHelperStyle(
+                    ui,
+                    size: 12.5,
+                    color: subtitleColor,
                     height: 1.5,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  ).copyWith(decoration: TextDecoration.none),
                 ),
               ],
             ),
@@ -17620,16 +22360,23 @@ class _InviteHistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
     const accent = Color(0xFF7A9BFF);
+    final uiStyle = sweldoUiStyleOf(context);
+    final usesLightSurface = !uiStyle.isDark;
+    final titleColor = usesLightSurface ? ui.textPrimary : intelliumTextPrimary;
 
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: ui.cardFill.withValues(alpha: .92),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: accent.withValues(alpha: .10)),
-      ),
+      decoration: usesLightSurface
+          ? ui.cardDecoration(radius: 20).copyWith(
+              border: Border.all(color: accent.withValues(alpha: .14)),
+            )
+          : BoxDecoration(
+              color: const Color(0xFF0F1727),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: accent.withValues(alpha: .10)),
+            ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -17647,13 +22394,13 @@ class _InviteHistoryCard extends StatelessWidget {
           Expanded(
             child: Text(
               item,
-              style: TextStyle(
-                color: ui.textPrimary,
-                decoration: TextDecoration.none,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+              style: sweldoHelperStyle(
+                ui,
+                size: 13,
+                color: titleColor,
+                weight: FontWeight.w600,
                 height: 1.45,
-              ),
+              ).copyWith(decoration: TextDecoration.none),
             ),
           ),
         ],
@@ -17714,7 +22461,172 @@ class _InviteActionButton extends StatelessWidget {
 // Settings
 // -----------------------------------------------------------------------------
 
-class SettingsScreen extends StatelessWidget {
+const String _customPickerActionAdd = '__custom_picker_add__';
+const String _premiumPickerActionPrefix = '__premium_picker_locked__:';
+
+Future<String?> showNamedOptionEditorSheet(
+  BuildContext context, {
+  required String title,
+  required String fieldLabel,
+  required Iterable<String> existingValues,
+  String? initialValue,
+  String? originalValue,
+  String? hintText,
+  String saveLabel = 'Save',
+}) async {
+  final controller = TextEditingController(text: initialValue ?? '');
+  final result = await showModalBottomSheet<String>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+    ),
+    builder: (sheetContext) {
+      String? validationMessage;
+      var saving = false;
+      return StatefulBuilder(
+        builder: (context, setModalState) => SafeArea(
+          child: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                18,
+                20,
+                MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SheetHandle(),
+                    const SizedBox(height: 20),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: intelliumTextPrimary,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: controller,
+                      autofocus: true,
+                      textInputAction: TextInputAction.done,
+                      style: const TextStyle(color: intelliumTextPrimary),
+                      onChanged: (_) {
+                        if (validationMessage != null) {
+                          setModalState(() => validationMessage = null);
+                        }
+                      },
+                      decoration: InputDecoration(
+                        labelText: fieldLabel,
+                        hintText: hintText,
+                      ),
+                    ),
+                    if (validationMessage != null) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        validationMessage!,
+                        style: const TextStyle(
+                          color: Color(0xFFFF8A8A),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(sheetContext),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: PrimaryButton(
+                            label: saveLabel,
+                            onPressed: () {
+                              final cleaned =
+                                  normalizeNamedOptionValue(controller.text);
+                              if (cleaned.isEmpty) {
+                                setModalState(() {
+                                  validationMessage =
+                                      'Enter a $fieldLabel name.';
+                                });
+                                return;
+                              }
+                              if (containsNamedOption(
+                                existingValues,
+                                cleaned,
+                                excluding: originalValue,
+                              )) {
+                                setModalState(() {
+                                  validationMessage =
+                                      'That $fieldLabel name already exists.';
+                                });
+                                return;
+                              }
+                              if (saving) return;
+                              setModalState(() => saving = true);
+                              Navigator.pop(sheetContext, cleaned);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+  );
+  controller.dispose();
+  return result;
+}
+
+Future<bool> showNamedOptionDeleteDialog(
+  BuildContext context, {
+  required String title,
+  required String value,
+  required String message,
+}) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      title: Text(
+        title,
+        style: const TextStyle(color: intelliumTextPrimary),
+      ),
+      content: Text(
+        message.replaceAll('{value}', value),
+        style: const TextStyle(color: intelliumTextSecondary, height: 1.4),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+  return confirmed ?? false;
+}
+
+class SettingsScreen extends StatefulWidget {
   final VoidCallback onChanged;
   final PremiumService premiumService;
   final AppThemeController themeController;
@@ -17725,6 +22637,133 @@ class SettingsScreen extends StatelessWidget {
     required this.premiumService,
     required this.themeController,
   });
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  PremiumService get premiumService => widget.premiumService;
+  AppThemeController get themeController => widget.themeController;
+  VoidCallback get onChanged => widget.onChanged;
+  bool backupReminderEnabled = true;
+  DateTime? lastBackupExportedAt;
+  bool sampleDataLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadLocalUtilityState());
+  }
+
+  Future<void> _loadLocalUtilityState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final reminderEnabled = await FinanceRepository.isBackupReminderEnabled();
+    final lastBackupAt = await FinanceRepository.getLastBackupExportedAt();
+    final hasSampleData = prefs.containsKey(AppKeys.sampleDataSeedVersion);
+    if (!mounted) return;
+    setState(() {
+      backupReminderEnabled = reminderEnabled;
+      lastBackupExportedAt = lastBackupAt;
+      sampleDataLoaded = hasSampleData;
+    });
+  }
+
+  Future<void> _toggleBackupReminder(bool value) async {
+    await FinanceRepository.setBackupReminderEnabled(value);
+    if (!mounted) return;
+    setState(() {
+      backupReminderEnabled = value;
+    });
+  }
+
+  Future<void> _handleLoadSampleData(BuildContext context) async {
+    final hasExistingData = await FinanceRepository.hasAnySavedFinanceData();
+    if (!context.mounted) return;
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            backgroundColor: intelliumSurface,
+            title: const Text(
+              'Load Sample Data?',
+              style: TextStyle(color: intelliumTextPrimary),
+            ),
+            content: Text(
+              hasExistingData
+                  ? 'This will add sample income, expenses, bills, and savings beside your existing records so you can preview SweldoTrack. You can clear sample data later.'
+                  : 'This will add sample income, expenses, bills, and savings so you can preview SweldoTrack. You can clear sample data later.',
+              style: const TextStyle(
+                color: intelliumTextSecondary,
+                height: 1.45,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Load Sample Data'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed) return;
+
+    await FinanceRepository.loadSampleData();
+    await FinanceRepository.loadSelectedCurrency();
+    await themeController.load();
+    await _loadLocalUtilityState();
+    onChanged();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Sample data loaded.')),
+    );
+  }
+
+  Future<void> _handleClearSampleData(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            backgroundColor: intelliumSurface,
+            title: const Text(
+              'Clear Sample Data?',
+              style: TextStyle(color: intelliumTextPrimary),
+            ),
+            content: const Text(
+              'This removes demo income, expenses, bills, savings activity, and demo payment labels only. Your real records stay intact.',
+              style: TextStyle(
+                color: intelliumTextSecondary,
+                height: 1.45,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Clear Sample Data'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed) return;
+
+    await FinanceRepository.clearSampleData();
+    await FinanceRepository.loadSelectedCurrency();
+    await themeController.load();
+    await _loadLocalUtilityState();
+    onChanged();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Sample data cleared.')),
+    );
+  }
 
   Future<void> _openHelpTutorialScreen(BuildContext context) async {
     await Navigator.of(context).push(
@@ -17778,6 +22817,356 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _showCurrencyPicker(BuildContext context) async {
+    final selectedCode = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) {
+        final ui = SweldoVisualStyle.fromContext(sheetContext);
+        final currentCode = sweldoCurrencyNotifier.value.code;
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SheetHandle(),
+                const SizedBox(height: 20),
+                Text(
+                  'Choose Currency',
+                  style: TextStyle(
+                    color: ui.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'This changes how totals are displayed across spending, analytics, and your monthly report card.',
+                  style: TextStyle(
+                    color: ui.textSecondary,
+                    fontSize: 12.5,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                for (final option in sweldoCurrencyOptions) ...[
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(22),
+                      onTap: () => Navigator.pop(sheetContext, option.code),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: ui.cardDecoration(radius: 22).copyWith(
+                              border: Border.all(
+                                color: currentCode == option.code
+                                    ? Theme.of(context).colorScheme.primary
+                                    : ui.borderColor,
+                                width: currentCode == option.code ? 1.4 : 1,
+                              ),
+                            ),
+                        child: Row(
+                          children: [
+                            Container(
+                              height: 46,
+                              width: 46,
+                              alignment: Alignment.center,
+                              decoration: ui.iconChipBackground(
+                                Theme.of(context).colorScheme.primary,
+                                radius: 16,
+                              ),
+                              child: Text(
+                                option.symbol.trim(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    option.label,
+                                    style: TextStyle(
+                                      color: ui.textPrimary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${option.displayLabel} format',
+                                    style: TextStyle(
+                                      color: ui.textSecondary,
+                                      fontSize: 12.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (currentCode == option.code)
+                              Icon(
+                                Icons.check_circle_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (selectedCode == null) return;
+    await FinanceRepository.setSelectedCurrency(selectedCode);
+    if (!mounted) return;
+    setState(() {});
+    onChanged();
+  }
+
+  Future<void> _showCustomOptionManager({
+    required BuildContext context,
+    required bool isCategory,
+  }) async {
+    final initialItems = isCategory
+        ? await FinanceRepository.getCustomExpenseCategories()
+        : await FinanceRepository.getCustomPaymentMethods();
+    if (!mounted || !context.mounted) return;
+    final uiStyle = sweldoUiStyleOf(context);
+
+    await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: sweldoSheetBackgroundColor(uiStyle),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) {
+        final ui = SweldoVisualStyle.fromContext(sheetContext);
+        final fieldLabel = isCategory ? 'category' : 'payment method';
+        final title =
+            isCategory ? 'Custom Spending Categories' : 'Custom Payment Methods';
+        final helperCopy = isCategory
+            ? 'Create labels that match how you actually spend. Built-in categories stay protected and cannot be deleted here.'
+            : 'Create personal bank, card, or wallet labels for the payment methods you actually use.';
+        final freeLimit =
+            isCategory ? freeCustomCategoryLimit : freeCustomPaymentMethodLimit;
+        var items = List<String>.from(initialItems);
+
+        Future<void> persist(StateSetter setModalState) async {
+          if (isCategory) {
+            await FinanceRepository.saveCustomExpenseCategories(items);
+          } else {
+            await FinanceRepository.saveCustomPaymentMethods(items);
+          }
+          if (!mounted || !sheetContext.mounted) return;
+          setModalState(() {});
+          setState(() {});
+          onChanged();
+        }
+
+        Future<void> addItem(StateSetter setModalState) async {
+          if (!premiumService.isPremium && items.length >= freeLimit) {
+            showAppMessage(
+              sheetContext,
+              'Free users can save up to $freeLimit custom $fieldLabel names. Premium unlocks more.',
+            );
+            return;
+          }
+          final created = await showNamedOptionEditorSheet(
+            sheetContext,
+            title: 'Add Custom ${isCategory ? 'Category' : 'Payment Method'}',
+            fieldLabel: fieldLabel,
+            existingValues: items,
+            hintText: isCategory ? 'Ex. Weekend Market' : 'Ex. BPI Payroll',
+            saveLabel: 'Add',
+          );
+          if (created == null) return;
+          items = [...items, created];
+          await persist(setModalState);
+        }
+
+        Future<void> renameItem(StateSetter setModalState, int index) async {
+          final currentValue = items[index];
+          final renamed = await showNamedOptionEditorSheet(
+            sheetContext,
+            title: 'Rename ${isCategory ? 'Category' : 'Payment Method'}',
+            fieldLabel: fieldLabel,
+            existingValues: items,
+            initialValue: currentValue,
+            originalValue: currentValue,
+            hintText: currentValue,
+            saveLabel: 'Save',
+          );
+          if (renamed == null) return;
+          items[index] = renamed;
+          await persist(setModalState);
+        }
+
+        Future<void> deleteItem(StateSetter setModalState, int index) async {
+          final value = items[index];
+          final confirmed = await showNamedOptionDeleteDialog(
+            sheetContext,
+            title: 'Delete ${isCategory ? 'Category' : 'Payment Method'}',
+            value: value,
+            message:
+                'Delete "{value}" from this device? Existing saved spending entries will keep their text, but this custom option will be removed from future pickers.',
+          );
+          if (!confirmed) return;
+          items.removeAt(index);
+          await persist(setModalState);
+        }
+
+        return StatefulBuilder(
+          builder: (context, setModalState) => SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                18,
+                20,
+                MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SheetHandle(),
+                    const SizedBox(height: 20),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: ui.textPrimary,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      helperCopy,
+                      style: TextStyle(
+                        color: ui.textSecondary,
+                        fontSize: 12.5,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: ui.cardDecoration(radius: 20),
+                      child: Text(
+                        premiumService.isPremium
+                            ? '${items.length} custom $fieldLabel names saved on this device.'
+                            : '${items.length} of $freeLimit custom $fieldLabel names used on the free plan. Premium unlocks more.',
+                        style: TextStyle(
+                          color: ui.textSecondary,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    if (items.isEmpty)
+                      EmptyStateCard(
+                        icon: isCategory
+                            ? Icons.category_rounded
+                            : Icons.account_balance_wallet_rounded,
+                        title: 'No custom ${isCategory ? 'categories' : 'payment methods'} yet',
+                        subtitle: isCategory
+                            ? 'Add one so your spending labels match your real habits.'
+                            : 'Add personal bank, wallet, or card labels for faster spending entries.',
+                      )
+                    else
+                      ...List.generate(items.length, (index) {
+                        final definition = isCategory
+                            ? resolveSpendingCategoryDefinition(items[index])
+                            : resolvePaymentMethodDefinition(items[index]);
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: ui.cardDecoration(radius: 22),
+                            child: Row(
+                              children: [
+                                Container(
+                                  height: 44,
+                                  width: 44,
+                                  decoration: ui.iconChipBackground(
+                                    definition.color,
+                                    radius: 16,
+                                  ),
+                                  child: Icon(
+                                    definition.icon,
+                                    color: definition.color,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        items[index],
+                                        style: TextStyle(
+                                          color: ui.textPrimary,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Custom ${isCategory ? 'category' : 'payment method'}',
+                                        style: TextStyle(
+                                          color: ui.textSecondary,
+                                          fontSize: 12.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () => renameItem(setModalState, index),
+                                  icon: const Icon(Icons.edit_rounded),
+                                  color: ui.textSecondary,
+                                ),
+                                IconButton(
+                                  onPressed: () => deleteItem(setModalState, index),
+                                  icon: const Icon(Icons.delete_outline_rounded),
+                                  color: ui.textSecondary,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                    const SizedBox(height: 8),
+                    PrimaryButton(
+                      label: 'Add ${isCategory ? 'Custom Category' : 'Payment Method'}',
+                      onPressed: () => addItem(setModalState),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _showBackupReadyDialog(
     BuildContext context, {
     required String title,
@@ -17809,6 +23198,15 @@ class SettingsScreen extends StatelessWidget {
                       height: 1.45,
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Your backup only includes local finance data. Premium subscription status is restored through Google Play.',
+                    style: TextStyle(
+                      color: intelliumTextMuted,
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
                   const SizedBox(height: 14),
                   TextField(
                     controller: controller,
@@ -17835,6 +23233,8 @@ class SettingsScreen extends StatelessWidget {
                     : () async {
                         setDialogState(() => copying = true);
                         await Clipboard.setData(ClipboardData(text: jsonPayload));
+                        await FinanceRepository.markBackupExportedNow();
+                        await _loadLocalUtilityState();
                         if (!dialogContext.mounted || !context.mounted) return;
                         Navigator.pop(dialogContext);
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -17875,7 +23275,7 @@ class SettingsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Paste a SweldoTrack backup JSON file below. Import replaces only the supported local data included in that backup.',
+                    'Paste a SweldoTrack backup JSON file below. Import replaces only the supported local data included in that backup. Premium subscription status is restored separately through Google Play.',
                     style: TextStyle(
                       color: intelliumTextSecondary,
                       height: 1.45,
@@ -17970,7 +23370,9 @@ class SettingsScreen extends StatelessWidget {
 
                         try {
                           await FinanceRepository.importLocalBackupJson(raw);
+                          await FinanceRepository.loadSelectedCurrency();
                           await themeController.load();
+                          await _loadLocalUtilityState();
                           if (!context.mounted) return;
                           onChanged();
                           if (!dialogContext.mounted) return;
@@ -18035,7 +23437,10 @@ class SettingsScreen extends StatelessWidget {
     final finalConfirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => StatefulBuilder(
-            builder: (context, setDialogState) => AlertDialog(
+            builder: (context, setDialogState) {
+              final visual = SweldoVisualStyle.fromContext(context);
+              final ui = sweldoUiStyleOf(context);
+              return AlertDialog(
               backgroundColor: intelliumSurface,
               title: const Text(
                 'Final confirmation',
@@ -18057,13 +23462,40 @@ class SettingsScreen extends StatelessWidget {
                     controller: confirmationController,
                     autofocus: true,
                     textCapitalization: TextCapitalization.characters,
-                    style: const TextStyle(color: intelliumTextPrimary),
+                    cursorColor: ui.accent,
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontWeight: FontWeight.w700,
+                    ),
                     onChanged: (value) {
                       setDialogState(() => confirmationValue = value.trim());
                     },
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Type RESET',
                       hintText: 'RESET',
+                      filled: true,
+                      fillColor: Colors.white,
+                      labelStyle: const TextStyle(
+                        color: Color(0xFF475569),
+                        fontWeight: FontWeight.w700,
+                      ),
+                      hintStyle: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: visual.borderColor.withValues(alpha: .88),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: ui.accent,
+                          width: 1.6,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -18080,7 +23512,8 @@ class SettingsScreen extends StatelessWidget {
                   child: const Text('Reset All Data'),
                 ),
               ],
-            ),
+            );
+            },
           ),
         ) ??
         false;
@@ -18089,6 +23522,7 @@ class SettingsScreen extends StatelessWidget {
 
     try {
       await FinanceRepository.resetAllLocalUserData();
+      await FinanceRepository.loadSelectedCurrency();
       await premiumService.reloadLocalStatus();
       await themeController.load();
       if (!context.mounted) return;
@@ -18112,34 +23546,45 @@ class SettingsScreen extends StatelessWidget {
         : DateFormat('MMM d, yyyy h:mm a').format(
             premiumService.lastVerifiedAt!.toLocal(),
           );
-    final premiumStatusValue = !premiumLaunchEnabled
-        ? premiumTemporarilyUnavailableLabel
-        : premiumService.premiumStatusLabel;
-    final premiumStatusSubtitle = !premiumLaunchEnabled
+    final premiumPendingState = premiumService.isPurchasePending ||
+        premiumService.isRestorePending ||
+        premiumService.hasPaymentDetectedButNotVerified;
+    final premiumStatusBadgeLabel = !premiumLaunchEnabled
+        ? premiumAccessLabel
+        : premiumService.isPremium
+            ? 'Premium Active'
+            : premiumPendingState
+                ? 'Purchase Pending'
+                : 'Free Plan';
+    final premiumStatusMessage = !premiumLaunchEnabled
         ? premiumPurchasesUnavailableMessage
-        : premiumService.premiumStatusDetail;
-    final premiumVerificationValue = !premiumLaunchEnabled
-        ? 'Unavailable'
-        : premiumService.requiresBackendVerificationSetup
-            ? premiumTemporarilyUnavailableLabel
+        : premiumService.isPremium
+            ? premiumService.shouldShowPremiumVerificationRefreshNotice
+                ? premiumVerificationRefreshStatusMessage
+                : 'Your premium access is verified.'
+                : premiumPendingState
+                    ? 'Google Play is still processing your purchase. Tap Restore Purchase to check again.'
+                : 'Light, Dark, and Intellium Digital are free. Premium unlocks Neon and Executive appearances, advanced analytics, backup, and optional smart tools.';
+    final premiumStatusAccent = !premiumLaunchEnabled
+        ? intelliumTextMuted
+        : premiumService.isPremium
+            ? Theme.of(context).colorScheme.primary
+            : premiumPendingState
+                ? const Color(0xFFFFC857)
+                : const Color(0xFF6C8CFF);
+    final premiumStatusSupportingText = premiumService.errorMessage ??
+        (!premiumLaunchEnabled
+            ? null
             : premiumService.isPremium
-                ? 'Verified'
-                : premiumService.isRestorePending
-                    ? 'Checking'
-                    : premiumService.isPurchasePending
-                        ? 'Pending'
-                        : 'Not verified yet';
-    final premiumVerificationSubtitle = !premiumLaunchEnabled
-        ? premiumPurchasesUnavailableMessage
-        : premiumService.requiresBackendVerificationSetup
-            ? premiumPurchasesUnavailableMessage
-            : premiumService.isPremium
-                ? 'Your Google Play purchase was verified before premium access was enabled here.'
-                : premiumService.isRestorePending
-                    ? 'Google Play is checking this account for a previous premium purchase.'
-                    : premiumService.isPurchasePending
-                        ? 'Google Play is still finishing your purchase confirmation.'
-                        : 'Premium activates only after a verified Google Play purchase.';
+                ? 'Premium benefits stay available here while billing and verification continue in the background.'
+                : premiumService.premiumStatusDetail);
+    final showBackupReminder = backupReminderEnabled &&
+        (lastBackupExportedAt == null ||
+            DateTime.now().difference(lastBackupExportedAt!) >
+                const Duration(days: 30));
+    final backupReminderSubtitle = lastBackupExportedAt == null
+        ? 'No recent local backup was exported from this device yet.'
+        : 'Last backup copied on ${DateFormat('MMM d, yyyy').format(lastBackupExportedAt!.toLocal())}.';
 
     Widget buildSectionHeader(String title, String subtitle) {
       return Column(
@@ -18197,9 +23642,10 @@ class SettingsScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: AnimatedBuilder(
-          animation: Listenable.merge([premiumService, themeController]),
+          animation:
+              Listenable.merge([premiumService, themeController, sweldoCurrencyNotifier]),
           builder: (context, _) => SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
+            padding: _pageContentPadding(context, top: 16, bottom: 110),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -18272,24 +23718,66 @@ class SettingsScreen extends StatelessWidget {
                   'Customize how SweldoTrack looks and behaves on this device.',
                 ),
                 const SizedBox(height: 16),
-                const SummaryCard(
+                SummaryCard(
                   title: 'Currency',
-                  value: '\u20B1',
-                  subtitle: 'Philippine Peso format',
-                  color: Color(0xFF00C896),
+                  value: sweldoCurrencyNotifier.value.displayLabel,
+                  subtitle:
+                      '${sweldoCurrencyNotifier.value.label} display format',
+                  color: Theme.of(context).colorScheme.primary,
                   icon: Icons.currency_exchange_rounded,
+                  onTap: () => _showCurrencyPicker(context),
                 ),
                 const SizedBox(height: 12),
                 ThemeSelectionCard(
                   themeController: themeController,
                   hasPremium: premiumService.isPremium,
                 ),
+                const SizedBox(height: 12),
+                FutureBuilder<List<String>>(
+                  future: FinanceRepository.getCustomExpenseCategories(),
+                  builder: (context, snapshot) {
+                    final count = snapshot.data?.length ?? 0;
+                    return SummaryCard(
+                      title: 'Custom Categories',
+                      value: '$count',
+                      subtitle: premiumService.isPremium
+                          ? 'Manage your custom spending categories saved on this device.'
+                          : '$count of $freeCustomCategoryLimit free custom categories used. Premium unlocks more.',
+                      color: const Color(0xFFFFC857),
+                      icon: Icons.category_rounded,
+                      onTap: () => _showCustomOptionManager(
+                        context: context,
+                        isCategory: true,
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                FutureBuilder<List<String>>(
+                  future: FinanceRepository.getCustomPaymentMethods(),
+                  builder: (context, snapshot) {
+                    final count = snapshot.data?.length ?? 0;
+                    return SummaryCard(
+                      title: 'Custom Payment Methods',
+                      value: '$count',
+                      subtitle: premiumService.isPremium
+                          ? 'Manage your custom bank, wallet, and card labels on this device.'
+                          : '$count of $freeCustomPaymentMethodLimit free payment labels used. Premium unlocks more.',
+                      color: const Color(0xFF6C8CFF),
+                      icon: Icons.account_balance_wallet_rounded,
+                      onTap: () => _showCustomOptionManager(
+                        context: context,
+                        isCategory: false,
+                      ),
+                    );
+                  },
+                ),
                 if (!premiumService.isPremium) ...[
                   const SizedBox(height: 12),
                   PremiumFeatureLockCard(
-                    title: 'Premium Theme Pack',
+                    title: 'Premium Appearances',
                     subtitle:
-                        'Jade Green stays free. Unlock additional premium themes with SweldoTrack Premium.',
+                        'Light, Dark, and Intellium Digital are free. Unlock Premium Neon and Premium Executive with SweldoTrack Premium.',
                     premiumService: premiumService,
                   ),
                 ],
@@ -18315,208 +23803,164 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 PremiumPlanCard(premiumService: premiumService),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
+                _PremiumStatusCard(
+                  badgeLabel: premiumStatusBadgeLabel,
+                  message: premiumStatusMessage,
+                  lastVerifiedLabel: lastVerifiedLabel,
+                  accent: premiumStatusAccent,
+                  supportingText: premiumStatusSupportingText,
+                ),
+                const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: ui.sectionContainerDecoration(),
-                  child: LayoutBuilder(
-                    builder: (context, sectionConstraints) {
-                      final stackCards = sectionConstraints.maxWidth < 720;
-                      final stackButtons = sectionConstraints.maxWidth < 520;
-
-                      final statusCard = SummaryCard(
-                        title: 'Premium Status',
-                        value: premiumStatusValue,
-                        subtitle: premiumStatusSubtitle,
-                        color: premiumService.isPremium
-                            ? intelliumCyan
-                            : intelliumTextMuted,
-                        icon: premiumService.isPremium
-                            ? Icons.verified_rounded
-                            : Icons.shield_outlined,
-                      );
-                      final verificationCard = SummaryCard(
-                        title: 'Verification',
-                        value: premiumVerificationValue,
-                        subtitle: premiumVerificationSubtitle,
-                        color: const Color(0xFF6C8CFF),
-                        icon: Icons.security_rounded,
-                      );
-                      final lastCheckCard = SummaryCard(
-                        title: 'Last Premium Check',
-                        value: lastVerifiedLabel,
-                        subtitle: premiumService.lastVerifiedAt == null
-                            ? 'No premium verification has been saved on this device yet.'
-                            : 'Most recent premium verification saved on this device.',
-                        color: const Color(0xFFFFC857),
-                        icon: Icons.schedule_rounded,
-                      );
-
-                      final restoreButton = ElevatedButton(
-                        onPressed: !premiumService.canRestorePremium
-                            ? null
-                            : () async {
-                                await premiumService.restorePurchases();
-                                if (!context.mounted) return;
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: intelliumCyan,
-                          foregroundColor: intelliumBackground,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                        ),
-                        child: const Text(
-                          'Restore Purchase',
-                          style: TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                      );
-                      final refreshButton = ElevatedButton(
-                        onPressed: premiumService.isAnyPremiumActionPending
-                            ? null
-                            : () async {
-                                await premiumService.refreshStoreState();
-                                if (!context.mounted) return;
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: intelliumCard,
-                          foregroundColor: intelliumTextPrimary,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                        ),
-                        child: const Text(
-                          'Refresh Premium Status',
-                          style: TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                      );
-
-                      return Column(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Premium Status',
-                            style: TextStyle(
-                              color: ui.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Review your subscription, verification, and purchase recovery options.',
-                            style: TextStyle(
-                              color: ui.textSecondary,
-                              fontSize: 12.5,
-                              height: 1.35,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          if (stackCards) ...[
-                            statusCard,
-                            const SizedBox(height: 12),
-                            verificationCard,
-                          ] else
-                            Row(
-                              children: [
-                                Expanded(child: statusCard),
-                                const SizedBox(width: 12),
-                                Expanded(child: verificationCard),
-                              ],
-                            ),
-                          const SizedBox(height: 12),
-                          lastCheckCard,
-                          if (!premiumService.isPremium &&
-                              (premiumService
-                                      .requiresBackendVerificationSetup ||
-                                  !premiumService.isAvailable ||
-                                  !premiumService.isProductLoaded ||
-                                  premiumService.lastVerificationMessage !=
-                                      null)) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              premiumService.premiumStatusDetail,
-                              style: TextStyle(
-                                color: ui.textSecondary,
-                                fontSize: 12.5,
-                                height: 1.4,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                          if (premiumService.errorMessage != null) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              premiumService.errorMessage!,
-                              style: TextStyle(
-                                color: ui.isJade
-                                    ? const Color(0xFFFFB6C8)
-                                    : const Color(0xFFFF8A8A),
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 16),
                           Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(18),
-                            decoration: ui.cardDecoration(radius: 24),
+                            height: 44,
+                            width: 44,
+                            decoration: ui.iconChipBackground(
+                              Theme.of(context).colorScheme.primary,
+                              radius: 14,
+                            ),
+                            child: Icon(
+                              Icons.grid_view_rounded,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Restore Purchase',
+                                  'Premium Benefits',
                                   style: TextStyle(
                                     color: ui.textPrimary,
-                                    fontSize: 15,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  premiumService
-                                      .premiumRestoreAvailabilityMessage,
+                                  'More personalization and deeper insights for the same core tracking flow.',
                                   style: TextStyle(
                                     color: ui.textSecondary,
                                     fontSize: 12.5,
                                     height: 1.35,
                                   ),
                                 ),
-                                const SizedBox(height: 14),
-                                if (stackButtons) ...[
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: restoreButton,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: refreshButton,
-                                  ),
-                                ] else
-                                  Row(
-                                    children: [
-                                      Expanded(child: restoreButton),
-                                      const SizedBox(width: 12),
-                                      Expanded(child: refreshButton),
-                                    ],
-                                  ),
                               ],
                             ),
                           ),
                         ],
-                      );
-                    },
+                      ),
+                      const SizedBox(height: 16),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final columns = constraints.maxWidth < 420 ? 1 : 2;
+                          final cardWidth = columns == 1
+                              ? constraints.maxWidth
+                              : (constraints.maxWidth - 12) / 2;
+                          return Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              SizedBox(
+                                width: cardWidth,
+                                child: _PremiumBenefitTile(
+                                  title: 'Use Neon and Executive',
+                                  description:
+                                      'Choose between bold Neon and polished Executive premium appearances.',
+                                  icon: Icons.palette_rounded,
+                                  accent: const Color(0xFFFF8A5B),
+                                  unlocked: premiumService.isPremium,
+                                ),
+                              ),
+                              SizedBox(
+                                width: cardWidth,
+                                child: _PremiumBenefitTile(
+                                  title: 'Unlock deeper insights',
+                                  description:
+                                      'See clearer trend summaries, richer cash flow context, and premium insight cards.',
+                                  icon: Icons.auto_graph_rounded,
+                                  accent: intelliumCyan,
+                                  unlocked: premiumService.isPremium,
+                                ),
+                              ),
+                              SizedBox(
+                                width: cardWidth,
+                                child: _PremiumBenefitTile(
+                                  title: 'Create more custom categories',
+                                  description:
+                                      'Save more personal category labels beyond the free custom limit.',
+                                  icon: Icons.category_rounded,
+                                  accent: const Color(0xFFFFC857),
+                                  unlocked: premiumService.isPremium,
+                                ),
+                              ),
+                              SizedBox(
+                                width: cardWidth,
+                                child: _PremiumBenefitTile(
+                                  title: 'Organize bank and wallet labels',
+                                  description:
+                                      'Add more custom bank, card, and wallet labels beyond the free limit.',
+                                  icon: Icons.account_balance_wallet_rounded,
+                                  accent: const Color(0xFF6C8CFF),
+                                  unlocked: premiumService.isPremium,
+                                ),
+                              ),
+                              SizedBox(
+                                width: cardWidth,
+                                child: _PremiumBenefitTile(
+                                  title: 'View richer monthly reports',
+                                  description:
+                                      'Get a richer Monthly Report Card with clearer breakdowns and insight copy.',
+                                  icon: Icons.insights_rounded,
+                                  accent: const Color(0xFFB084F5),
+                                  unlocked: premiumService.isPremium,
+                                ),
+                              ),
+                              SizedBox(
+                                width: cardWidth,
+                                child: _PremiumBenefitTile(
+                                  title: 'Smart tools and rewards tracking',
+                                  description:
+                                      'Use smart detection tools, premium utilities, and referral rewards tracking.',
+                                  icon: Icons.bolt_rounded,
+                                  accent: Theme.of(context).colorScheme.primary,
+                                  unlocked: premiumService.isPremium,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        premiumService.isPremium
+                            ? 'Premium is active on this device. Billing is handled securely by Google Play.'
+                            : 'Billing is handled securely by Google Play. You can restore Premium anytime.',
+                        style: TextStyle(
+                          color: ui.textMuted,
+                          fontSize: 12.4,
+                          height: 1.4,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 24),
                 buildSectionHeader(
                   'Privacy & Data',
-                  'Review local storage, backups, privacy details, and finance-only recovery tools.',
+                  'Manage backups, privacy, and local data.',
                 ),
                 const SizedBox(height: 16),
                 Container(
@@ -18599,24 +24043,75 @@ class SettingsScreen extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 14),
+                            if (showBackupReminder) ...[
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(14),
+                                decoration: ui.cardDecoration(radius: 20).copyWith(
+                                      border: Border.all(
+                                        color: const Color(0xFFFFC857)
+                                            .withValues(alpha: .18),
+                                      ),
+                                    ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      height: 38,
+                                      width: 38,
+                                      decoration: ui.iconChipBackground(
+                                        const Color(0xFFFFC857),
+                                        radius: 12,
+                                      ),
+                                      child: const Icon(
+                                        Icons.notification_important_rounded,
+                                        color: Color(0xFFFFC857),
+                                        size: 18,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Backup Reminder',
+                                            style: TextStyle(
+                                              color: ui.textPrimary,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            backupReminderSubtitle,
+                                            style: TextStyle(
+                                              color: ui.textSecondary,
+                                              fontSize: 12.3,
+                                              height: 1.35,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
                             _SettingsActionCard(
                               icon: Icons.ios_share_rounded,
                               accent: intelliumCyan,
-                              title: 'Export All Data',
+                              title: 'Export Backup',
                               subtitle:
-                                  'Create a full local JSON backup for profile, finance, preferences, and supported settings.',
+                                  'Create a JSON backup of your local finance data, settings, categories, and payment labels.',
                               onTap: () async {
                                 final payload = await FinanceRepository
                                     .exportAllLocalDataJson();
                                 if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Backup ready to copy.'),
-                                  ),
-                                );
                                 await _showBackupReadyDialog(
                                   context,
-                                  title: 'Export All Data',
+                                  title: 'Export Backup',
                                   subtitle:
                                       'Copy this JSON backup and store it somewhere safe.',
                                   jsonPayload: payload,
@@ -18635,54 +24130,72 @@ class SettingsScreen extends StatelessWidget {
                               },
                             ),
                             const SizedBox(height: 12),
-                            _SettingsActionCard(
-                              icon: Icons.receipt_long_outlined,
-                              accent: const Color(0xFF57E9C3),
-                              title: 'Export Expenses Only',
-                              subtitle:
-                                  'Copy a JSON backup containing saved spending entries only.',
-                              onTap: () async {
-                                final payload = await FinanceRepository
-                                    .exportExpensesOnlyJson();
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Backup ready to copy.'),
+                            Container(
+                              width: double.infinity,
+                              decoration: ui.cardDecoration(radius: 22),
+                              child: SwitchListTile.adaptive(
+                                value: backupReminderEnabled,
+                                onChanged: _toggleBackupReminder,
+                                activeThumbColor: intelliumCyan,
+                                activeTrackColor:
+                                    intelliumCyan.withValues(alpha: .28),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 4,
+                                ),
+                                title: Text(
+                                  'Backup Reminder',
+                                  style: TextStyle(
+                                    color: ui.textPrimary,
+                                    fontWeight: FontWeight.w800,
                                   ),
-                                );
-                                await _showBackupReadyDialog(
-                                  context,
-                                  title: 'Export Expenses Only',
-                                  subtitle:
-                                      'Copy this JSON if you only want a spending-only backup.',
-                                  jsonPayload: payload,
-                                );
+                                ),
+                                subtitle: Text(
+                                  backupReminderEnabled
+                                      ? 'SweldoTrack will remind you here when it has been a while since your last copied backup.'
+                                      : 'Turn this on if you want a gentle local reminder to export backups.',
+                                  style: TextStyle(
+                                    color: ui.textSecondary,
+                                    fontSize: 12.3,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _SettingsActionCard(
+                              icon: Icons.auto_awesome_rounded,
+                              accent: const Color(0xFF57E9C3),
+                              title: 'Load Sample Data',
+                              subtitle:
+                                  'Add safe demo income, expenses, bills, savings, and payment labels for previews and screenshots.',
+                              onTap: () {
+                                unawaited(_handleLoadSampleData(context));
                               },
                             ),
                             const SizedBox(height: 12),
                             _SettingsActionCard(
-                              icon: Icons.calendar_month_rounded,
-                              accent: const Color(0xFF6C8CFF),
-                              title: 'Export Bills Only',
-                              subtitle:
-                                  'Copy a JSON backup containing saved bills only.',
-                              onTap: () async {
-                                final payload = await FinanceRepository
-                                    .exportBillsOnlyJson();
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Backup ready to copy.'),
-                                  ),
-                                );
-                                await _showBackupReadyDialog(
-                                  context,
-                                  title: 'Export Bills Only',
-                                  subtitle:
-                                      'Copy this JSON if you only want a bills-only backup.',
-                                  jsonPayload: payload,
-                                );
-                              },
+                              icon: Icons.layers_clear_rounded,
+                              accent: const Color(0xFFFF8A5B),
+                              title: 'Clear Sample Data',
+                              subtitle: sampleDataLoaded
+                                  ? 'Remove demo records only and keep your real local data intact.'
+                                  : 'No demo records are currently loaded on this device.',
+                              onTap: sampleDataLoaded
+                                  ? () {
+                                      unawaited(_handleClearSampleData(context));
+                                    }
+                                  : null,
+                            ),
+                            const SizedBox(height: 14),
+                            Text(
+                              'Your backup only includes local finance data. Premium subscription status is restored through Google Play.',
+                              style: TextStyle(
+                                color: ui.textMuted,
+                                fontSize: 12.2,
+                                height: 1.4,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ],
                         ),
@@ -18730,7 +24243,7 @@ class SettingsScreen extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        'Clear saved spending, bills, savings, referrals, and balance setup while keeping themes and premium state intact.',
+                                        'Clear saved spending, bills, savings, and balance setup while keeping themes and premium state intact.',
                                         style: TextStyle(
                                           color: ui.textSecondary,
                                           fontSize: 12.5,
@@ -18755,7 +24268,7 @@ class SettingsScreen extends StatelessWidget {
                                           style: TextStyle(
                                               color: intelliumTextPrimary)),
                                       content: const Text(
-                                        'This clears saved spending, bills, income setup, savings targets, and referral history on this device. Premium cache, app theme, and onboarding stay untouched.',
+                                        'This clears saved spending, bills, income setup, and savings targets on this device. Premium cache, app theme, and onboarding stay untouched.',
                                         style: TextStyle(
                                             color: intelliumTextSecondary),
                                       ),
@@ -19283,7 +24796,7 @@ class _SettingsActionCard extends StatelessWidget {
   final Color accent;
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _SettingsActionCard({
     required this.icon,
@@ -19299,54 +24812,61 @@ class _SettingsActionCard extends StatelessWidget {
 
     return Material(
       color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: Ink(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: ui.cardDecoration(radius: 22),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                height: 42,
-                width: 42,
-                decoration: ui.iconChipBackground(accent, radius: 14),
-                child: Icon(icon, color: accent),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: ui.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: ui.textSecondary,
-                        fontSize: 12.5,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 108),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: onTap,
+          child: Ink(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: ui.cardDecoration(radius: 22),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 42,
+                  width: 42,
+                  decoration: ui.iconChipBackground(accent, radius: 14),
+                  child: Icon(icon, color: accent),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 16,
-                color: ui.textMuted,
-              ),
-            ],
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: sweldoLabelStyle(
+                          ui,
+                          size: 15,
+                          color: ui.textPrimary,
+                          weight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: sweldoHelperStyle(
+                          ui,
+                          size: 12.5,
+                          color: ui.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: onTap == null
+                      ? ui.textMuted.withValues(alpha: .45)
+                      : ui.textMuted,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -19393,18 +24913,20 @@ class _SettingsPlaceholderCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
+                  style: sweldoLabelStyle(
+                    ui,
+                    size: 15,
                     color: ui.textPrimary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
+                    weight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: TextStyle(
+                  style: sweldoHelperStyle(
+                    ui,
+                    size: 12.5,
                     color: ui.textSecondary,
-                    fontSize: 12.5,
                     height: 1.4,
                   ),
                 ),
@@ -19581,7 +25103,7 @@ class HelpTutorialScreen extends StatelessWidget {
             infoCard(
               icon: Icons.auto_graph_rounded,
               color: const Color(0xFF6C8CFF),
-              title: 'Anticipated Balance',
+              title: 'Expected Balance',
               body:
                   'This projects what your balance may look like after upcoming bills and your current setup are considered.',
             ),
@@ -19589,7 +25111,7 @@ class HelpTutorialScreen extends StatelessWidget {
             infoCard(
               icon: Icons.speed_rounded,
               color: const Color(0xFFFFC857),
-              title: 'Daily Spending Limit',
+              title: 'Safe to Spend Today',
               body:
                   'This is your suggested daily amount based on the time left before your next cutoff or payday and the balance setup saved on your device.',
             ),
@@ -19597,9 +25119,9 @@ class HelpTutorialScreen extends StatelessWidget {
             infoCard(
               icon: Icons.receipt_long_rounded,
               color: intelliumPink,
-              title: 'Expenses',
+              title: 'Spending',
               body:
-                  'Expenses are your day-to-day spending entries. They reduce Available Balance and build your monthly spending history.',
+                  'Spending entries reduce Available Balance and build your monthly spending history.',
             ),
             const SizedBox(height: 12),
             infoCard(
@@ -19623,7 +25145,7 @@ class HelpTutorialScreen extends StatelessWidget {
               color: const Color(0xFF6C8CFF),
               title: 'Reset Finance Data',
               body:
-                  'This clears saved finance records, referrals, and balance setup while keeping your theme and premium state intact.',
+                  'This clears saved finance records and balance setup while keeping your theme and premium state intact.',
             ),
             const SizedBox(height: 12),
             infoCard(
@@ -19639,7 +25161,7 @@ class HelpTutorialScreen extends StatelessWidget {
               color: const Color(0xFFFFC857),
               title: 'Premium',
               body:
-                  'Premium unlocks extra themes, advanced analytics, and optional smart tools after a verified Google Play purchase.',
+                  'Light, Dark, and Intellium Digital are free. Premium unlocks Neon and Executive appearances, advanced analytics, backup, and optional smart tools after a verified Google Play purchase.',
             ),
             const SizedBox(height: 12),
             infoCard(
@@ -19854,18 +25376,10 @@ class _SmartExpenseDetectionSettingsCardState
   }
 
   Future<void> _handlePremiumLockedTap() async {
-    final canStartPurchase = widget.premiumService.canPurchasePremium;
+    await widget.premiumService.startPremiumUpgradeFlow();
 
-    if (canStartPurchase) {
-      await widget.premiumService.buyPremium();
-      return;
-    }
-
-    if (!mounted) return;
-    showAppMessage(
-      context,
-      widget.premiumService.premiumPurchaseAvailabilityMessage,
-    );
+    if (!mounted || widget.premiumService.errorMessage == null) return;
+    showAppMessage(context, widget.premiumService.errorMessage!);
   }
 
   Future<void> _setDetectionEnabled(bool value) async {
@@ -19955,11 +25469,11 @@ class _SmartExpenseDetectionSettingsCardState
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Smart Expense Detection is optional. If enabled, SweldoTrack uses Android Notification Access to check notifications only from the supported apps you select, such as GCash, Maya, Shopee, Lazada, Foodpanda, or Grab. Notification content is processed locally on your device only, nothing is saved automatically, and you review and confirm each suggestion before it is saved. You can turn this off anytime, and you should leave it off if you are uncomfortable with notification access.',
+                    'Optional Android-only feature. SweldoTrack can check notifications only from the supported apps you select, including GCash, Maya, Grab, Foodpanda, Lazada, and Shopee.\n\nNotification text is processed locally on this device. Nothing is saved automatically, and you review each suggestion before saving. You can turn this off anytime.',
                     style: TextStyle(
                       color: ui.textSecondary,
                       fontSize: 12.5,
-                      height: 1.4,
+                      height: 1.48,
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -19976,7 +25490,7 @@ class _SmartExpenseDetectionSettingsCardState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Step 1 Â· Notification Access',
+                          'Step 1 - Notification Access',
                           style: TextStyle(
                             color: ui.textPrimary,
                             fontSize: 14,
@@ -19986,12 +25500,12 @@ class _SmartExpenseDetectionSettingsCardState
                         const SizedBox(height: 6),
                         Text(
                           permissionGranted
-                              ? 'SweldoTrack can now check notifications only from the supported Android apps you choose after you turn detection on. Notification text stays on this device and is only used to suggest possible expenses for your review.'
-                              : 'Grant Android notification access so this optional feature can check notifications only from the supported apps you choose. Notification text is read on this device only for those selected apps, and nothing is saved automatically.',
+                              ? 'Access is ready. SweldoTrack will only review notifications from the supported apps you choose and wait for your confirmation before saving anything.'
+                              : 'Grant Android Notification Access so this optional feature can review notifications only from the supported apps you choose.',
                           style: TextStyle(
                             color: ui.textSecondary,
                             fontSize: 12.5,
-                            height: 1.4,
+                            height: 1.45,
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -20072,7 +25586,7 @@ class _SmartExpenseDetectionSettingsCardState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Step 2 Â· Choose Monitored Apps',
+                          'Step 2 - Choose Monitored Apps',
                           style: TextStyle(
                             color: ui.textPrimary,
                             fontSize: 14,
@@ -20253,11 +25767,11 @@ class _SmartExpenseDetectionSettingsCardState
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Smart Expense Detection is optional. If enabled, SweldoTrack uses Android Notification Access to check notifications only from your selected supported apps. Notification content is processed locally on this device only for those selected apps, nothing is saved automatically, you review and confirm each suggestion before it is saved, and you can turn the feature off anytime. Leave it off if you are not comfortable with notification access.',
+                      'Optional Android-only feature. SweldoTrack can review notifications only from supported apps you select. Processing stays local on this device, nothing is saved automatically, and you confirm every suggestion before saving.',
                       style: TextStyle(
                         color: ui.textSecondary,
                         fontSize: 12.5,
-                        height: 1.35,
+                        height: 1.45,
                       ),
                     ),
                   ],
@@ -20342,18 +25856,18 @@ class _SmartExpenseDetectionSettingsCardState
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Unlock this optional Android-only premium feature for supported apps like GCash, Maya, Grab, Foodpanda, Lazada, and Shopee. You choose which supported apps SweldoTrack can check, notification text is only read for those selected apps on this device, nothing is saved automatically, and you can disable it anytime.',
+                    'Unlock this optional Android-only premium feature for supported apps like GCash, Maya, Grab, Foodpanda, Lazada, and Shopee. SweldoTrack processes notification text locally on this device, saves nothing automatically, and always waits for your review before saving.',
                     style: TextStyle(
                       color: ui.textSecondary,
                       fontSize: 12.5,
-                      height: 1.4,
+                      height: 1.45,
                     ),
                   ),
                   const SizedBox(height: 14),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: widget.premiumService.canPurchasePremium
+                      onPressed: widget.premiumService.canStartPremiumUpgradeFlow
                           ? () async {
                               await _handlePremiumLockedTap();
                             }
@@ -20367,7 +25881,7 @@ class _SmartExpenseDetectionSettingsCardState
                         ),
                       ),
                       child: Text(
-                        widget.premiumService.premiumActionLabel,
+                        'Unlock Premium • ${widget.premiumService.premiumDisplayPriceLabel}',
                         style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
                     ),
@@ -20734,7 +26248,12 @@ class _SmartExpenseStatusChip extends StatelessWidget {
 }
 
 class ExpenseTrackerScreen extends StatefulWidget {
-  const ExpenseTrackerScreen({super.key});
+  final PremiumService premiumService;
+
+  const ExpenseTrackerScreen({
+    super.key,
+    required this.premiumService,
+  });
 
   @override
   State<ExpenseTrackerScreen> createState() => _ExpenseTrackerScreenState();
@@ -20765,48 +26284,514 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
   }
 
   Future<void> deleteItem(int index) async {
-    expenses.removeAt(index);
-    await save();
+    final updatedExpenses = List<ExpenseItem>.from(expenses)..removeAt(index);
+    await FinanceRepository.saveExpenses(updatedExpenses);
     if (!mounted) return;
     await reloadExpenses();
+    if (!mounted) return;
+    setState(() {});
   }
 
   void showAddExpenseSheet({int? editIndex}) {
+    unawaited(_showAddExpenseSheet(editIndex: editIndex));
+  }
+
+  Future<void> _showPremiumSelectionMessage(
+    BuildContext context, {
+    required String label,
+    required bool isCategory,
+  }) async {
+    showAppMessage(
+      context,
+      '$label is available with SweldoTrack Premium. Upgrade to unlock premium ${isCategory ? 'categories' : 'payment methods'} and more custom labels.',
+    );
+  }
+
+  Future<String?> _showOptionPicker({
+    required BuildContext context,
+    required bool isCategory,
+    required String selectedValue,
+    required List<String> customOptions,
+  }) {
+    final hasPremium = widget.premiumService.isPremium;
+    final freeOptions =
+        isCategory ? freeSpendingCategoryDefinitions : freePaymentMethodDefinitions;
+    final premiumOptions = isCategory
+        ? premiumSpendingCategoryDefinitions
+        : premiumPaymentMethodDefinitions;
+    final customDefinitions = (isCategory
+            ? buildSpendingCategoryDefinitions(customNames: customOptions)
+            : buildPaymentMethodDefinitions(customNames: customOptions))
+        .where((item) => !item.builtIn)
+        .toList(growable: false);
+
+    Widget buildTile(
+      BuildContext sheetContext,
+      SpendingOptionDefinition definition,
+    ) {
+      final ui = SweldoVisualStyle.fromContext(sheetContext);
+      final isSelected = normalizeNamedOptionKey(definition.name) ==
+          normalizeNamedOptionKey(selectedValue);
+      final isLocked = definition.premium && !hasPremium;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(22),
+            onTap: () => Navigator.pop(
+              sheetContext,
+              isLocked
+                  ? '$_premiumPickerActionPrefix${definition.name}'
+                  : definition.name,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: ui.cardDecoration(radius: 22).copyWith(
+                    border: Border.all(
+                      color: isSelected
+                          ? Theme.of(sheetContext).colorScheme.primary
+                          : ui.borderColor,
+                      width: isSelected ? 1.4 : 1,
+                    ),
+                  ),
+              child: Row(
+                children: [
+                  Container(
+                    height: 44,
+                    width: 44,
+                    decoration:
+                        ui.iconChipBackground(definition.color, radius: 16),
+                    child: Icon(definition.icon, color: definition.color),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                definition.name,
+                                style: TextStyle(
+                                  color: ui.textPrimary,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            if (definition.premium)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isLocked
+                                      ? const Color(0xFFFFC857)
+                                          .withValues(alpha: .14)
+                                      : const Color(0xFF6C8CFF)
+                                          .withValues(alpha: .14),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  isLocked ? 'Premium' : 'Unlocked',
+                                  style: TextStyle(
+                                    color: isLocked
+                                        ? const Color(0xFFFFC857)
+                                        : const Color(0xFF6C8CFF),
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            if (!definition.builtIn && !definition.premium)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: definition.color.withValues(alpha: .14),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  'Custom',
+                                  style: TextStyle(
+                                    color: definition.color,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          isCategory
+                              ? 'Use this category for spending history, analytics, and your monthly report.'
+                              : 'Saved as the payment method text on this spending entry.',
+                          style: TextStyle(
+                            color: ui.textSecondary,
+                            fontSize: 12.5,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Icon(
+                    isLocked
+                        ? Icons.lock_outline_rounded
+                        : isSelected
+                            ? Icons.check_circle_rounded
+                            : Icons.chevron_right_rounded,
+                    color: isLocked
+                        ? const Color(0xFFFFC857)
+                        : isSelected
+                            ? Theme.of(sheetContext).colorScheme.primary
+                            : ui.textMuted,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) {
+        final ui = SweldoVisualStyle.fromContext(sheetContext);
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SheetHandle(),
+                const SizedBox(height: 20),
+                Text(
+                  isCategory ? 'Choose Category' : 'Choose Payment Method',
+                  style: TextStyle(
+                    color: ui.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  isCategory
+                      ? 'Pick a clearer spending label or add your own custom category.'
+                      : 'Pick the payment label you want saved with this spending entry.',
+                  style: TextStyle(
+                    color: ui.textSecondary,
+                    fontSize: 12.5,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'Core options',
+                  style: TextStyle(
+                    color: ui.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                for (final option in freeOptions) buildTile(sheetContext, option),
+                const SizedBox(height: 4),
+                Text(
+                  'Premium options',
+                  style: TextStyle(
+                    color: ui.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                for (final option in premiumOptions) buildTile(sheetContext, option),
+                if (customDefinitions.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Custom labels',
+                    style: TextStyle(
+                      color: ui.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  for (final option in customDefinitions)
+                    buildTile(sheetContext, option),
+                ],
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        Navigator.pop(sheetContext, _customPickerActionAdd),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Theme.of(sheetContext).colorScheme.primary,
+                      side: BorderSide(
+                        color: Theme.of(sheetContext)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: .35),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    icon: const Icon(Icons.add_circle_outline_rounded),
+                    label: Text(
+                      isCategory
+                          ? 'Add Custom Category'
+                          : 'Add Custom Payment Method',
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<String?> _createCustomOption({
+    required BuildContext context,
+    required bool isCategory,
+    required List<String> existingItems,
+  }) async {
+    final fieldLabel = isCategory ? 'category' : 'payment method';
+    final freeLimit =
+        isCategory ? freeCustomCategoryLimit : freeCustomPaymentMethodLimit;
+    if (!widget.premiumService.isPremium && existingItems.length >= freeLimit) {
+      showAppMessage(
+        context,
+        'Free users can save up to $freeLimit custom $fieldLabel names. Premium unlocks more.',
+      );
+      return null;
+    }
+    final created = await showNamedOptionEditorSheet(
+      context,
+      title: 'Add Custom ${isCategory ? 'Category' : 'Payment Method'}',
+      fieldLabel: fieldLabel,
+      existingValues: existingItems,
+      hintText: isCategory ? 'Ex. Weekend Market' : 'Ex. Maya Savings',
+      saveLabel: 'Add',
+    );
+    if (created == null) return null;
+    final updatedItems = [...existingItems, created];
+    if (isCategory) {
+      await FinanceRepository.saveCustomExpenseCategories(updatedItems);
+    } else {
+      await FinanceRepository.saveCustomPaymentMethods(updatedItems);
+    }
+    return created;
+  }
+
+  Future<void> _showAddExpenseSheet({int? editIndex}) async {
     FocusScope.of(context).unfocus();
     final existingExpense = editIndex == null ? null : expenses[editIndex];
     final isEditing = existingExpense != null;
-    const categoryOptions = {'Food', 'Transport', 'Bills', 'Other'};
-    const paymentOptions = {'Cash', 'GCash', 'Maya'};
     final title = TextEditingController(text: existingExpense?.title ?? '');
     final amount = TextEditingController(
       text: existingExpense == null ? '' : existingExpense.amount.toString(),
     );
-    String category = categoryOptions.contains(existingExpense?.category)
-        ? existingExpense!.category
-        : 'Food';
-    String payment = paymentOptions.contains(existingExpense?.paymentMethod)
-        ? existingExpense!.paymentMethod
-        : 'Cash';
+    var customCategories = await FinanceRepository.getCustomExpenseCategories();
+    var customPayments = await FinanceRepository.getCustomPaymentMethods();
+    if (!mounted) {
+      title.dispose();
+      amount.dispose();
+      return;
+    }
+    var category = normalizeNamedOptionValue(existingExpense?.category ?? 'Food');
+    var payment =
+        normalizeNamedOptionValue(existingExpense?.paymentMethod ?? 'Cash');
     DateTime selectedDate =
         dateOnly(existingExpense?.createdAt ?? DateTime.now());
     var saving = false;
+    final uiStyle = sweldoUiStyleOf(context);
 
-    showModalBottomSheet(
+    final didSave = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: intelliumSurface,
+      backgroundColor: sweldoSheetBackgroundColor(uiStyle),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setModalState) {
+            final ui = SweldoVisualStyle.fromContext(context);
+            final uiStyle = sweldoUiStyleOf(context);
+            final parsedAmountPreview = parseMoneyInput(amount.text);
+            final categoryDefinition = resolveSpendingCategoryDefinition(
+              category,
+              customNames: customCategories,
+            );
+            final paymentDefinition = resolvePaymentMethodDefinition(
+              payment,
+              customNames: customPayments,
+            );
+
+            Future<void> pickCategory() async {
+              final result = await _showOptionPicker(
+                context: context,
+                isCategory: true,
+                selectedValue: category,
+                customOptions: customCategories,
+              );
+              if (result == null || !context.mounted) return;
+              if (result == _customPickerActionAdd) {
+                final created = await _createCustomOption(
+                  context: context,
+                  isCategory: true,
+                  existingItems: customCategories,
+                );
+                if (created == null || !context.mounted) return;
+                customCategories =
+                    await FinanceRepository.getCustomExpenseCategories();
+                setModalState(() => category = created);
+                return;
+              }
+              if (result.startsWith(_premiumPickerActionPrefix)) {
+                await _showPremiumSelectionMessage(
+                  context,
+                  label: result.substring(_premiumPickerActionPrefix.length),
+                  isCategory: true,
+                );
+                return;
+              }
+              setModalState(() => category = result);
+            }
+
+            Future<void> pickPaymentMethod() async {
+              final result = await _showOptionPicker(
+                context: context,
+                isCategory: false,
+                selectedValue: payment,
+                customOptions: customPayments,
+              );
+              if (result == null || !context.mounted) return;
+              if (result == _customPickerActionAdd) {
+                final created = await _createCustomOption(
+                  context: context,
+                  isCategory: false,
+                  existingItems: customPayments,
+                );
+                if (created == null || !context.mounted) return;
+                customPayments =
+                    await FinanceRepository.getCustomPaymentMethods();
+                setModalState(() => payment = created);
+                return;
+              }
+              if (result.startsWith(_premiumPickerActionPrefix)) {
+                await _showPremiumSelectionMessage(
+                  context,
+                  label: result.substring(_premiumPickerActionPrefix.length),
+                  isCategory: false,
+                );
+                return;
+              }
+              setModalState(() => payment = result);
+            }
+
+            Widget buildSelector({
+              required String label,
+              required SpendingOptionDefinition definition,
+              required String subtitle,
+              required VoidCallback onTap,
+            }) {
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(22),
+                  onTap: onTap,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: ui.cardDecoration(radius: 22).copyWith(
+                          border: Border.all(
+                            color: definition.color.withValues(alpha: .24),
+                          ),
+                        ),
+                    child: Row(
+                      children: [
+                        Container(
+                          height: 46,
+                          width: 46,
+                          decoration:
+                              ui.iconChipBackground(definition.color, radius: 16),
+                          child: Icon(definition.icon, color: definition.color),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                label,
+                                style: TextStyle(
+                                  color: ui.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                definition.name,
+                                style: TextStyle(
+                                  color: ui.textPrimary,
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                subtitle,
+                                style: TextStyle(
+                                  color: ui.textMuted,
+                                  fontSize: 12.5,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Icon(
+                          Icons.expand_more_rounded,
+                          color: ui.textMuted,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+
             return SafeArea(
               child: GestureDetector(
                 onTap: () => FocusScope.of(context).unfocus(),
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 18, 20,
-                      MediaQuery.of(context).viewInsets.bottom + 24),
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    18,
+                    20,
+                    MediaQuery.of(context).viewInsets.bottom + 24,
+                  ),
                   child: SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -20814,98 +26799,160 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                       children: [
                         const SheetHandle(),
                         const SizedBox(height: 20),
-                        Text(
-                          isEditing ? 'Edit Spending' : 'Add Spending',
-                          style: const TextStyle(
-                              color: intelliumTextPrimary,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(26),
+                            gradient: ui.premiumCtaGradient,
+                            border: Border.all(
+                              color: uiStyle.isDark
+                                  ? Colors.white.withValues(alpha: .08)
+                                  : Colors.white.withValues(alpha: .20),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: uiStyle.accent.withValues(
+                                  alpha: uiStyle.isDark ? .12 : .10,
+                                ),
+                                blurRadius: 24,
+                                spreadRadius: -6,
+                                offset: const Offset(0, 14),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isEditing ? 'Edit Spending' : 'Add Spending',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Add spending with clear categories and payment labels for better reports.',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: .86),
+                                  fontSize: 12.5,
+                                  height: 1.4,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 18),
                         TextField(
                           controller: title,
                           textInputAction: TextInputAction.next,
-                          style: const TextStyle(color: intelliumTextPrimary),
-                          decoration: const InputDecoration(
-                              labelText: 'Spending Title',
-                              hintText: 'Ex. Lunch, Gas, Grocery'),
+                          cursorColor: uiStyle.accent,
+                          style: TextStyle(color: ui.textPrimary),
+                          decoration: sweldoInputDecoration(
+                            context,
+                            label: 'Spending Title',
+                            hint: 'Ex. Lunch, Gas, Grocery',
+                            icon: Icons.edit_note_rounded,
+                          ),
                         ),
                         const SizedBox(height: 14),
                         TextField(
                           controller: amount,
                           keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
+                            decimal: true,
+                          ),
                           textInputAction: TextInputAction.done,
-                          style: const TextStyle(color: intelliumTextPrimary),
-                          decoration: const InputDecoration(
-                              labelText: 'Amount', hintText: 'Ex. 250.00'),
+                          cursorColor: uiStyle.accent,
+                          style: TextStyle(color: ui.textPrimary),
+                          onChanged: (_) => setModalState(() {}),
+                          decoration: sweldoInputDecoration(
+                            context,
+                            label: 'Amount',
+                            hint: 'Ex. 250.00',
+                            icon: Icons.payments_rounded,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          decoration: ui.cardDecoration(radius: 18),
+                          child: Text(
+                            parsedAmountPreview == null
+                                ? 'Enter an amount to preview it in ${sweldoCurrencyNotifier.value.displayLabel}.'
+                                : 'Preview: ${formatMoney(parsedAmountPreview, decimals: 2)}',
+                            style: TextStyle(
+                              color: ui.textSecondary,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 14),
                         InkWell(
                           onTap: () async {
                             final pickedDate = await showDatePicker(
-                              context: context,
+                              context: sheetContext,
                               initialDate: selectedDate,
                               firstDate: DateTime.now()
                                   .subtract(const Duration(days: 3650)),
                               lastDate: DateTime.now()
                                   .add(const Duration(days: 3650)),
                             );
-                            if (pickedDate == null) return;
-                            if (!context.mounted) return;
+                            if (pickedDate == null || !sheetContext.mounted) {
+                              return;
+                            }
                             setModalState(
-                                () => selectedDate = dateOnly(pickedDate));
+                              () => selectedDate = dateOnly(pickedDate),
+                            );
                           },
                           borderRadius: BorderRadius.circular(18),
                           child: InputDecorator(
-                            decoration: const InputDecoration(
-                              labelText: 'Spending Date',
-                              hintText: 'Select a date',
+                            decoration: sweldoInputDecoration(
+                              context,
+                              label: 'Spending Date',
+                              hint: 'Select a date',
+                              icon: Icons.event_rounded,
                             ),
                             child: Text(
                               formatCalendarDate(selectedDate),
-                              style:
-                                  const TextStyle(color: intelliumTextPrimary),
+                              style: TextStyle(color: ui.textPrimary),
                             ),
                           ),
                         ),
                         const SizedBox(height: 14),
-                        DropdownButtonFormField<String>(
-                          initialValue: category,
-                          dropdownColor: intelliumCard,
-                          style: const TextStyle(color: intelliumTextPrimary),
-                          items: const [
-                            DropdownMenuItem(
-                                value: 'Food', child: Text('Food')),
-                            DropdownMenuItem(
-                                value: 'Transport', child: Text('Transport')),
-                            DropdownMenuItem(
-                                value: 'Bills', child: Text('Bills')),
-                            DropdownMenuItem(
-                                value: 'Other', child: Text('Other')),
-                          ],
-                          onChanged: (v) =>
-                              setModalState(() => category = v ?? 'Food'),
-                          decoration:
-                              const InputDecoration(labelText: 'Category'),
+                        buildSelector(
+                          label: 'Category',
+                          definition: categoryDefinition,
+                          subtitle: categoryDefinition.premium &&
+                                  !widget.premiumService.isPremium
+                              ? 'Premium category already selected on this entry.'
+                              : categoryDefinition.builtIn
+                                  ? 'Choose from built-in, premium, and custom categories.'
+                                  : 'Custom category saved on this device.',
+                          onTap: () {
+                            unawaited(pickCategory());
+                          },
                         ),
                         const SizedBox(height: 14),
-                        DropdownButtonFormField<String>(
-                          initialValue: payment,
-                          dropdownColor: intelliumCard,
-                          style: const TextStyle(color: intelliumTextPrimary),
-                          items: const [
-                            DropdownMenuItem(
-                                value: 'Cash', child: Text('Cash')),
-                            DropdownMenuItem(
-                                value: 'GCash', child: Text('GCash')),
-                            DropdownMenuItem(
-                                value: 'Maya', child: Text('Maya')),
-                          ],
-                          onChanged: (v) =>
-                              setModalState(() => payment = v ?? 'Cash'),
-                          decoration: const InputDecoration(
-                              labelText: 'Payment Method'),
+                        buildSelector(
+                          label: 'Payment Method',
+                          definition: paymentDefinition,
+                          subtitle: paymentDefinition.premium &&
+                                  !widget.premiumService.isPremium
+                              ? 'Premium payment method already selected on this entry.'
+                              : paymentDefinition.builtIn
+                                  ? 'Choose from default, premium, and custom payment labels.'
+                                  : 'Custom payment method saved on this device.',
+                          onTap: () {
+                            unawaited(pickPaymentMethod());
+                          },
                         ),
                         const SizedBox(height: 20),
                         PrimaryButton(
@@ -20920,11 +26967,14 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                             );
 
                             if (titleValue.isEmpty) {
-                              showAppMessage(context, 'Enter a spending title');
+                              showAppMessage(
+                                sheetContext,
+                                'Enter a spending title',
+                              );
                               return;
                             }
                             if (amountError != null) {
-                              showAppMessage(context, amountError);
+                              showAppMessage(sheetContext, amountError);
                               return;
                             }
                             final amountValue = parseMoneyInput(amountText)!;
@@ -20947,15 +26997,19 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                               paymentMethod: payment,
                               createdAt: selectedDate,
                             );
+                            final updatedExpenses = List<ExpenseItem>.from(
+                              expenses,
+                            );
                             if (isEditing) {
-                              expenses[editIndex!] = updatedExpense;
+                              updatedExpenses[editIndex!] = updatedExpense;
                             } else {
-                              expenses.insert(0, updatedExpense);
+                              updatedExpenses.insert(0, updatedExpense);
                             }
-                            await save();
-                            if (!context.mounted || !mounted) return;
-                            Navigator.pop(context);
-                            await reloadExpenses();
+                            await FinanceRepository.saveExpenses(
+                              updatedExpenses,
+                            );
+                            if (!sheetContext.mounted) return;
+                            Navigator.of(sheetContext).pop(true);
                           },
                         ),
                       ],
@@ -20967,10 +27021,15 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
           },
         );
       },
-    ).whenComplete(() {
-      title.dispose();
-      amount.dispose();
-    });
+    );
+    title.dispose();
+    amount.dispose();
+    if (didSave == true) {
+      if (!mounted) return;
+      await reloadExpenses();
+      if (!mounted) return;
+      setState(() {});
+    }
   }
 
   double get totalSpent => expenses.fold<double>(0, (sum, e) => sum + e.amount);
@@ -20993,42 +27052,34 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
   }
 
   Color categoryColor(String category) {
-    switch (category) {
-      case 'Food':
-        return const Color(0xFFFFC857);
-      case 'Transport':
-        return const Color(0xFF6C8CFF);
-      case 'Bills':
-        return const Color(0xFFB084F5);
-      default:
-        return const Color(0xFF00C896);
-    }
+    return resolveSpendingCategoryDefinition(category).color;
   }
 
   @override
   Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
     return Scaffold(
-      backgroundColor: intelliumBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: intelliumBackground,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
         titleSpacing: 20,
         toolbarHeight: 72,
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'SweldoTrack',
               style: TextStyle(
-                  color: intelliumTextPrimary,
+                  color: ui.textPrimary,
                   fontSize: 22,
                   fontWeight: FontWeight.w800),
             ),
-            SizedBox(height: 2),
+            const SizedBox(height: 2),
             Text(
               'Track what you spend and where it goes',
               style: TextStyle(
-                  color: intelliumTextMuted,
+                  color: ui.textMuted,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600),
             ),
@@ -21037,52 +27088,61 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: showAddExpenseSheet,
-        backgroundColor: intelliumCyan,
-        foregroundColor: intelliumBackground,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         icon: const Icon(Icons.add),
         label: const Text('Add Spending',
             style: TextStyle(fontWeight: FontWeight.w800)),
       ),
-      body: loading
-          ? buildPageLoadingState('Loading your spending...')
-          : SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+      body: SafeArea(
+        top: false,
+        child: loading
+            ? buildPageLoadingState('Loading your spending...')
+            : SingleChildScrollView(
+                padding: _pageContentPadding(context, top: 16, bottom: 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   HeroCard(
-                    colors: const [
-                      Color(0xFF1A2551),
-                      intelliumBlue,
-                      intelliumPurple
-                    ],
+                    colors: ui.accentGradient.colors,
                     title: 'Total Spending',
-                    value: formatPhp(totalSpent),
-                    badge: '${expenses.length} entries | Top: $topCategory',
+                    value: formatMoney(totalSpent),
+                    badge: '${expenses.length} entries • Top: $topCategory',
                   ),
                   const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: HomeOverviewCard(
-                          title: 'Total Spent',
-                          value: formatPhp(totalSpent),
-                          subtitle: 'All spending entries',
-                          color: intelliumCyan,
-                          icon: Icons.wallet_rounded,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: HomeOverviewCard(
-                          title: 'Entries',
-                          value: '${expenses.length}',
-                          subtitle: 'Transactions added',
-                          color: intelliumPink,
-                          icon: Icons.receipt_long_rounded,
-                        ),
-                      ),
-                    ],
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final compact = constraints.maxWidth < 420;
+                      final cardWidth = compact
+                          ? constraints.maxWidth
+                          : (constraints.maxWidth - 12) / 2;
+                      return Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          SizedBox(
+                            width: cardWidth,
+                            child: HomeOverviewCard(
+                              title: 'Total Spent',
+                              value: formatMoney(totalSpent),
+                              subtitle: 'All spending entries',
+                              color: intelliumCyan,
+                              icon: Icons.wallet_rounded,
+                            ),
+                          ),
+                          SizedBox(
+                            width: cardWidth,
+                            child: HomeOverviewCard(
+                              title: 'Entries',
+                              value: '${expenses.length}',
+                              subtitle: 'Transactions added',
+                              color: intelliumPink,
+                              icon: Icons.receipt_long_rounded,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 14),
                   HomeOverviewCard(
@@ -21102,33 +27162,28 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: intelliumSurface,
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: .05)),
-                      ),
-                      child: const Column(
+                      decoration: ui.cardDecoration(radius: 28),
+                      child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _HomeEmptyIcon(
+                          const _HomeEmptyIcon(
                             icon: Icons.wallet_rounded,
                             color: intelliumCyan,
                           ),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           Text(
                             'No spending yet',
                             style: TextStyle(
-                                color: intelliumTextPrimary,
+                                color: ui.textPrimary,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800),
                           ),
-                          SizedBox(height: 6),
+                          const SizedBox(height: 6),
                           Text(
                             'Add your first spending entry to start tracking where your money goes.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                                color: intelliumTextSecondary, fontSize: 12.5),
+                                color: ui.textSecondary, fontSize: 12.5),
                           ),
                         ],
                       ),
@@ -21136,28 +27191,26 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                   else
                     ...List.generate(expenses.length, (index) {
                       final item = expenses[index];
+                      final categoryDefinition =
+                          resolveSpendingCategoryDefinition(item.category);
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 14),
                         child: Container(
                           padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: intelliumSurface,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                                color: Colors.white.withValues(alpha: .05)),
-                          ),
+                          decoration: ui.cardDecoration(radius: 24),
                           child: Row(
                             children: [
                               Container(
                                 height: 48,
                                 width: 48,
-                                decoration: BoxDecoration(
-                                  color: categoryColor(item.category)
-                                      .withValues(alpha: .16),
-                                  borderRadius: BorderRadius.circular(16),
+                                decoration: ui.iconChipBackground(
+                                  categoryDefinition.color,
+                                  radius: 16,
                                 ),
-                                child: Icon(Icons.receipt_long_rounded,
-                                    color: categoryColor(item.category)),
+                                child: Icon(
+                                  categoryDefinition.icon,
+                                  color: categoryDefinition.color,
+                                ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -21168,18 +27221,18 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                                       item.title,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                          color: intelliumTextPrimary,
+                                      style: TextStyle(
+                                          color: ui.textPrimary,
                                           fontSize: 16,
                                           fontWeight: FontWeight.w800),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      '${item.category} | ${item.paymentMethod}',
+                                      '${item.category} • ${item.paymentMethod}',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                          color: intelliumTextMuted,
+                                      style: TextStyle(
+                                          color: ui.textMuted,
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w600),
                                     ),
@@ -21188,8 +27241,8 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                                       formatCalendarDate(item.createdAt),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                          color: intelliumTextSecondary,
+                                      style: TextStyle(
+                                          color: ui.textSecondary,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600),
                                     ),
@@ -21208,9 +27261,9 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                                       fit: BoxFit.scaleDown,
                                       alignment: Alignment.centerRight,
                                       child: Text(
-                                        formatPhp(item.amount),
-                                        style: const TextStyle(
-                                            color: intelliumTextPrimary,
+                                        formatMoney(item.amount),
+                                        style: TextStyle(
+                                            color: ui.textPrimary,
                                             fontSize: 15,
                                             fontWeight: FontWeight.w800),
                                       ),
@@ -21228,7 +27281,7 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                                         onPressed: () => showAddExpenseSheet(
                                             editIndex: index),
                                         icon: const Icon(Icons.edit_outlined),
-                                        color: intelliumTextMuted,
+                                        color: ui.textMuted,
                                       ),
                                       IconButton(
                                         visualDensity: VisualDensity.compact,
@@ -21238,7 +27291,7 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                                         onPressed: () => deleteItem(index),
                                         icon: const Icon(
                                             Icons.delete_outline_rounded),
-                                        color: intelliumTextMuted,
+                                        color: ui.textMuted,
                                       ),
                                     ],
                                   ),
@@ -21252,6 +27305,7 @@ class _ExpenseTrackerScreenState extends State<ExpenseTrackerScreen> {
                 ],
               ),
             ),
+          ),
     );
   }
 }
@@ -21424,14 +27478,14 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
     var tempUseManualDailyBudget = useManualDailyBudget;
     var saving = false;
 
-    await showModalBottomSheet<void>(
+    final shouldShowManualBudgetWarning = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: intelliumSurface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (context) => StatefulBuilder(
+      builder: (sheetContext) => StatefulBuilder(
         builder: (context, setModalState) => SafeArea(
           child: GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
@@ -21590,7 +27644,7 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                         subtitle: Text(
                           tempUseManualDailyBudget
                               ? 'Set your own daily spending limit and compare it against the recommended auto amount.'
-                              : 'Let the app calculate your daily spending limit automatically from Anticipated Balance.',
+                              : 'Let the app calculate Safe to Spend Today automatically from Expected Balance.',
                           style: const TextStyle(
                             color: intelliumTextMuted,
                             fontSize: 12.5,
@@ -21606,7 +27660,7 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                             decimal: true),
                         style: const TextStyle(color: Colors.white),
                         decoration: const InputDecoration(
-                          labelText: 'Manual Daily Spending Limit',
+                          labelText: 'Manual Safe to Spend Today',
                           hintText: 'Ex. 500',
                         ),
                       ),
@@ -21618,13 +27672,15 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                         if (saving) return;
                         final salaryText = tempSalary.text.trim();
                         final daysText = tempDays.text.trim();
+                        final hasDaysInput = daysText.isNotEmpty;
                         final targetText = tempTarget.text.trim();
                         final manualDailyBudgetText =
                             tempManualDailyBudget.text.trim();
                         final salaryValue = parseMoneyInput(
                           salaryText.isEmpty ? '0' : salaryText,
                         );
-                        final daysValue = int.tryParse(daysText);
+                        final daysValue =
+                            hasDaysInput ? int.tryParse(daysText) : null;
                         final targetValue = parseMoneyInput(
                           targetText.isEmpty ? '0' : targetText,
                           allowNegative: false,
@@ -21661,33 +27717,37 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                             : null;
 
                         if (openingBalanceError != null) {
-                          showAppMessage(context, openingBalanceError);
+                          showAppMessage(sheetContext, openingBalanceError);
                           return;
                         }
                         if (tempSalaryReceivedDate != null &&
                             tempNextPaydayDate != null &&
                             !dateOnly(tempNextPaydayDate!)
                                 .isAfter(dateOnly(tempSalaryReceivedDate!))) {
-                          showAppMessage(context,
+                          showAppMessage(sheetContext,
                               'Next cutoff must be after the cutoff start date');
                           return;
                         }
-                        if (tempNextPaydayDate == null && daysValue == null) {
+                        if (hasDaysInput && daysValue == null) {
                           showAppMessage(
-                              context, 'Enter a valid whole number of days');
+                            sheetContext,
+                            'Enter a valid whole number of days',
+                          );
                           return;
                         }
                         if (resolvedDays < 0) {
                           showAppMessage(
-                              context, 'Remaining days cannot be negative');
+                            sheetContext,
+                            'Remaining days cannot be negative',
+                          );
                           return;
                         }
                         if (targetAmountError != null) {
-                          showAppMessage(context, targetAmountError);
+                          showAppMessage(sheetContext, targetAmountError);
                           return;
                         }
                         if (manualDailyBudgetError != null) {
-                          showAppMessage(context, manualDailyBudgetError);
+                          showAppMessage(sheetContext, manualDailyBudgetError);
                           return;
                         }
                         final resolvedSalaryValue = salaryValue ?? 0;
@@ -21708,31 +27768,22 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                         );
 
                         setModalState(() => saving = true);
-                        salaryController.text =
-                            resolvedSalaryValue.toStringAsFixed(0);
-                        daysController.text = resolvedDays.toString();
-                        targetSavingsController.text =
-                            resolvedTargetValue.toStringAsFixed(0);
-                        manualDailyBudgetController.text =
-                            tempUseManualDailyBudget &&
-                                    manualDailyBudgetValue != null
-                                ? manualDailyBudgetValue.toStringAsFixed(0)
-                                : '';
-                        salaryReceivedDate = tempSalaryReceivedDate;
-                        nextPaydayDate = tempNextPaydayDate;
-                        useManualDailyBudget = tempUseManualDailyBudget;
-                        await saveSetup();
-                        await load();
-                        if (!context.mounted || !mounted) return;
-                        Navigator.pop(context);
-                        if (projectedSnapshot.usesManualDailyBudget &&
-                            !projectedSnapshot.isManualDailyBudgetSafe) {
-                          showAppMessage(
-                            context,
-                            'Manual daily spending limit saved, but it is above the safe cutoff pace.',
-                          );
-                        }
-                        setState(() {});
+                        await FinanceRepository.saveBalanceSetup(
+                          startingBalance: resolvedSalaryValue,
+                          daysUntilPayday: resolvedDays,
+                          savingsGoalTarget: resolvedTargetValue,
+                          cycleStartDate: tempSalaryReceivedDate,
+                          nextCutoffDate: tempNextPaydayDate,
+                          useManualDailyBudget: tempUseManualDailyBudget,
+                          manualDailyBudget: tempUseManualDailyBudget
+                              ? manualDailyBudgetValue
+                              : null,
+                        );
+                        if (!sheetContext.mounted) return;
+                        Navigator.of(sheetContext).pop(
+                          projectedSnapshot.usesManualDailyBudget &&
+                              !projectedSnapshot.isManualDailyBudgetSafe,
+                        );
                       },
                     ),
                   ],
@@ -21747,6 +27798,16 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
     tempDays.dispose();
     tempTarget.dispose();
     tempManualDailyBudget.dispose();
+    if (!mounted || shouldShowManualBudgetWarning == null) return;
+    await load();
+    if (!mounted) return;
+    setState(() {});
+    if (shouldShowManualBudgetWarning) {
+      showAppMessage(
+        context,
+        'Manual daily spending limit saved, but it is above the safe cutoff pace.',
+      );
+    }
   }
 
   Future<void> showAddFixedExpense() async {
@@ -21759,10 +27820,13 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
   }
 
   Future<void> _deleteIncomeEntry(String incomeEntryId) async {
-    incomeEntries.removeWhere((item) => item.id == incomeEntryId);
-    await FinanceRepository.saveIncomeEntries(incomeEntries);
+    final updatedEntries = incomeEntries
+        .where((item) => item.id != incomeEntryId)
+        .toList(growable: false);
+    await FinanceRepository.saveIncomeEntries(updatedEntries);
     if (!mounted) return;
     await load();
+    if (!mounted) return;
     setState(() {});
   }
 
@@ -21777,11 +27841,11 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
     var receivedAt = dateOnly(existingEntry?.receivedAt ?? DateTime.now());
     var saving = false;
     final isEditing = existingEntry != null;
-
-    await showModalBottomSheet<void>(
+    final uiStyle = sweldoUiStyleOf(context);
+    final didSave = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: intelliumSurface,
+      backgroundColor: sweldoSheetBackgroundColor(uiStyle),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -21805,8 +27869,8 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                     const SizedBox(height: 20),
                     Text(
                       isEditing ? 'Edit Income' : 'Add Income',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: SweldoVisualStyle.fromContext(context).textPrimary,
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                       ),
@@ -21817,17 +27881,20 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
                       textInputAction: TextInputAction.next,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: 'Amount',
-                        hintText: 'Ex. 15,000.00',
+                      cursorColor: sweldoUiStyleOf(context).accent,
+                      style: TextStyle(color: SweldoVisualStyle.fromContext(context).textPrimary),
+                      decoration: sweldoInputDecoration(
+                        context,
+                        label: 'Amount',
+                        hint: 'Ex. 15,000.00',
+                        icon: Icons.payments_rounded,
                       ),
                     ),
                     const SizedBox(height: 14),
                     InkWell(
                       onTap: () async {
                         final pickedDate = await showDatePicker(
-                          context: context,
+                          context: sheetContext,
                           initialDate: receivedAt,
                           firstDate: DateTime.now()
                               .subtract(const Duration(days: 3650)),
@@ -21835,17 +27902,21 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                               DateTime.now().add(const Duration(days: 3650)),
                         );
                         if (pickedDate == null) return;
-                        if (!context.mounted) return;
+                        if (!sheetContext.mounted) return;
                         setModalState(() => receivedAt = pickedDate);
                       },
                       borderRadius: BorderRadius.circular(18),
                       child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Received Date',
+                        decoration: sweldoInputDecoration(
+                          context,
+                          label: 'Received Date',
+                          icon: Icons.event_rounded,
                         ),
                         child: Text(
                           formatCalendarDate(receivedAt),
-                          style: const TextStyle(color: intelliumTextPrimary),
+                          style: TextStyle(
+                            color: SweldoVisualStyle.fromContext(context).textPrimary,
+                          ),
                         ),
                       ),
                     ),
@@ -21853,10 +27924,13 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                     TextField(
                       controller: noteController,
                       textInputAction: TextInputAction.done,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: 'Note',
-                        hintText: 'Ex. 15th cutoff income',
+                      cursorColor: sweldoUiStyleOf(context).accent,
+                      style: TextStyle(color: SweldoVisualStyle.fromContext(context).textPrimary),
+                      decoration: sweldoInputDecoration(
+                        context,
+                        label: 'Note',
+                        hint: 'Ex. 15th cutoff income',
+                        icon: Icons.sticky_note_2_outlined,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -21869,10 +27943,11 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                           fieldLabel: 'income amount',
                         );
                         if (amountError != null) {
-                          showAppMessage(context, amountError);
+                          showAppMessage(sheetContext, amountError);
                           return;
                         }
-                        final amount = parseMoneyInput(amountController.text)!;
+                        final parsedAmount =
+                            parseMoneyInput(amountController.text)!;
                         setModalState(() => saving = true);
                         final updatedEntry = (existingEntry ??
                                 IncomeEntry(
@@ -21884,22 +27959,26 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                                   note: '',
                                 ))
                             .copyWith(
-                          amount: amount,
+                          amount: parsedAmount,
                           receivedAt: receivedAt,
                           note: noteController.text.trim(),
                         );
-                        final existingIndex = incomeEntries.indexWhere(
+                        final updatedEntries = List<IncomeEntry>.from(
+                          incomeEntries,
+                        );
+                        final existingIndex = updatedEntries.indexWhere(
                           (item) => item.id == updatedEntry.id,
                         );
                         if (existingIndex >= 0) {
-                          incomeEntries[existingIndex] = updatedEntry;
-                          await FinanceRepository.saveIncomeEntries(
-                              incomeEntries);
+                          updatedEntries[existingIndex] = updatedEntry;
                         } else {
-                          await FinanceRepository.addIncomeEntry(updatedEntry);
+                          updatedEntries.insert(0, updatedEntry);
                         }
-                        if (!context.mounted) return;
-                        Navigator.pop(context);
+                        await FinanceRepository.saveIncomeEntries(
+                          updatedEntries,
+                        );
+                        if (!sheetContext.mounted) return;
+                        Navigator.of(sheetContext).pop(true);
                       },
                     ),
                   ],
@@ -21913,9 +27992,12 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
 
     amountController.dispose();
     noteController.dispose();
-    if (!mounted) return;
-    await load();
-    setState(() {});
+    if (didSave == true) {
+      if (!mounted) return;
+      await load();
+      if (!mounted) return;
+      setState(() {});
+    }
   }
 
   Future<void> deleteFixedExpense(int index) async {
@@ -21930,11 +28012,11 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
     final amountController = TextEditingController(
       text: salary > 0 ? salary.toStringAsFixed(2) : '',
     );
-
-    await showModalBottomSheet<void>(
+    final uiStyle = sweldoUiStyleOf(context);
+    final didSave = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: intelliumSurface,
+      backgroundColor: sweldoSheetBackgroundColor(uiStyle),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -21943,26 +28025,27 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
         var saving = false;
 
         return StatefulBuilder(
-          builder: (context, setSheetState) => GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                20,
-                18,
-                20,
-                MediaQuery.of(sheetContext).viewInsets.bottom + 24,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+          builder: (context, setSheetState) => SafeArea(
+            child: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  18,
+                  20,
+                  MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                     const SheetHandle(),
                     const SizedBox(height: 20),
-                    const Text(
+                    Text(
                       'How much is your opening available balance?',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: SweldoVisualStyle.fromContext(context).textPrimary,
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                       ),
@@ -21975,7 +28058,10 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                         decimal: true,
                       ),
                       textInputAction: TextInputAction.done,
-                      style: const TextStyle(color: Colors.white),
+                      cursorColor: sweldoUiStyleOf(context).accent,
+                      style: TextStyle(
+                        color: SweldoVisualStyle.fromContext(context).textPrimary,
+                      ),
                       onChanged: (_) {
                         if (validationMessage != null) {
                           setSheetState(() => validationMessage = null);
@@ -21995,15 +28081,15 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                           amountController.text,
                         )!;
                         FocusScope.of(context).unfocus();
-                        salaryController.text = parsedValue.toStringAsFixed(2);
                         await FinanceRepository.setStartingBalance(parsedValue);
-                        await load();
-                        if (!sheetContext.mounted || !mounted) return;
-                        Navigator.pop(sheetContext);
+                        if (!sheetContext.mounted) return;
+                        Navigator.of(sheetContext).pop(true);
                       },
-                      decoration: const InputDecoration(
-                        labelText: 'Opening Balance',
-                        hintText: 'Ex. 5000.00',
+                      decoration: sweldoInputDecoration(
+                        context,
+                        label: 'Opening Balance',
+                        hint: 'Ex. 5000.00',
+                        icon: Icons.account_balance_wallet_rounded,
                       ),
                     ),
                     if (validationMessage != null) ...[
@@ -22051,20 +28137,18 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                               )!;
                               setSheetState(() => saving = true);
                               FocusScope.of(context).unfocus();
-                              salaryController.text =
-                                  parsedValue.toStringAsFixed(2);
                               await FinanceRepository.setStartingBalance(
                                 parsedValue,
                               );
-                              await load();
-                              if (!sheetContext.mounted || !mounted) return;
-                              Navigator.pop(sheetContext);
+                              if (!sheetContext.mounted) return;
+                              Navigator.of(sheetContext).pop(true);
                             },
                           ),
                         ),
                       ],
                     ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -22074,27 +28158,31 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
     );
 
     amountController.dispose();
+    if (didSave == true) {
+      if (!mounted) return;
+      await load();
+      if (!mounted) return;
+      setState(() {});
+    }
   }
 
   Widget _buildIncomeHistorySection() {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final accent = Theme.of(context).colorScheme.primary;
     final items = incomeEntries.toList()
       ..sort((a, b) => b.receivedAt.compareTo(a.receivedAt));
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: .05)),
-      ),
+      decoration: ui.sectionContainerDecoration(radius: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Income History',
             style: TextStyle(
-              color: Colors.white,
+              color: ui.textPrimary,
               fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
@@ -22104,8 +28192,8 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
             items.isEmpty
                 ? 'Income entries will appear here once you add them.'
                 : 'Every saved income entry increases Available Balance.',
-            style: const TextStyle(
-              color: intelliumTextMuted,
+            style: TextStyle(
+              color: ui.textSecondary,
               fontSize: 12.5,
               height: 1.35,
             ),
@@ -22116,29 +28204,27 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
               icon: Icons.account_balance_wallet_rounded,
               title: 'No income yet',
               subtitle:
-                  'Add your first income entry to keep Available Balance and Daily Spending Limit accurate.',
+                  'Add your first income entry to keep Available Balance and Safe to Spend Today accurate.',
             )
           else
             ...items.take(5).map(
                   (item) => Container(
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF111827),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
+                    decoration: ui.cardDecoration(radius: 18).copyWith(
+                          border: Border.all(
+                            color: accent.withValues(alpha: .14),
+                          ),
+                        ),
                     child: Row(
                       children: [
                         Container(
                           height: 40,
                           width: 40,
-                          decoration: BoxDecoration(
-                            color: const Color(0x3300C896),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Icon(
+                          decoration: ui.iconChipBackground(accent, radius: 14),
+                          child: Icon(
                             Icons.account_balance_wallet_rounded,
-                            color: Color(0xFF00C896),
+                            color: accent,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -22148,8 +28234,8 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                             children: [
                               Text(
                                 item.note.isEmpty ? 'Income' : item.note,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: ui.textPrimary,
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -22157,8 +28243,8 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                               const SizedBox(height: 2),
                               Text(
                                 formatCalendarDate(item.receivedAt),
-                                style: const TextStyle(
-                                  color: intelliumTextMuted,
+                                style: TextStyle(
+                                  color: ui.textMuted,
                                   fontSize: 12,
                                 ),
                               ),
@@ -22170,9 +28256,9 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              formatPhp(item.amount),
-                              style: const TextStyle(
-                                color: Color(0xFF00C896),
+                              formatMoney(item.amount),
+                              style: TextStyle(
+                                color: accent,
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -22190,7 +28276,7 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                                   onPressed: () =>
                                       showAddIncomeEntry(existingEntry: item),
                                   icon: const Icon(Icons.edit_outlined),
-                                  color: intelliumTextMuted,
+                                  color: ui.textMuted,
                                 ),
                                 IconButton(
                                   visualDensity: VisualDensity.compact,
@@ -22202,7 +28288,7 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                                   onPressed: () => _deleteIncomeEntry(item.id),
                                   icon:
                                       const Icon(Icons.delete_outline_rounded),
-                                  color: intelliumTextMuted,
+                                  color: ui.textMuted,
                                 ),
                               ],
                             ),
@@ -22228,20 +28314,59 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
     final accent = budgetSnapshot.availableBalance < 0
-        ? const Color(0xFFFF6B6B)
-        : const Color(0xFF00C896);
+        ? sweldoDangerColor
+        : Theme.of(context).colorScheme.primary;
+    final heroColors = switch (uiStyle.mode) {
+      SweldoUiMode.light => const [
+          Color(0xFFFFFFFF),
+          Color(0xFFF7FAFF),
+          Color(0xFFECF4FF),
+        ],
+      SweldoUiMode.dark => const [
+          Color(0xFF161C28),
+          Color(0xFF111827),
+          Color(0xFF0B1220),
+        ],
+      SweldoUiMode.intelliumDigital => const [
+          intelliumBlue,
+          Color(0xFF0F172A),
+          Color(0xFF0B1020),
+        ],
+      SweldoUiMode.premiumNeon => const [
+          Color(0xFF10C8FF),
+          Color(0xFF5B3CFF),
+          Color(0xFF121028),
+        ],
+      SweldoUiMode.premiumExecutive => const [
+          Color(0xFF3D2E14),
+          Color(0xFF1A1621),
+          Color(0xFF0E0B12),
+        ],
+    };
 
     return Scaffold(
+      backgroundColor: uiStyle.background,
       appBar: AppBar(
-        title: const Text('Income & Balance',
-            style: TextStyle(fontWeight: FontWeight.w700)),
+        backgroundColor: uiStyle.background,
+        surfaceTintColor: Colors.transparent,
+        leading: sweldoAppBarBackButton(context),
+        title: Text(
+          'Income & Balance',
+          style: TextStyle(
+            color: ui.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         actions: [
           IconButton(
+            tooltip: '',
             onPressed: () {
               unawaited(showSetupSheet());
             },
-            icon: const Icon(Icons.edit_rounded),
+            icon: Icon(Icons.edit_rounded, color: ui.textPrimary),
           ),
         ],
       ),
@@ -22249,33 +28374,31 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
         onPressed: () {
           unawaited(showAddIncomeEntry());
         },
-        backgroundColor: const Color(0xFF00C896),
-        foregroundColor: Colors.black,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         icon: const Icon(Icons.add),
         label: const Text('Add Income',
             style: TextStyle(fontWeight: FontWeight.w700)),
       ),
-      body: loading
-          ? buildPageLoadingState(
-              'Loading income, balances, and your current budget snapshot...')
-          : SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+      body: SafeArea(
+        top: false,
+        child: loading
+            ? buildPageLoadingState(
+                'Loading income, balances, and your current budget snapshot...')
+            : SingleChildScrollView(
+                padding: _pageContentPadding(context, top: 12, bottom: 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   HeroCard(
-                    colors: [
-                      accent,
-                      const Color(0xFF0F172A),
-                      const Color(0xFF0B0F1A)
-                    ],
+                    colors: heroColors,
                     title: 'Available Balance',
-                    value: formatPhp(budgetSnapshot.availableBalance),
+                    value: formatMoney(budgetSnapshot.availableBalance),
                     badge: budgetSnapshot.usesManualDailyBudget
-                        ? '${formatPhp(budgetSnapshot.totalIncomeAdded)} total income | ${formatPhp(budgetSnapshot.autoDailyBudget)} recommended daily limit'
+                        ? '${formatMoney(budgetSnapshot.totalIncomeAdded)} total income | ${formatMoney(budgetSnapshot.autoDailyBudget)} recommended daily limit'
                         : remainingDays > 0
-                            ? '${formatPhp(budgetSnapshot.projectedAvailableBalance)} anticipated balance | ${formatPhp(budgetSnapshot.dailyBudget)} daily spending limit'
-                            : 'No cutoff date set yet. Daily spending limit uses Anticipated Balance for now.',
+                            ? '${formatMoney(budgetSnapshot.projectedAvailableBalance)} expected balance | ${formatMoney(budgetSnapshot.dailyBudget)} safe to spend today'
+                            : 'No cutoff date set yet. Safe to Spend Today uses Expected Balance for now.',
                     onTap: () =>
                         _openSummaryScreen(const SalaryOverviewScreen()),
                   ),
@@ -22287,7 +28410,7 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                       Expanded(
                         child: SummaryCard(
                           title: 'Opening Balance',
-                          value: formatPhp(salary),
+                          value: formatMoney(salary),
                           subtitle:
                               'Money available before future income entries',
                           color: const Color(0xFF6C8CFF),
@@ -22301,7 +28424,7 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                       Expanded(
                         child: SummaryCard(
                           title: 'Upcoming Bills',
-                          value: formatPhp(budgetSnapshot.totalBills),
+                          value: formatMoney(budgetSnapshot.totalBills),
                           subtitle: 'Scheduled unpaid bills',
                           color: const Color(0xFFFFC857),
                           icon: Icons.receipt_long_rounded,
@@ -22316,7 +28439,7 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                       Expanded(
                         child: SummaryCard(
                           title: 'Savings Balance',
-                          value: formatPhp(savingsTransferred),
+                          value: formatMoney(savingsTransferred),
                           subtitle: 'Money set aside',
                           color: const Color(0xFFB084F5),
                           icon: Icons.savings_rounded,
@@ -22327,8 +28450,8 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: SummaryCard(
-                          title: 'Daily Spending Limit',
-                          value: formatPhp(budgetSnapshot.dailyBudget),
+                          title: 'Safe to Spend Today',
+                          value: formatMoney(budgetSnapshot.dailyBudget),
                           subtitle: dailyBudgetSummaryText(
                               budgetSnapshot, remainingDays),
                           color: accent,
@@ -22344,8 +28467,8 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                     children: [
                       Expanded(
                         child: SummaryCard(
-                          title: 'Anticipated Balance',
-                          value: formatPhp(
+                          title: 'Expected Balance',
+                          value: formatMoney(
                               budgetSnapshot.projectedAvailableBalance),
                           subtitle:
                               'Estimated balance after upcoming unpaid bills',
@@ -22357,7 +28480,7 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                       Expanded(
                         child: SummaryCard(
                           title: 'Paid Bills',
-                          value: formatPhp(paidBillsTotal),
+                          value: formatMoney(paidBillsTotal),
                           subtitle: 'Already deducted once',
                           color: const Color(0xFFFFC857),
                           icon: Icons.check_circle_rounded,
@@ -22372,7 +28495,7 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                       Expanded(
                         child: SummaryCard(
                           title: 'Income',
-                          value: formatPhp(budgetSnapshot.totalIncomeAdded),
+                          value: formatMoney(budgetSnapshot.totalIncomeAdded),
                           subtitle: 'Total income added so far',
                           color: const Color(0xFF6C8CFF),
                           icon: Icons.account_balance_wallet_rounded,
@@ -22384,7 +28507,7 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                       Expanded(
                         child: SummaryCard(
                           title: 'Spending',
-                          value: formatPhp(budgetSnapshot.totalLoggedExpenses),
+                          value: formatMoney(budgetSnapshot.totalLoggedExpenses),
                           subtitle: 'Logged in the active cutoff',
                           color: const Color(0xFFFF6B6B),
                           icon: Icons.wallet_rounded,
@@ -22395,9 +28518,9 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                     ],
                   ),
                   const SizedBox(height: 26),
-                  const Text('Fixed Deductions',
+                  Text('Fixed Deductions',
                       style: TextStyle(
-                          color: Colors.white,
+                          color: ui.textPrimary,
                           fontSize: 22,
                           fontWeight: FontWeight.w700)),
                   const SizedBox(height: 14),
@@ -22414,41 +28537,39 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                         padding: const EdgeInsets.only(bottom: 14),
                         child: Container(
                           padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF111827),
-                            borderRadius: BorderRadius.circular(24),
-                          ),
+                          decoration: ui.cardDecoration(radius: 24),
                           child: Row(
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: .08),
-                                  borderRadius: BorderRadius.circular(16),
+                                decoration:
+                                    ui.iconChipBackground(const Color(0xFFFFC857), radius: 16),
+                                child: const Icon(
+                                  Icons.receipt_long_rounded,
+                                  color: Color(0xFFFFC857),
                                 ),
-                                child: const Icon(Icons.receipt_long_rounded,
-                                    color: Color(0xFFFFC857)),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(item.name,
-                                    style: const TextStyle(
-                                        color: Colors.white,
+                                    style: TextStyle(
+                                        color: ui.textPrimary,
                                         fontSize: 17,
                                         fontWeight: FontWeight.w700)),
                               ),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text(formatPhp(item.amount),
-                                      style: const TextStyle(
-                                          color: Colors.white,
+                                  Text(formatMoney(item.amount),
+                                      style: TextStyle(
+                                          color: ui.textPrimary,
                                           fontWeight: FontWeight.w800)),
                                   IconButton(
+                                    tooltip: '',
                                     onPressed: () => deleteFixedExpense(index),
                                     icon: const Icon(
                                         Icons.delete_outline_rounded),
-                                    color: Colors.white54,
+                                    color: ui.textMuted,
                                   ),
                                 ],
                               ),
@@ -22460,6 +28581,7 @@ class _SweldoBudgetScreenState extends State<SweldoBudgetScreen> {
                 ],
               ),
             ),
+          ),
     );
   }
 }
@@ -22493,10 +28615,11 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
     final controller = TextEditingController();
     var saving = false;
     FocusScope.of(context).unfocus();
-    await showModalBottomSheet<void>(
+    final uiStyle = sweldoUiStyleOf(context);
+    final didSave = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: intelliumSurface,
+      backgroundColor: sweldoSheetBackgroundColor(uiStyle),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -22516,10 +28639,10 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
                 children: [
                   const SheetHandle(),
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     'Add to Savings',
                     style: TextStyle(
-                        color: intelliumTextPrimary,
+                        color: SweldoVisualStyle.fromContext(sheetContext).textPrimary,
                         fontSize: 22,
                         fontWeight: FontWeight.w800),
                   ),
@@ -22529,10 +28652,15 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                     textInputAction: TextInputAction.done,
-                    style: const TextStyle(color: intelliumTextPrimary),
-                    decoration: const InputDecoration(
-                      labelText: 'Amount to add',
-                      hintText: 'Ex. 500.00',
+                    cursorColor: sweldoUiStyleOf(sheetContext).accent,
+                    style: TextStyle(
+                      color: SweldoVisualStyle.fromContext(sheetContext).textPrimary,
+                    ),
+                    decoration: sweldoInputDecoration(
+                      sheetContext,
+                      label: 'Amount to add',
+                      hint: 'Ex. 500.00',
+                      icon: Icons.savings_rounded,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -22568,7 +28696,7 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
                       if (!context.mounted || !mounted) return;
                       if (value > ledger.availableBalance + 0.001) {
                         showAppMessage(
-                          context,
+                          sheetContext,
                           'Not enough available balance for this transfer',
                         );
                         return;
@@ -22582,9 +28710,8 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
                           type: SavingsTransferType.contribution,
                         ),
                       );
-                      if (!context.mounted || !mounted) return;
-                      Navigator.pop(context);
-                      await load();
+                      if (!sheetContext.mounted || !mounted) return;
+                      Navigator.pop(sheetContext, true);
                     },
                   ),
                 ],
@@ -22594,16 +28721,21 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
         ),
       ),
     ).whenComplete(controller.dispose);
+    if (didSave == true) {
+      if (!mounted) return;
+      await load();
+    }
   }
 
   Future<void> setGoal() async {
     final controller = TextEditingController(text: goal.toStringAsFixed(0));
     var saving = false;
     FocusScope.of(context).unfocus();
-    await showModalBottomSheet<void>(
+    final uiStyle = sweldoUiStyleOf(context);
+    final didSave = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: intelliumSurface,
+      backgroundColor: sweldoSheetBackgroundColor(uiStyle),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -22623,10 +28755,10 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
                 children: [
                   const SheetHandle(),
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     'Set New Goal',
                     style: TextStyle(
-                        color: intelliumTextPrimary,
+                        color: SweldoVisualStyle.fromContext(sheetContext).textPrimary,
                         fontSize: 22,
                         fontWeight: FontWeight.w800),
                   ),
@@ -22636,18 +28768,23 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                     textInputAction: TextInputAction.done,
-                    style: const TextStyle(color: intelliumTextPrimary),
-                    decoration: const InputDecoration(
-                      labelText: 'Savings target',
-                      hintText: 'Ex. 10,000.00',
+                    cursorColor: sweldoUiStyleOf(sheetContext).accent,
+                    style: TextStyle(
+                      color: SweldoVisualStyle.fromContext(sheetContext).textPrimary,
+                    ),
+                    decoration: sweldoInputDecoration(
+                      sheetContext,
+                      label: 'Savings target',
+                      hint: 'Ex. 10,000.00',
+                      icon: Icons.flag_rounded,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'Saving a new goal will reset your current saved progress to \u20B10.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                        color: Color(0xFFFFC857),
+                        color: Theme.of(sheetContext).colorScheme.primary,
                         fontSize: 13,
                         fontWeight: FontWeight.w600),
                   ),
@@ -22666,14 +28803,16 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
                       }
                       final value = parseMoneyInput(controller.text)!;
                       final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (dialogContext) => AlertDialog(
-                          backgroundColor: intelliumSurface,
-                          title: const Text('Reset current progress?',
-                              style: TextStyle(color: intelliumTextPrimary)),
-                          content: const Text(
+                        context: sheetContext,
+                        builder: (dialogContext) {
+                          final dialogUi = SweldoVisualStyle.fromContext(dialogContext);
+                          return AlertDialog(
+                          backgroundColor: dialogUi.sectionFill,
+                          title: Text('Reset current progress?',
+                              style: TextStyle(color: dialogUi.textPrimary)),
+                          content: Text(
                             'Setting a new savings target will reset your current saved progress to \u20B10.',
-                            style: TextStyle(color: intelliumTextSecondary),
+                            style: TextStyle(color: dialogUi.textSecondary),
                           ),
                           actions: [
                             TextButton(
@@ -22685,7 +28824,8 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
                                     Navigator.pop(dialogContext, true),
                                 child: const Text('Continue')),
                           ],
-                        ),
+                        );
+                        },
                       );
                       if (confirmed != true) return;
                       saving = true;
@@ -22693,9 +28833,8 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
                       saved = 0;
                       await FinanceRepository.setSavingsGoal(goal);
                       await FinanceRepository.clearSavingsProgress();
-                      if (!context.mounted || !mounted) return;
-                      Navigator.pop(context);
-                      await load();
+                      if (!sheetContext.mounted || !mounted) return;
+                      Navigator.pop(sheetContext, true);
                     },
                   ),
                 ],
@@ -22705,6 +28844,10 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
         ),
       ),
     ).whenComplete(controller.dispose);
+    if (didSave == true) {
+      if (!mounted) return;
+      await load();
+    }
   }
 
   @override
@@ -22745,19 +28888,21 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
         onPressed: () {
           unawaited(addSavings());
         },
-        backgroundColor: intelliumCyan,
-        foregroundColor: intelliumBackground,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         icon: const Icon(Icons.add),
         label: const Text('Add to Savings',
             style: TextStyle(fontWeight: FontWeight.w800)),
       ),
-      body: loading
-          ? buildPageLoadingState('Loading your savings...')
-          : SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+      body: SafeArea(
+        top: false,
+        child: loading
+            ? buildPageLoadingState('Loading your savings...')
+            : SingleChildScrollView(
+                padding: _pageContentPadding(context, top: 16, bottom: 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   HeroCard(
                     colors: const [
                       Color(0xFF2C2A58),
@@ -22765,7 +28910,7 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
                       intelliumBlue
                     ],
                     title: 'Savings Progress',
-                    value: '${formatPhp(saved)} / ${formatPhp(goal)}',
+                    value: '${formatMoney(saved)} / ${formatMoney(goal)}',
                     badge: '${(progress * 100).toInt()}% completed',
                     progress: progress.toDouble(),
                     progressColor: intelliumCyan,
@@ -22776,7 +28921,7 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
                       Expanded(
                         child: HomeOverviewCard(
                           title: 'Saved So Far',
-                          value: formatPhp(saved),
+                          value: formatMoney(saved),
                           subtitle: 'Savings balance',
                           color: intelliumCyan,
                           icon: Icons.savings_rounded,
@@ -22786,7 +28931,7 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
                       Expanded(
                         child: HomeOverviewCard(
                           title: 'Remaining',
-                          value: formatPhp(remaining),
+                          value: formatMoney(remaining),
                           subtitle: 'Still needed',
                           color: intelliumPink,
                           icon: Icons.flag_rounded,
@@ -22797,7 +28942,7 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
                   const SizedBox(height: 14),
                   HomeOverviewCard(
                     title: 'Savings Target',
-                    value: formatPhp(goal),
+                    value: formatMoney(goal),
                     subtitle: 'Target amount',
                     color: intelliumPurple,
                     icon: Icons.track_changes_rounded,
@@ -22860,6 +29005,7 @@ class _SavingsGoalScreenState extends State<SavingsGoalScreen> {
                 ],
               ),
             ),
+          ),
     );
   }
 }
@@ -22894,28 +29040,33 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
   }
 
   Future<void> togglePaid(int index) async {
-    final bill = bills[index];
+    final updatedBills = List<BillItem>.from(bills);
+    final bill = updatedBills[index];
     final markAsPaid = billHasOutstandingBalance(bill);
-    bills[index] = bill.copyWith(
+    updatedBills[index] = bill.copyWith(
       isPaid: markAsPaid,
       paidDate: markAsPaid ? dateOnly(DateTime.now()) : null,
       settledCycleKey: markAsPaid && bill.isRecurring
           ? resolveBillCurrentCycleKey(bill)
           : null,
     );
-    await save();
+    await FinanceRepository.saveBills(updatedBills);
+    if (!mounted) return;
+    await load();
     if (!mounted) return;
     setState(() {});
   }
 
   Future<void> deleteBill(int index) async {
-    bills.removeAt(index);
-    await save();
+    final updatedBills = List<BillItem>.from(bills)..removeAt(index);
+    await FinanceRepository.saveBills(updatedBills);
+    if (!mounted) return;
+    await load();
     if (!mounted) return;
     setState(() {});
   }
 
-  void showAddBillSheet({int? editIndex}) {
+  Future<void> showAddBillSheet({int? editIndex}) async {
     FocusScope.of(context).unfocus();
     final existingBill = editIndex == null ? null : bills[editIndex];
     final isEditing = existingBill != null;
@@ -22937,21 +29088,27 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
         isPaid ? (existingBill.paidDate ?? dateOnly(DateTime.now())) : null;
     var saving = false;
 
-    showModalBottomSheet(
+    final uiStyle = sweldoUiStyleOf(context);
+    final didSave = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: intelliumSurface,
+      backgroundColor: sweldoSheetBackgroundColor(uiStyle),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (context) => StatefulBuilder(
+      builder: (sheetContext) => StatefulBuilder(
         builder: (context, setModalState) {
+          final ui = SweldoVisualStyle.fromContext(context);
           return SafeArea(
             child: GestureDetector(
               onTap: () => FocusScope.of(context).unfocus(),
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
-                    20, 18, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+                  20,
+                  18,
+                  20,
+                  MediaQuery.of(context).viewInsets.bottom + 24,
+                ),
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -22964,40 +29121,54 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                           isEditing
                               ? 'Edit Upcoming Bill'
                               : 'Add Upcoming Bill',
-                          style: const TextStyle(
-                              color: intelliumTextPrimary,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800),
+                          style: TextStyle(
+                            color: ui.textPrimary,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 18),
                       TextField(
                         controller: title,
                         textInputAction: TextInputAction.next,
-                        style: const TextStyle(color: intelliumTextPrimary),
-                        decoration: const InputDecoration(
-                            labelText: 'Bill Title',
-                            hintText: 'Ex. Electricity'),
+                        cursorColor: uiStyle.accent,
+                        style: TextStyle(color: ui.textPrimary),
+                        decoration: sweldoInputDecoration(
+                          context,
+                          label: 'Bill Title',
+                          hint: 'Ex. Electricity',
+                          icon: Icons.receipt_long_rounded,
+                        ),
                       ),
                       const SizedBox(height: 14),
                       TextField(
                         controller: amount,
                         keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
+                          decimal: true,
+                        ),
                         textInputAction: TextInputAction.done,
-                        style: const TextStyle(color: intelliumTextPrimary),
-                        decoration: const InputDecoration(
-                            labelText: 'Amount', hintText: 'Ex. 1,250.00'),
+                        cursorColor: uiStyle.accent,
+                        style: TextStyle(color: ui.textPrimary),
+                        decoration: sweldoInputDecoration(
+                          context,
+                          label: 'Amount',
+                          hint: 'Ex. 1,250.00',
+                          icon: Icons.payments_rounded,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       SwitchListTile(
                         value: recurring,
-                        activeThumbColor: intelliumCyan,
-                        title: const Text('Recurring Bill',
-                            style: TextStyle(color: intelliumTextPrimary)),
-                        subtitle: const Text(
-                            'Turn on if this bill repeats monthly',
-                            style: TextStyle(color: intelliumTextMuted)),
+                        activeThumbColor: uiStyle.accent,
+                        title: Text(
+                          'Recurring Bill',
+                          style: TextStyle(color: ui.textPrimary),
+                        ),
+                        subtitle: Text(
+                          'Turn on if this bill repeats monthly',
+                          style: TextStyle(color: ui.textMuted),
+                        ),
                         onChanged: (v) => setModalState(() {
                           recurring = v;
                         }),
@@ -23006,67 +29177,85 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                       InkWell(
                         onTap: () async {
                           final pickedDate = await showDatePicker(
-                            context: context,
+                            context: sheetContext,
                             initialDate: dueDate,
                             firstDate: DateTime.now()
                                 .subtract(const Duration(days: 3650)),
                             lastDate:
                                 DateTime.now().add(const Duration(days: 3650)),
                           );
-                          if (pickedDate == null) return;
-                          if (!context.mounted) return;
+                          if (pickedDate == null || !sheetContext.mounted) {
+                            return;
+                          }
                           setModalState(() => dueDate = dateOnly(pickedDate));
                         },
                         borderRadius: BorderRadius.circular(18),
                         child: InputDecorator(
-                          decoration: InputDecoration(
-                            labelText:
+                          decoration: sweldoInputDecoration(
+                            context,
+                            label:
                                 recurring ? 'Due Date Anchor' : 'Due Date',
-                            hintText: 'Select a date',
+                            hint: 'Select a date',
+                            icon: Icons.event_rounded,
                           ),
                           child: Text(
                             formatCalendarDate(dueDate),
-                            style: const TextStyle(color: intelliumTextPrimary),
+                            style: TextStyle(color: ui.textPrimary),
                           ),
                         ),
                       ),
                       const SizedBox(height: 14),
                       DropdownButtonFormField<String>(
                         initialValue: category,
-                        dropdownColor: intelliumCard,
-                        style: const TextStyle(color: intelliumTextPrimary),
+                        dropdownColor: sweldoInputFillColor(uiStyle),
+                        style: TextStyle(color: ui.textPrimary),
                         items: const [
                           DropdownMenuItem(
-                              value: 'Utilities', child: Text('Utilities')),
+                            value: 'Utilities',
+                            child: Text('Utilities'),
+                          ),
                           DropdownMenuItem(
-                              value: 'Internet', child: Text('Internet')),
-                          DropdownMenuItem(value: 'Loan', child: Text('Loan')),
+                            value: 'Internet',
+                            child: Text('Internet'),
+                          ),
                           DropdownMenuItem(
-                              value: 'Other', child: Text('Other')),
+                            value: 'Loan',
+                            child: Text('Loan'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Other',
+                            child: Text('Other'),
+                          ),
                         ],
                         onChanged: (v) =>
                             setModalState(() => category = v ?? 'Utilities'),
-                        decoration:
-                            const InputDecoration(labelText: 'Category'),
+                        decoration: sweldoInputDecoration(
+                          context,
+                          label: 'Category',
+                          icon: Icons.category_outlined,
+                        ),
                       ),
                       const SizedBox(height: 14),
                       SwitchListTile.adaptive(
                         value: isPaid,
-                        activeThumbColor: intelliumCyan,
-                        activeTrackColor: intelliumCyan.withValues(alpha: .35),
+                        activeThumbColor: uiStyle.accent,
+                        activeTrackColor: uiStyle.accent.withValues(alpha: .35),
                         contentPadding: EdgeInsets.zero,
-                        title: const Text(
+                        title: Text(
                           'Mark as settled',
                           style: TextStyle(
-                              color: intelliumTextPrimary,
-                              fontWeight: FontWeight.w700),
+                            color: ui.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         subtitle: Text(
                           isPaid
                               ? 'A settled date will be saved with this bill.'
                               : 'Leave this off to keep the bill unpaid.',
-                          style: const TextStyle(
-                              color: intelliumTextMuted, fontSize: 12.5),
+                          style: TextStyle(
+                            color: ui.textMuted,
+                            fontSize: 12.5,
+                          ),
                         ),
                         onChanged: (value) => setModalState(() {
                           isPaid = value;
@@ -23082,29 +29271,31 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                         InkWell(
                           onTap: () async {
                             final pickedDate = await showDatePicker(
-                              context: context,
+                              context: sheetContext,
                               initialDate: paidDate ?? dateOnly(DateTime.now()),
                               firstDate: DateTime.now()
                                   .subtract(const Duration(days: 3650)),
                               lastDate: DateTime.now()
                                   .add(const Duration(days: 3650)),
                             );
-                            if (pickedDate == null) return;
-                            if (!context.mounted) return;
-                            setModalState(
-                                () => paidDate = dateOnly(pickedDate));
+                            if (pickedDate == null || !sheetContext.mounted) {
+                              return;
+                            }
+                            setModalState(() => paidDate = dateOnly(pickedDate));
                           },
                           borderRadius: BorderRadius.circular(18),
                           child: InputDecorator(
-                            decoration: const InputDecoration(
-                              labelText: 'Settled Date',
-                              hintText: 'Select a date',
+                            decoration: sweldoInputDecoration(
+                              context,
+                              label: 'Settled Date',
+                              hint: 'Select a date',
+                              icon: Icons.event_available_rounded,
                             ),
                             child: Text(
                               formatCalendarDate(
-                                  paidDate ?? dateOnly(DateTime.now())),
-                              style:
-                                  const TextStyle(color: intelliumTextPrimary),
+                                paidDate ?? dateOnly(DateTime.now()),
+                              ),
+                              style: TextStyle(color: ui.textPrimary),
                             ),
                           ),
                         ),
@@ -23123,11 +29314,11 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                           );
 
                           if (titleValue.isEmpty) {
-                            showAppMessage(context, 'Enter a bill title');
+                            showAppMessage(sheetContext, 'Enter a bill title');
                             return;
                           }
                           if (amountError != null) {
-                            showAppMessage(context, amountError);
+                            showAppMessage(sheetContext, amountError);
                             return;
                           }
                           final amountValue = parseMoneyInput(amountText)!;
@@ -23172,15 +29363,15 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                                 (preservedHistoricalRecurringSettlement &&
                                     existingBill.isPaid),
                           );
+                          final updatedBills = List<BillItem>.from(bills);
                           if (isEditing) {
-                            bills[editIndex!] = updatedBill;
+                            updatedBills[editIndex!] = updatedBill;
                           } else {
-                            bills.insert(0, updatedBill);
+                            updatedBills.insert(0, updatedBill);
                           }
-                          await save();
-                          if (!context.mounted || !mounted) return;
-                          Navigator.pop(context);
-                          setState(() {});
+                          await FinanceRepository.saveBills(updatedBills);
+                          if (!sheetContext.mounted) return;
+                          Navigator.of(sheetContext).pop(true);
                         },
                       ),
                     ],
@@ -23191,10 +29382,15 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
           );
         },
       ),
-    ).whenComplete(() {
-      title.dispose();
-      amount.dispose();
-    });
+    );
+    title.dispose();
+    amount.dispose();
+    if (didSave == true) {
+      if (!mounted) return;
+      await load();
+      if (!mounted) return;
+      setState(() {});
+    }
   }
 
   Color billColor(String category) {
@@ -23212,6 +29408,8 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final visual = SweldoVisualStyle.fromContext(context);
+    final ui = sweldoUiStyleOf(context);
     final totalBills = bills.fold<double>(0, (sum, e) => sum + e.amount);
     final unpaidBills = bills
         .where((e) => billHasOutstandingBalance(e))
@@ -23219,29 +29417,38 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
     final paidCount =
         bills.where((e) => isBillSettledForCurrentCycle(e)).length;
     final progress = bills.isEmpty ? 0 : paidCount / bills.length;
+    final heroColors = ui.heroGradient.colors;
+    final accentPrimary = Theme.of(context).colorScheme.primary;
+    final accentSecondary = ui.mode == SweldoUiMode.premiumExecutive
+        ? _PremiumPalette.gold
+        : ui.mode == SweldoUiMode.intelliumDigital ||
+                ui.mode == SweldoUiMode.premiumNeon
+            ? intelliumCyan
+            : accentPrimary;
 
     return Scaffold(
-      backgroundColor: intelliumBackground,
+      backgroundColor: ui.background,
       appBar: AppBar(
-        backgroundColor: intelliumBackground,
+        backgroundColor: ui.background,
         surfaceTintColor: Colors.transparent,
+        leading: sweldoAppBarBackButton(context),
         titleSpacing: 20,
         toolbarHeight: 72,
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Upcoming Bills',
               style: TextStyle(
-                  color: intelliumTextPrimary,
+                  color: visual.textPrimary,
                   fontSize: 22,
                   fontWeight: FontWeight.w800),
             ),
-            SizedBox(height: 2),
+            const SizedBox(height: 2),
             Text(
               'Track due dates, upcoming bills, and settled bills',
               style: TextStyle(
-                  color: intelliumTextMuted,
+                  color: visual.textSecondary,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600),
             ),
@@ -23249,31 +29456,31 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: showAddBillSheet,
-        backgroundColor: intelliumCyan,
-        foregroundColor: intelliumBackground,
+        onPressed: () {
+          unawaited(showAddBillSheet());
+        },
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         icon: const Icon(Icons.add),
         label: const Text('Add Upcoming Bill',
             style: TextStyle(fontWeight: FontWeight.w800)),
       ),
-      body: loading
-          ? buildPageLoadingState('Loading your bills...')
-          : SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+      body: SafeArea(
+        top: false,
+        child: loading
+            ? buildPageLoadingState('Loading your bills...')
+            : SingleChildScrollView(
+                padding: _pageContentPadding(context, top: 16, bottom: 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   HeroCard(
-                    colors: const [
-                      Color(0xFF2C2A58),
-                      intelliumPurple,
-                      intelliumBlue
-                    ],
+                    colors: heroColors,
                     title: 'Upcoming Bills',
-                    value: '${formatPhp(unpaidBills)} unpaid',
+                    value: '${formatMoney(unpaidBills)} unpaid',
                     badge: '$paidCount of ${bills.length} marked as paid',
                     progress: progress.toDouble(),
-                    progressColor: intelliumCyan,
+                    progressColor: accentSecondary,
                   ),
                   const SizedBox(height: 18),
                   Row(
@@ -23281,9 +29488,9 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                       Expanded(
                         child: HomeOverviewCard(
                           title: 'All Bills',
-                          value: formatPhp(totalBills),
+                          value: formatMoney(totalBills),
                           subtitle: 'All saved bill entries',
-                          color: intelliumPurple,
+                          color: accentPrimary,
                           icon: Icons.receipt_long_rounded,
                         ),
                       ),
@@ -23291,9 +29498,9 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                       Expanded(
                         child: HomeOverviewCard(
                           title: 'Upcoming Bills',
-                          value: formatPhp(unpaidBills),
+                          value: formatMoney(unpaidBills),
                           subtitle: 'Still unpaid',
-                          color: intelliumPink,
+                          color: sweldoDangerColor,
                           icon: Icons.warning_amber_rounded,
                         ),
                       ),
@@ -23306,73 +29513,46 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                   ),
                   const SizedBox(height: 14),
                   if (bills.isEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: intelliumSurface,
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: .05)),
-                      ),
-                      child: const Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _HomeEmptyIcon(
-                            icon: Icons.calendar_month_rounded,
-                            color: intelliumPink,
-                          ),
-                          SizedBox(height: 12),
-                          Text(
-                            'No upcoming bills yet',
-                            style: TextStyle(
-                                color: intelliumTextPrimary,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800),
-                          ),
-                          SizedBox(height: 6),
-                          Text(
-                            'Add your first bill to track due dates, payment status, and Anticipated Balance.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                color: intelliumTextSecondary, fontSize: 12.5),
-                          ),
-                        ],
-                      ),
+                    const EmptyStateCard(
+                      icon: Icons.calendar_month_rounded,
+                      title: 'No upcoming bills yet',
+                      subtitle:
+                          'Add your first bill to track due dates, payment status, and Expected Balance.',
                     )
                   else
                     ...List.generate(bills.length, (index) {
                       final bill = bills[index];
                       final isSettled = isBillSettledForCurrentCycle(bill);
+                      final categoryAccent = billColor(bill.category);
+                      final settledAccent = ui.mode == SweldoUiMode.premiumExecutive
+                          ? _PremiumPalette.gold
+                          : ui.mode == SweldoUiMode.intelliumDigital ||
+                                  ui.mode == SweldoUiMode.premiumNeon
+                              ? intelliumCyan
+                              : accentPrimary;
+                      final stateAccent =
+                          isSettled ? settledAccent : categoryAccent;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 14),
                         child: Container(
                           padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: intelliumSurface,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                                color: Colors.white.withValues(alpha: .05)),
+                          decoration: visual.sectionContainerDecoration(
+                            radius: 24,
                           ),
                           child: Row(
                             children: [
                               Container(
                                 height: 48,
                                 width: 48,
-                                decoration: BoxDecoration(
-                                  color: (isSettled
-                                          ? intelliumCyan
-                                          : billColor(bill.category))
-                                      .withValues(alpha: .16),
-                                  borderRadius: BorderRadius.circular(16),
+                                decoration: visual.iconChipBackground(
+                                  stateAccent,
+                                  radius: 16,
                                 ),
                                 child: Icon(
                                   isSettled
                                       ? Icons.check_circle_rounded
                                       : Icons.calendar_month_rounded,
-                                  color: isSettled
-                                      ? intelliumCyan
-                                      : billColor(bill.category),
+                                  color: stateAccent,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -23384,8 +29564,8 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                                       bill.title,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                          color: intelliumTextPrimary,
+                                      style: TextStyle(
+                                          color: visual.textPrimary,
                                           fontSize: 16,
                                           fontWeight: FontWeight.w800),
                                     ),
@@ -23394,8 +29574,8 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                                       '${bill.category} | Due: ${formatCalendarDate(resolveUpcomingBillDate(bill) ?? bill.dueDate)}',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                          color: intelliumTextMuted,
+                                      style: TextStyle(
+                                          color: visual.textMuted,
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.w600),
                                     ),
@@ -23411,9 +29591,7 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        color: isSettled
-                                            ? intelliumCyan
-                                            : intelliumPurple,
+                                        color: stateAccent,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -23433,9 +29611,9 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                                       fit: BoxFit.scaleDown,
                                       alignment: Alignment.centerRight,
                                       child: Text(
-                                        formatPhp(bill.amount),
-                                        style: const TextStyle(
-                                            color: intelliumTextPrimary,
+                                        formatMoney(bill.amount),
+                                        style: TextStyle(
+                                            color: visual.textPrimary,
                                             fontSize: 15,
                                             fontWeight: FontWeight.w800),
                                       ),
@@ -23450,9 +29628,11 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                                             minWidth: 36, minHeight: 36),
                                         padding: EdgeInsets.zero,
                                         onPressed: () =>
-                                            showAddBillSheet(editIndex: index),
+                                            unawaited(
+                                              showAddBillSheet(editIndex: index),
+                                            ),
                                         icon: const Icon(Icons.edit_outlined),
-                                        color: intelliumTextMuted,
+                                        color: visual.textMuted,
                                       ),
                                       IconButton(
                                         visualDensity: VisualDensity.compact,
@@ -23467,8 +29647,8 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                                                   .radio_button_unchecked_rounded,
                                         ),
                                         color: isSettled
-                                            ? intelliumCyan
-                                            : intelliumTextMuted,
+                                            ? stateAccent
+                                            : visual.textMuted,
                                       ),
                                       IconButton(
                                         visualDensity: VisualDensity.compact,
@@ -23478,7 +29658,7 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                                         onPressed: () => deleteBill(index),
                                         icon: const Icon(
                                             Icons.delete_outline_rounded),
-                                        color: intelliumTextMuted,
+                                        color: visual.textMuted,
                                       ),
                                     ],
                                   ),
@@ -23489,9 +29669,10 @@ class _BillsTrackerScreenState extends State<BillsTrackerScreen> {
                         ),
                       );
                     }),
-                ],
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 }
@@ -23534,28 +29715,567 @@ class ClickableCard extends StatelessWidget {
   }
 }
 
-class SalaryOverviewScreen extends StatelessWidget {
-  const SalaryOverviewScreen({super.key});
+@immutable
+class _BudgetDetailData {
+  final double startingBalance;
+  final List<IncomeEntry> incomeEntries;
+  final List<ExpenseItem> expenses;
+  final List<BillItem> bills;
+  final double savingsBalance;
+  final List<SavingsContributionEntry> savingsHistory;
+  final DateTime? cycleStartDate;
+  final DateTime? nextCutoffDate;
+  final int fallbackDaysUntilCutoff;
+  final DailyBudgetSettings dailyBudgetSettings;
+  final BudgetOverview overview;
+  final BalanceLedgerSnapshot ledger;
+  final double todaySpending;
+  final List<BillItem> upcomingBills;
+
+  const _BudgetDetailData({
+    required this.startingBalance,
+    required this.incomeEntries,
+    required this.expenses,
+    required this.bills,
+    required this.savingsBalance,
+    required this.savingsHistory,
+    required this.cycleStartDate,
+    required this.nextCutoffDate,
+    required this.fallbackDaysUntilCutoff,
+    required this.dailyBudgetSettings,
+    required this.overview,
+    required this.ledger,
+    required this.todaySpending,
+    required this.upcomingBills,
+  });
+
+  BudgetSnapshot get snapshot => overview.snapshot;
+}
+
+Future<_BudgetDetailData> _loadBudgetDetailData() async {
+  final startingBalance = await FinanceRepository.getStartingBalance();
+  final incomeEntries = await FinanceRepository.loadIncomeEntries();
+  final expenses = await FinanceRepository.loadExpenses();
+  final bills = await FinanceRepository.loadBills();
+  final savingsBalance = await FinanceRepository.getTrackedSavingsAmount();
+  final savingsHistory = await FinanceRepository.loadSavingsHistory();
+  final cycleStartDate = await FinanceRepository.getSalaryReceivedDate();
+  final nextCutoffDate = await FinanceRepository.getNextPaydayDate();
+  final fallbackDaysUntilCutoff = await FinanceRepository.getDaysUntilPayday();
+  final dailyBudgetSettings = await FinanceRepository.getDailyBudgetSettings();
+  final overview = recalculateBudget(
+    startingBalance: startingBalance,
+    incomeEntries: incomeEntries,
+    savingsBalance: savingsBalance,
+    savingsHistory: savingsHistory,
+    bills: bills,
+    expenses: expenses,
+    cycleStartDate: cycleStartDate,
+    nextCutoffDate: nextCutoffDate,
+    fallbackDaysUntilCutoff: fallbackDaysUntilCutoff,
+    useManualDailyBudget: dailyBudgetSettings.useManualDailyBudget,
+    manualDailyBudget: dailyBudgetSettings.manualDailyBudget,
+  );
+  final ledger = calculateBalanceLedgerSnapshot(
+    startingBalance: startingBalance,
+    incomeEntries: incomeEntries,
+    bills: bills,
+    expenses: expenses,
+    savingsBalance: savingsBalance,
+    savingsHistory: savingsHistory,
+  );
+  final upcomingBills = filterBillsForBudgetCycle(
+    bills: bills,
+    cycleStartDate: cycleStartDate,
+    nextCutoffDate: nextCutoffDate,
+  )..sort((a, b) {
+      final aDate = resolveUpcomingBillDate(a) ?? DateTime(9999);
+      final bDate = resolveUpcomingBillDate(b) ?? DateTime(9999);
+      return aDate.compareTo(bDate);
+    });
+  incomeEntries.sort((a, b) => b.receivedAt.compareTo(a.receivedAt));
+
+  return _BudgetDetailData(
+    startingBalance: startingBalance,
+    incomeEntries: incomeEntries,
+    expenses: expenses,
+    bills: bills,
+    savingsBalance: savingsBalance,
+    savingsHistory: savingsHistory,
+    cycleStartDate: cycleStartDate,
+    nextCutoffDate: nextCutoffDate,
+    fallbackDaysUntilCutoff: fallbackDaysUntilCutoff,
+    dailyBudgetSettings: dailyBudgetSettings,
+    overview: overview,
+    ledger: ledger,
+    todaySpending: getTodayExpensesTotal(expenses, bills: bills),
+    upcomingBills: upcomingBills,
+  );
+}
+
+String _budgetDetailDateLabel(DateTime? date, {String fallback = 'Not set'}) {
+  if (date == null) return fallback;
+  return formatCalendarDate(dateOnly(date));
+}
+
+class _BudgetDetailScaffold extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _BudgetDetailScaffold({
+    required this.title,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return const _PlaceholderDetailScreen(
-      title: 'Available Balance',
-      description: 'Available balance details are not available yet.',
-      icon: Icons.account_balance_wallet_rounded,
+    return Scaffold(
+      backgroundColor: intelliumBackground,
+      appBar: AppBar(
+        backgroundColor: intelliumBackground,
+        surfaceTintColor: Colors.transparent,
+        title: Text(
+          title,
+          style: const TextStyle(
+            color: intelliumTextPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      body: SafeArea(
+        top: false,
+        child: child,
+      ),
     );
   }
 }
 
-class SalaryScreen extends StatelessWidget {
-  const SalaryScreen({super.key});
+class _BudgetDetailSection extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final Widget child;
+
+  const _BudgetDetailSection({
+    required this.title,
+    required this.child,
+    this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return const _PlaceholderDetailScreen(
-      title: 'Opening Balance',
-      description: 'Opening balance details are not available yet.',
-      icon: Icons.payments_rounded,
+    final ui = SweldoVisualStyle.fromContext(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: ui.sectionContainerDecoration(radius: 26),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: ui.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              subtitle!,
+              style: TextStyle(
+                color: ui.textSecondary,
+                fontSize: 12.5,
+                height: 1.4,
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _BudgetDetailGrid extends StatelessWidget {
+  final List<Widget> children;
+
+  const _BudgetDetailGrid({
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 540;
+        final itemWidth = compact
+            ? constraints.maxWidth
+            : (constraints.maxWidth - 12) / 2;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final child in children)
+              SizedBox(
+                width: itemWidth,
+                child: child,
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _BudgetWarningCard extends StatelessWidget {
+  final String title;
+  final String message;
+  final Color accent;
+  final IconData icon;
+
+  const _BudgetWarningCard({
+    required this.title,
+    required this.message,
+    required this.accent,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: ui.cardDecoration(radius: 24).copyWith(
+            border: Border.all(color: accent.withValues(alpha: .24)),
+          ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: ui.iconChipBackground(accent, radius: 14),
+            child: Icon(icon, color: accent, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: sweldoLabelStyle(
+                    ui,
+                    size: 13.5,
+                    color: ui.textPrimary,
+                    weight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: sweldoHelperStyle(
+                    ui,
+                    size: 12.5,
+                    color: ui.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+abstract class _BudgetDetailScreenState<T extends StatefulWidget>
+    extends State<T> {
+  late Future<_BudgetDetailData> _future;
+
+  String get screenTitle;
+  String get loadingMessage;
+
+  Widget buildScreen(BuildContext context, _BudgetDetailData data);
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _loadBudgetDetailData();
+  }
+
+  Future<void> _reload() async {
+    if (!mounted) return;
+    setState(() {
+      _future = _loadBudgetDetailData();
+    });
+  }
+
+  Future<void> pushAndReload(Widget screen) async {
+    final navigator = Navigator.of(context);
+    await navigator.push<void>(
+      MaterialPageRoute(builder: (_) => screen),
+    );
+    if (!mounted) return;
+    await _reload();
+  }
+
+  Future<void> openBudgetSetup() async {
+    await pushAndReload(const SweldoBudgetScreen());
+  }
+
+  Future<void> openBills() async {
+    await pushAndReload(const BillsTrackerScreen());
+  }
+
+  Future<void> openExpenses() async {
+    final premiumService =
+        context.findAncestorStateOfType<_SweldoTrackAppState>()?.premiumService;
+    if (premiumService != null) {
+      await pushAndReload(ExpenseTrackerScreen(premiumService: premiumService));
+      return;
+    }
+    await pushAndReload(const SweldoBudgetScreen());
+  }
+
+  Future<void> openIncomeSetup() async {
+    await pushAndReload(const SweldoBudgetScreen());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _BudgetDetailScaffold(
+      title: screenTitle,
+      child: FutureBuilder<_BudgetDetailData>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return buildPageLoadingState(loadingMessage);
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const EmptyStateCard(
+                      icon: Icons.sync_problem_rounded,
+                      title: 'Could not load this screen',
+                      subtitle:
+                          'Try again to refresh your saved SweldoTrack data.',
+                    ),
+                    const SizedBox(height: 18),
+                    PrimaryButton(
+                      label: 'Try Again',
+                      onPressed: () {
+                        unawaited(_reload());
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+          return buildScreen(context, snapshot.data!);
+        },
+      ),
+    );
+  }
+}
+
+class SalaryOverviewScreen extends StatefulWidget {
+  const SalaryOverviewScreen({super.key});
+
+  @override
+  State<SalaryOverviewScreen> createState() => _SalaryOverviewScreenState();
+}
+
+class _SalaryOverviewScreenState
+    extends _BudgetDetailScreenState<SalaryOverviewScreen> {
+  @override
+  String get loadingMessage => 'Loading your available balance snapshot...';
+
+  @override
+  String get screenTitle => 'Available Balance';
+
+  @override
+  Widget buildScreen(BuildContext context, _BudgetDetailData data) {
+    final snapshot = data.snapshot;
+    final daysBadge = snapshot.remainingDays > 0
+        ? '${snapshot.remainingDays} day${snapshot.remainingDays == 1 ? '' : 's'} until cutoff'
+        : 'No cutoff date set';
+
+    return SingleChildScrollView(
+      padding: _pageContentPadding(context, top: 12, bottom: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          HeroCard(
+            colors: const [
+              Color(0xFF1D4ED8),
+              Color(0xFF0F172A),
+              Color(0xFF08111F),
+            ],
+            title: 'Available Balance',
+            value: formatMoney(snapshot.availableBalance),
+            badge:
+                '${formatMoney(snapshot.projectedAvailableBalance)} expected balance | $daysBadge',
+          ),
+          const SizedBox(height: 16),
+          _BudgetDetailGrid(
+            children: [
+              SummaryCard(
+                title: 'Expected Balance',
+                value: formatMoney(snapshot.projectedAvailableBalance),
+                subtitle: 'Available balance after upcoming unpaid bills',
+                color: const Color(0xFF57E9C3),
+                icon: Icons.shield_outlined,
+              ),
+              SummaryCard(
+                title: 'Income Total',
+                value: formatMoney(snapshot.totalIncomeAdded),
+                subtitle: '${data.incomeEntries.length} saved income entr${data.incomeEntries.length == 1 ? 'y' : 'ies'}',
+                color: const Color(0xFF6C8CFF),
+                icon: Icons.account_balance_wallet_rounded,
+              ),
+              SummaryCard(
+                title: 'Spending Total',
+                value: formatMoney(snapshot.totalLoggedExpenses),
+                subtitle: 'Logged in the active cutoff window',
+                color: const Color(0xFFFF7A9C),
+                icon: Icons.wallet_rounded,
+              ),
+              SummaryCard(
+                title: 'Paid Bills',
+                value: formatMoney(snapshot.settledBillsAmount),
+                subtitle: 'Bills already deducted from available balance',
+                color: const Color(0xFFFFC857),
+                icon: Icons.check_circle_rounded,
+              ),
+              SummaryCard(
+                title: 'Savings Transfers',
+                value: formatMoney(snapshot.savingsTransfersAmount),
+                subtitle:
+                    '${formatMoney(snapshot.savingsContributionsAmount)} in | ${formatMoney(snapshot.savingsWithdrawalsAmount)} out',
+                color: const Color(0xFFB084F5),
+                icon: Icons.savings_rounded,
+              ),
+              SummaryCard(
+                title: 'Savings Balance',
+                value: formatMoney(data.savingsBalance),
+                subtitle:
+                    '${data.savingsHistory.length} saved transfer${data.savingsHistory.length == 1 ? '' : 's'}',
+                color: const Color(0xFF2DD4BF),
+                icon: Icons.account_balance_rounded,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SalaryScreen extends StatefulWidget {
+  const SalaryScreen({super.key});
+
+  @override
+  State<SalaryScreen> createState() => _SalaryScreenState();
+}
+
+class _SalaryScreenState extends _BudgetDetailScreenState<SalaryScreen> {
+  @override
+  String get loadingMessage => 'Loading your opening balance setup...';
+
+  @override
+  String get screenTitle => 'Opening Balance';
+
+  @override
+  Widget buildScreen(BuildContext context, _BudgetDetailData data) {
+    final snapshot = data.snapshot;
+    final nextCutoffLabel = _budgetDetailDateLabel(
+      data.nextCutoffDate,
+      fallback: 'Using saved days fallback',
+    );
+
+    return SingleChildScrollView(
+      padding: _pageContentPadding(context, top: 12, bottom: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          HeroCard(
+            colors: const [
+              Color(0xFF6C8CFF),
+              Color(0xFF111827),
+              Color(0xFF0B1120),
+            ],
+            title: 'Opening Balance',
+            value: formatMoney(data.startingBalance),
+            badge:
+                'Cutoff start: ${_budgetDetailDateLabel(data.cycleStartDate)} | Next cutoff: $nextCutoffLabel',
+          ),
+          const SizedBox(height: 16),
+          _BudgetDetailGrid(
+            children: [
+              SummaryCard(
+                title: 'Opening Balance',
+                value: formatMoney(data.startingBalance),
+                subtitle: 'Saved base amount before new income and spending',
+                color: const Color(0xFF6C8CFF),
+                icon: Icons.payments_rounded,
+              ),
+              SummaryCard(
+                title: 'Cutoff Start Date',
+                value: _budgetDetailDateLabel(data.cycleStartDate),
+                subtitle: 'Optional cycle anchor used for active cutoff totals',
+                color: const Color(0xFF2DD4BF),
+                icon: Icons.event_available_rounded,
+              ),
+              SummaryCard(
+                title: 'Next Cutoff / Payday',
+                value: nextCutoffLabel,
+                subtitle: data.nextCutoffDate == null
+                    ? 'Fallback days stay active until you save a date'
+                    : 'Saved cycle end date',
+                color: const Color(0xFFFFC857),
+                icon: Icons.event_repeat_rounded,
+              ),
+              SummaryCard(
+                title: 'Remaining Days',
+                value: snapshot.remainingDays.toString(),
+                subtitle: data.nextCutoffDate == null
+                    ? 'Based on your saved days-until-payday fallback'
+                    : 'Days left before the saved cutoff date',
+                color: const Color(0xFFFF7A9C),
+                icon: Icons.schedule_rounded,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () async {
+                await openBudgetSetup();
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+              child: const Text(
+                'Edit Balance / Cutoff',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -23569,28 +30289,482 @@ class BillsScreen extends StatelessWidget {
   }
 }
 
-class DailyBudgetScreen extends StatelessWidget {
+class DailyBudgetScreen extends StatefulWidget {
   const DailyBudgetScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const _PlaceholderDetailScreen(
-      title: 'Daily Spending Limit',
-      description: 'Daily spending limit details are not available yet.',
-      icon: Icons.today_rounded,
+  State<DailyBudgetScreen> createState() => _DailyBudgetScreenState();
+}
+
+class _DailyBudgetScreenState
+    extends _BudgetDetailScreenState<DailyBudgetScreen> {
+  @override
+  String get loadingMessage =>
+      'Loading safe-to-spend details for this cutoff...';
+
+  @override
+  String get screenTitle => 'Safe to Spend Today';
+
+  @override
+  Widget buildScreen(BuildContext context, _BudgetDetailData data) {
+    final snapshot = data.snapshot;
+    final manualBudget = snapshot.manualDailyBudget;
+    final visibleBills = data.upcomingBills.take(5).toList(growable: false);
+    final heroBadge = snapshot.usesManualDailyBudget
+        ? 'Manual ${formatMoney(manualBudget!)} | Auto safe limit ${formatMoney(snapshot.autoDailyBudget)}'
+        : snapshot.remainingDays > 0
+            ? '${formatMoney(snapshot.projectedAvailableBalance)} expected balance | ${snapshot.remainingDays} days until cutoff'
+            : 'No cutoff date set. Safe to Spend Today falls back to Expected Balance.';
+
+    return SingleChildScrollView(
+      padding: _pageContentPadding(context, top: 12, bottom: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          HeroCard(
+            colors: const [
+              Color(0xFF00C896),
+              Color(0xFF0F172A),
+              Color(0xFF07131A),
+            ],
+            title: 'Safe to Spend Today',
+            value: formatMoney(snapshot.dailySpendingLimit),
+            badge: heroBadge,
+          ),
+          if (snapshot.projectedAvailableBalance < 0) ...[
+            const SizedBox(height: 14),
+            const _BudgetWarningCard(
+              title: 'Expected Balance is negative',
+              message:
+                  'Upcoming unpaid bills already push this cutoff below zero. Limit spending to essentials and review your bills or balance setup.',
+              accent: Color(0xFFFF7A9C),
+              icon: Icons.warning_amber_rounded,
+            ),
+          ],
+          if (snapshot.usesManualDailyBudget &&
+              !snapshot.isManualDailyBudgetSafe) ...[
+            const SizedBox(height: 14),
+            _BudgetWarningCard(
+              title: 'Manual daily budget is above the safe limit',
+              message:
+                  'Your saved manual daily budget is higher than the safe cutoff pace. Auto safe limit: ${formatMoney(snapshot.autoDailyBudget)}.',
+              accent: const Color(0xFFFFC857),
+              icon: Icons.rule_folder_outlined,
+            ),
+          ],
+          const SizedBox(height: 16),
+          _BudgetDetailGrid(
+            children: [
+              SummaryCard(
+                title: 'Expected Balance',
+                value: formatMoney(snapshot.projectedAvailableBalance),
+                subtitle: 'Available balance after upcoming unpaid bills',
+                color: const Color(0xFF57E9C3),
+                icon: Icons.shield_outlined,
+              ),
+              SummaryCard(
+                title: 'Available Balance',
+                value: formatMoney(snapshot.availableBalance),
+                subtitle: 'Current balance before future unpaid bills',
+                color: const Color(0xFF6C8CFF),
+                icon: Icons.account_balance_wallet_rounded,
+              ),
+              SummaryCard(
+                title: 'Upcoming Unpaid Bills',
+                value: formatMoney(snapshot.totalBills),
+                subtitle: data.upcomingBills.isEmpty
+                    ? 'No unpaid bills due before this cutoff'
+                    : '${data.upcomingBills.length} bill${data.upcomingBills.length == 1 ? '' : 's'} due before cutoff',
+                color: const Color(0xFFFFC857),
+                icon: Icons.receipt_long_rounded,
+              ),
+              SummaryCard(
+                title: 'Today\'s Spending',
+                value: formatMoney(data.todaySpending),
+                subtitle: 'Expenses logged today',
+                color: const Color(0xFFFF7A9C),
+                icon: Icons.today_rounded,
+              ),
+              SummaryCard(
+                title: 'Remaining Days Until Cutoff',
+                value: snapshot.remainingDays.toString(),
+                subtitle: data.nextCutoffDate == null
+                    ? 'Using your saved days-until-payday fallback'
+                    : 'Next cutoff: ${_budgetDetailDateLabel(data.nextCutoffDate)}',
+                color: const Color(0xFF6C8CFF),
+                icon: Icons.schedule_rounded,
+              ),
+              if (snapshot.usesManualDailyBudget)
+                SummaryCard(
+                  title: 'Manual Daily Budget',
+                  value: formatMoney(manualBudget!),
+                  subtitle: snapshot.isManualDailyBudgetSafe
+                      ? 'Manual daily budget is within the safe cutoff pace'
+                      : 'Manual daily budget is above the safe cutoff pace',
+                  color: snapshot.isManualDailyBudgetSafe
+                      ? const Color(0xFF2DD4BF)
+                      : const Color(0xFFFFC857),
+                  icon: Icons.tune_rounded,
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _BudgetDetailSection(
+            title: 'Upcoming Unpaid Bills',
+            subtitle: 'Bills already counted in Expected Balance before your next cutoff.',
+            child: visibleBills.isEmpty
+                ? const EmptyStateCard(
+                    icon: Icons.receipt_long_rounded,
+                    title: 'No unpaid bills in this cutoff',
+                    subtitle:
+                        'Add a bill when you want SweldoTrack to protect your daily safe-to-spend amount.',
+                  )
+                : Column(
+                    children: [
+                      for (var index = 0; index < visibleBills.length; index++) ...[
+                        _BudgetBillRow(bill: visibleBills[index]),
+                        if (index != visibleBills.length - 1)
+                          const SizedBox(height: 10),
+                      ],
+                    ],
+                  ),
+          ),
+          const SizedBox(height: 16),
+          _BudgetDetailSection(
+            title: 'How Safe To Spend Today works',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Safe to Spend Today = Expected Balance ÷ days until cutoff',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Expected Balance already subtracts upcoming unpaid bills, so this screen shows the daily pace that fits what is left before the cutoff.',
+                  style: TextStyle(
+                    color: SweldoVisualStyle.fromContext(context).textSecondary,
+                    fontSize: 12.8,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () async {
+                await openExpenses();
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+              child: const Text(
+                'Add Expense',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () async {
+                await openBudgetSetup();
+              },
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+              child: const Text(
+                'Edit Balance / Cutoff',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () async {
+                await openBills();
+              },
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+              child: const Text(
+                'View Bills',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class SalaryAfterBillsScreen extends StatelessWidget {
+class SalaryAfterBillsScreen extends StatefulWidget {
   const SalaryAfterBillsScreen({super.key});
 
   @override
+  State<SalaryAfterBillsScreen> createState() => _SalaryAfterBillsScreenState();
+}
+
+class _SalaryAfterBillsScreenState
+    extends _BudgetDetailScreenState<SalaryAfterBillsScreen> {
+  @override
+  String get loadingMessage => 'Loading your income entries...';
+
+  @override
+  String get screenTitle => 'Income';
+
+  @override
+  Widget buildScreen(BuildContext context, _BudgetDetailData data) {
+    final totalIncome = data.snapshot.totalIncomeAdded;
+    final latestEntry = data.incomeEntries.isEmpty ? null : data.incomeEntries.first;
+    final visibleEntries = data.incomeEntries.take(8).toList(growable: false);
+
+    return SingleChildScrollView(
+      padding: _pageContentPadding(context, top: 12, bottom: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          HeroCard(
+            colors: const [
+              Color(0xFF6C8CFF),
+              Color(0xFF0F172A),
+              Color(0xFF081422),
+            ],
+            title: 'Income',
+            value: formatMoney(totalIncome),
+            badge: latestEntry == null
+                ? 'No income entries saved yet'
+                : '${data.incomeEntries.length} saved entr${data.incomeEntries.length == 1 ? 'y' : 'ies'} | Latest ${formatCalendarDate(latestEntry.receivedAt)}',
+          ),
+          const SizedBox(height: 16),
+          _BudgetDetailGrid(
+            children: [
+              SummaryCard(
+                title: 'Total Income Added',
+                value: formatMoney(totalIncome),
+                subtitle: 'All saved income entries in SweldoTrack',
+                color: const Color(0xFF6C8CFF),
+                icon: Icons.account_balance_wallet_rounded,
+              ),
+              SummaryCard(
+                title: 'Income Entries',
+                value: data.incomeEntries.length.toString(),
+                subtitle: latestEntry == null
+                    ? 'Add income to improve your cutoff totals'
+                    : 'Latest entry on ${formatCalendarDate(latestEntry.receivedAt)}',
+                color: const Color(0xFF57E9C3),
+                icon: Icons.list_alt_rounded,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _BudgetDetailSection(
+            title: 'Income Entries',
+            subtitle: 'A quick summary of the income currently saved in SweldoTrack.',
+            child: visibleEntries.isEmpty
+                ? const EmptyStateCard(
+                    icon: Icons.account_balance_wallet_rounded,
+                    title: 'No income entries yet',
+                    subtitle:
+                        'Add income so Available Balance and Safe to Spend Today can reflect your latest cutoff inflows.',
+                  )
+                : Column(
+                    children: [
+                      for (var index = 0; index < visibleEntries.length; index++) ...[
+                        _IncomeEntryRow(entry: visibleEntries[index]),
+                        if (index != visibleEntries.length - 1)
+                          const SizedBox(height: 10),
+                      ],
+                    ],
+                  ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () async {
+                await openIncomeSetup();
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+              child: const Text(
+                'Add Income',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BudgetBillRow extends StatelessWidget {
+  final BillItem bill;
+
+  const _BudgetBillRow({
+    required this.bill,
+  });
+
+  @override
   Widget build(BuildContext context) {
-    return const _PlaceholderDetailScreen(
-      title: 'Income',
-      description: 'Income entry details are not available yet.',
-      icon: Icons.account_balance_wallet_rounded,
+    final ui = SweldoVisualStyle.fromContext(context);
+    final dueDate = resolveUpcomingBillDate(bill) ?? bill.dueDate;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: ui.cardDecoration(radius: 22),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: ui.iconChipBackground(
+              const Color(0xFFFFC857),
+              radius: 14,
+            ),
+            child: const Icon(
+              Icons.receipt_long_rounded,
+              color: Color(0xFFFFC857),
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  bill.title,
+                  style: sweldoLabelStyle(
+                    ui,
+                    size: 13.5,
+                    color: ui.textPrimary,
+                    weight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${bill.category} | Due ${formatCalendarDate(dueDate)}',
+                  style: sweldoHelperStyle(
+                    ui,
+                    size: 12.4,
+                    color: ui.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            formatMoney(bill.amount),
+            style: sweldoAmountStyle(
+              ui,
+              size: 18,
+              weight: FontWeight.w800,
+              letterSpacing: -0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IncomeEntryRow extends StatelessWidget {
+  final IncomeEntry entry;
+
+  const _IncomeEntryRow({
+    required this.entry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = SweldoVisualStyle.fromContext(context);
+    final note = entry.note.trim().isEmpty ? 'Income entry' : entry.note.trim();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: ui.cardDecoration(radius: 22),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: ui.iconChipBackground(
+              const Color(0xFF6C8CFF),
+              radius: 14,
+            ),
+            child: const Icon(
+              Icons.account_balance_wallet_rounded,
+              color: Color(0xFF6C8CFF),
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  note,
+                  style: sweldoLabelStyle(
+                    ui,
+                    size: 13.5,
+                    color: ui.textPrimary,
+                    weight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  formatCalendarDate(entry.receivedAt),
+                  style: sweldoHelperStyle(
+                    ui,
+                    size: 12.4,
+                    color: ui.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            formatMoney(entry.amount),
+            style: sweldoAmountStyle(
+              ui,
+              size: 18,
+              weight: FontWeight.w800,
+              letterSpacing: -0.3,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -23600,7 +30774,18 @@ class ExpensesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ExpenseTrackerScreen();
+    final mainNavState =
+        context.findAncestorStateOfType<_MainNavigationScreenState>();
+    if (mainNavState == null) {
+      return const _PlaceholderDetailScreen(
+        title: 'Spending',
+        description: 'Open Spending from the main dashboard to continue.',
+        icon: Icons.wallet_rounded,
+      );
+    }
+    return ExpenseTrackerScreen(
+      premiumService: mainNavState.widget.premiumService,
+    );
   }
 }
 
@@ -23735,12 +30920,14 @@ class _PlaceholderDetailScreen extends StatelessWidget {
               color: intelliumTextPrimary, fontWeight: FontWeight.w700),
         ),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+      body: SafeArea(
+        top: false,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
@@ -23769,7 +30956,8 @@ class _PlaceholderDetailScreen extends StatelessWidget {
                   height: 1.5,
                 ),
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -23800,38 +30988,65 @@ class HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final uiStyle = sweldoUiStyleOf(context);
     final borderRadius = BorderRadius.circular(28);
+    final usesThemeGradient = uiStyle.mode == SweldoUiMode.intelliumDigital ||
+        uiStyle.mode == SweldoUiMode.premiumNeon ||
+        uiStyle.mode == SweldoUiMode.premiumExecutive;
+    final usesLightSurfaceHero = !uiStyle.isDark && !usesThemeGradient;
+    final titleColor = usesLightSurfaceHero
+        ? ui.textPrimary
+        : Colors.white.withValues(alpha: .88);
+    final amountColor = usesLightSurfaceHero ? ui.textPrimary : Colors.white;
+    final badgeColor = usesLightSurfaceHero
+        ? ui.textPrimary.withValues(alpha: .82)
+        : Colors.white.withValues(alpha: .84);
+    final resolvedGradient = usesThemeGradient
+        ? uiStyle.heroGradient
+        : LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: colors,
+          );
+    final resolvedBorder = usesThemeGradient
+        ? Border.all(color: Colors.white.withValues(alpha: .18))
+        : usesLightSurfaceHero
+            ? Border.all(color: ui.borderColor)
+            : null;
+    final resolvedShadows = usesThemeGradient
+        ? [
+            BoxShadow(
+              color: uiStyle.accent.withValues(alpha: .16),
+              blurRadius: 28,
+              spreadRadius: -8,
+              offset: const Offset(0, 16),
+            ),
+            BoxShadow(
+              color: uiStyle.heroGradient.colors.last.withValues(alpha: .10),
+              blurRadius: 24,
+              spreadRadius: -10,
+              offset: const Offset(0, 10),
+            ),
+          ]
+        : usesLightSurfaceHero
+            ? [
+                const BoxShadow(
+                  color: Color(0x12121A33),
+                  blurRadius: 24,
+                  spreadRadius: -10,
+                  offset: Offset(0, 14),
+                ),
+              ]
+            : null;
     return ClickableCard(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       borderRadius: borderRadius,
       decoration: BoxDecoration(
         borderRadius: borderRadius,
-        gradient: ui.isJade
-            ? const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF143A2C),
-                  Color(0xFF0D241B),
-                  Color(0xFF07120E)
-                ],
-              )
-            : LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: colors,
-              ),
-        border: ui.isJade ? Border.all(color: const Color(0x552EE6A6)) : null,
-        boxShadow: ui.isJade
-            ? [
-                const BoxShadow(
-                  color: Color(0x552EE6A6),
-                  blurRadius: 28,
-                  spreadRadius: 1,
-                ),
-              ]
-            : null,
+        gradient: resolvedGradient,
+        border: resolvedBorder,
+        boxShadow: resolvedShadows,
       ),
       onTap: onTap,
       child: Column(
@@ -23840,35 +31055,45 @@ class HeroCard extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: ui.isJade ? ui.textSecondary : Colors.white70,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+              color: titleColor,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 10),
           Text(
             value,
             style: TextStyle(
-              color: ui.textPrimary,
+              color: amountColor,
               fontSize: 32,
               fontWeight: FontWeight.w800,
+              letterSpacing: -1.0,
+              height: 1.0,
             ),
           ),
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: ui.isJade ? .08 : .14),
+              color: usesLightSurfaceHero
+                  ? ui.sectionFill.withValues(alpha: .96)
+                  : Colors.white.withValues(
+                      alpha: usesThemeGradient ? .12 : .14,
+                    ),
               borderRadius: BorderRadius.circular(14),
-              border:
-                  ui.isJade ? Border.all(color: const Color(0x442EE6A6)) : null,
+              border: usesThemeGradient
+                  ? Border.all(color: Colors.white.withValues(alpha: .16))
+                  : usesLightSurfaceHero
+                      ? Border.all(color: ui.borderColor.withValues(alpha: .92))
+                      : null,
             ),
             child: Text(
               badge,
               style: TextStyle(
-                color: ui.textPrimary,
+                color: badgeColor,
+                fontSize: 12.8,
                 fontWeight: FontWeight.w600,
-                fontSize: 13,
+                height: 1.35,
               ),
             ),
           ),
@@ -23879,12 +31104,18 @@ class HeroCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: progress!.clamp(0.0, 1.0).toDouble(),
                 minHeight: 8,
-                backgroundColor: Colors.white.withValues(alpha: .12),
+                backgroundColor: usesLightSurfaceHero
+                    ? ui.borderColor.withValues(alpha: .58)
+                    : Colors.white.withValues(alpha: .12),
                 valueColor: AlwaysStoppedAnimation<Color>(
-                    progressColor ?? const Color(0xFF00C896)),
+                  progressColor ??
+                      (usesThemeGradient
+                          ? Colors.white.withValues(alpha: .88)
+                          : uiStyle.accent),
+                ),
               ),
             ),
-          ]
+          ],
         ],
       ),
     );
@@ -23916,31 +31147,58 @@ class SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = SweldoVisualStyle.fromContext(context);
+    final displayColor = sweldoUiModeUsesSurfaceAccent(
+      sweldoUiStyleOf(context).mode,
+    )
+        ? Theme.of(context).colorScheme.primary
+        : color;
     final borderRadius = BorderRadius.circular(24);
     return ClickableCard(
       padding: const EdgeInsets.all(18),
       borderRadius: borderRadius,
       decoration: ui.cardDecoration(radius: 24),
       onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: ui.iconChipBackground(color),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(height: 14),
-          Text(title, style: TextStyle(color: ui.textSecondary, fontSize: 13)),
-          const SizedBox(height: 6),
-          Text(value,
-              style: TextStyle(
-                  color: ui.textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800)),
-          const SizedBox(height: 6),
-          Text(subtitle, style: TextStyle(color: ui.textMuted, fontSize: 12)),
-        ],
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 152),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: ui.iconChipBackground(displayColor),
+              child: Icon(icon, color: displayColor, size: 22),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              style: sweldoLabelStyle(
+                ui,
+                size: 12.8,
+                color: ui.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: sweldoAmountStyle(
+                ui,
+                size: 22,
+                weight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              style: sweldoHelperStyle(
+                ui,
+                size: 12.2,
+                color: ui.textSecondary,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -23955,13 +31213,14 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Colors.black,
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -23983,7 +31242,9 @@ class SheetHandle extends StatelessWidget {
         width: 48,
         height: 5,
         decoration: BoxDecoration(
-          color: ui.isJade ? const Color(0x552EE6A6) : Colors.white24,
+          color: ui.isDark
+              ? Colors.white24
+              : ui.textMuted.withValues(alpha: .34),
           borderRadius: BorderRadius.circular(999),
         ),
       ),
@@ -24011,25 +31272,41 @@ class EmptyStateCard extends StatelessWidget {
       padding: const EdgeInsets.all(22),
       decoration: ui.cardDecoration(radius: 24),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             padding: const EdgeInsets.all(14),
             decoration: ui.iconChipBackground(
-                Theme.of(context).colorScheme.primary,
-                radius: 18),
-            child: Icon(icon,
-                color: Theme.of(context).colorScheme.primary, size: 28),
+              Theme.of(context).colorScheme.primary,
+              radius: 18,
+            ),
+            child: Icon(
+              icon,
+              color: Theme.of(context).colorScheme.primary,
+              size: 28,
+            ),
           ),
           const SizedBox(height: 14),
-          Text(title,
-              style: TextStyle(
-                  color: ui.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700)),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: sweldoTitleStyle(
+              ui,
+              size: 22,
+              letterSpacing: -0.4,
+            ),
+          ),
           const SizedBox(height: 6),
-          Text(subtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: ui.textSecondary, fontSize: 13)),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: sweldoHelperStyle(
+              ui,
+              size: 12.8,
+              color: ui.textMuted,
+              height: 1.45,
+            ),
+          ),
         ],
       ),
     );

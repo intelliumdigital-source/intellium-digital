@@ -19,6 +19,46 @@ void main() {
   });
 
   group('PremiumService', () {
+    test('uses fallback premium price until store pricing is loaded', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+
+      final gateway = _FakePremiumBillingGateway();
+      final service = PremiumService(
+        verificationRepository: const _FakePremiumPurchaseVerificationRepository(
+          result: PremiumVerificationResult.verified(
+            mode: PremiumVerificationMode.backend,
+          ),
+        ),
+        billingGateway: gateway,
+        allowNonBackendVerification: true,
+      );
+
+      expect(service.premiumDisplayPriceLabel, '\u20B1120/month');
+      expect(
+        service.premiumPrimaryActionLabel,
+        'Purchase Premium - \u20B1120/month',
+      );
+      expect(
+        service.premiumSecondaryActionLabel,
+        'Unlock Premium - \u20B1120/month',
+      );
+
+      await service.initialize();
+
+      expect(service.premiumDisplayPriceLabel, 'PHP 120/month');
+      expect(
+        service.premiumPrimaryActionLabel,
+        'Purchase Premium - PHP 120/month',
+      );
+      expect(
+        service.premiumSecondaryActionLabel,
+        'Unlock Premium - PHP 120/month',
+      );
+
+      service.dispose();
+      await gateway.close();
+    });
+
     test('does not unlock premium from cached local state alone', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{
         AppKeys.premiumActive: true,
@@ -183,6 +223,109 @@ void main() {
       await gateway.close();
     });
 
+    test('backend verification failures keep restore available without completing the purchase', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+
+      final gateway = _FakePremiumBillingGateway();
+      gateway.onRestorePurchases = () async {
+        gateway.emit(<PurchaseDetails>[
+          _buildPurchase(
+            status: PurchaseStatus.restored,
+            pendingCompletePurchase: true,
+          ),
+        ]);
+      };
+
+      final service = PremiumService(
+        verificationRepository: const _FakePremiumPurchaseVerificationRepository(
+          result: PremiumVerificationResult.rejected(
+            mode: PremiumVerificationMode.backend,
+            message: 'Verification server timed out.',
+          ),
+        ),
+        billingGateway: gateway,
+        allowNonBackendVerification: true,
+      );
+
+      await service.initialize();
+      await service.restorePurchases();
+
+      expect(service.premiumStatusLabel, 'Payment Detected');
+      expect(
+        service.premiumStatusDetail,
+        'Your payment was detected, but premium verification could not be completed. Tap Restore Purchase to try again.',
+      );
+      expect(service.hasRecoverablePremiumVerificationIssue, isTrue);
+      expect(service.hasPaymentDetectedButNotVerified, isTrue);
+      expect(service.canRestorePremium, isTrue);
+      expect(service.restoreUnavailableReason, isNull);
+      expect(
+        service.premiumPrimaryActionLabel,
+        'Restore Purchase',
+      );
+      expect(
+        service.premiumSecondaryActionLabel,
+        'Restore Purchase',
+      );
+      expect(
+        service.premiumRestoreAvailabilityMessage,
+        'Your payment was detected, but premium verification could not be completed. Tap Restore Purchase to try again.',
+      );
+      expect(gateway.completePurchaseCalls, 0);
+
+      service.dispose();
+      await gateway.close();
+    });
+
+    test('restorePurchases retries verification after a recoverable backend failure', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+
+      final gateway = _FakePremiumBillingGateway();
+      gateway.onRestorePurchases = () async {
+        gateway.emit(<PurchaseDetails>[
+          _buildPurchase(
+            status: PurchaseStatus.restored,
+            pendingCompletePurchase: true,
+          ),
+        ]);
+      };
+      final verificationRepository =
+          _CountingPremiumPurchaseVerificationRepository(
+        results: <PremiumVerificationResult>[
+          const PremiumVerificationResult.rejected(
+            mode: PremiumVerificationMode.backend,
+            message: 'Verification server timed out.',
+          ),
+          const PremiumVerificationResult.verified(
+            mode: PremiumVerificationMode.backend,
+            purchasedProductId: PremiumService.productId,
+          ),
+        ],
+      );
+
+      final service = PremiumService(
+        verificationRepository: verificationRepository,
+        billingGateway: gateway,
+        allowNonBackendVerification: true,
+      );
+
+      await service.initialize();
+      await service.restorePurchases();
+
+      expect(verificationRepository.verifyCalls, 1);
+      expect(service.isPremium, isFalse);
+      expect(gateway.completePurchaseCalls, 0);
+
+      await service.restorePurchases();
+
+      expect(verificationRepository.verifyCalls, 2);
+      expect(service.isPremium, isTrue);
+      expect(gateway.completePurchaseCalls, 1);
+
+      service.dispose();
+      await gateway.close();
+    });
+
     test('restorePurchases fails closed on timeout with a clear message', () async {
       SharedPreferences.setMockInitialValues(<String, Object>{
         AppKeys.premiumActive: true,
@@ -312,5 +455,25 @@ class _FakePremiumPurchaseVerificationRepository
     required String expectedProductId,
   }) async {
     return result;
+  }
+}
+
+class _CountingPremiumPurchaseVerificationRepository
+    implements PremiumPurchaseVerificationRepository {
+  final List<PremiumVerificationResult> results;
+  int verifyCalls = 0;
+
+  _CountingPremiumPurchaseVerificationRepository({
+    required this.results,
+  }) : assert(results.isNotEmpty);
+
+  @override
+  Future<PremiumVerificationResult> verifyPurchase({
+    required PurchaseDetails purchase,
+    required String expectedProductId,
+  }) async {
+    final index = verifyCalls < results.length ? verifyCalls : results.length - 1;
+    verifyCalls++;
+    return results[index];
   }
 }

@@ -19,6 +19,7 @@ body {
   min-height: 100vh;
   background: #020611;
   color: #e2e8f0;
+  text-rendering: optimizeLegibility;
 }
 
 a {
@@ -32,4 +33,18 @@ input::placeholder {
 
 ::selection {
   background: rgba(61, 242, 255, 0.25);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
 }
