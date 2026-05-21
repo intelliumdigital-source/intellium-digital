@@ -821,6 +821,7 @@ h1,h2,h3{
   align-items:center;
   justify-content:center;
   margin-right:clamp(-60px,-4vw,-20px);
+  overflow:visible;
   background:transparent;
   border:0;
   border-radius:0;
@@ -830,29 +831,29 @@ h1,h2,h3{
 .hero-image-stage::before{
   content:"";
   position:absolute;
-  inset:0 -10% 0 -8%;
+  inset:-18% -18% -12% -20%;
   background:
-    radial-gradient(circle at 48% 48%,rgba(76,220,255,.24),transparent 52%),
-    radial-gradient(circle at 58% 56%,rgba(194,82,255,.2),transparent 58%);
-  filter:blur(40px);
+    radial-gradient(circle at 55% 48%,rgba(79,220,255,.28),transparent 46%),
+    radial-gradient(circle at 62% 58%,rgba(193,83,255,.24),transparent 52%),
+    linear-gradient(90deg,rgba(5,8,23,.35),transparent 28%,transparent 70%,rgba(5,8,23,.2));
+  filter:blur(34px);
   z-index:-2;
 }
 
 .hero-image-stage::after{
   content:"";
   position:absolute;
-  left:7%;
-  right:4%;
-  bottom:10%;
-  height:20%;
-  background:radial-gradient(ellipse,rgba(111,86,255,.38),transparent 70%);
-  filter:blur(36px);
-  z-index:-1;
+  inset:0;
+  background:
+    linear-gradient(90deg,rgba(5,8,23,.22),transparent 18%,transparent 78%,rgba(5,8,23,.18)),
+    linear-gradient(180deg,rgba(5,8,23,.18),transparent 20%,transparent 78%,rgba(5,8,23,.28));
+  pointer-events:none;
+  z-index:2;
 }
 
 .hero-main-image{
-  width:min(100%,920px);
-  max-width:100%;
+  width:min(112%,980px);
+  max-width:none;
   height:auto;
   object-fit:contain;
   display:block;
@@ -861,7 +862,17 @@ h1,h2,h3{
   border-radius:0;
   background:transparent;
   box-shadow:none;
-  filter:drop-shadow(0 42px 80px rgba(0,0,0,.68)) drop-shadow(0 0 44px rgba(84,214,255,.24));
+  opacity:.96;
+  mix-blend-mode:screen;
+  -webkit-mask-image:
+    linear-gradient(90deg,transparent 0%,black 10%,black 88%,transparent 100%),
+    linear-gradient(180deg,transparent 0%,black 8%,black 88%,transparent 100%);
+  mask-image:
+    linear-gradient(90deg,transparent 0%,black 10%,black 88%,transparent 100%),
+    linear-gradient(180deg,transparent 0%,black 8%,black 88%,transparent 100%);
+  -webkit-mask-composite:source-in;
+  mask-composite:intersect;
+  filter:drop-shadow(0 46px 90px rgba(0,0,0,.68)) drop-shadow(0 0 44px rgba(84,214,255,.24));
   transform:perspective(1200px) rotateY(-3deg) rotateX(1deg);
 }
 
