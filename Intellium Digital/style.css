@@ -133,16 +133,17 @@ button,input,select,textarea{font:inherit}
   top:0;
   z-index:1000;
   border-bottom:1px solid rgba(255,255,255,.08);
-  background:rgba(5,8,22,.7);
-  backdrop-filter:blur(18px);
+  background:rgba(5,8,22,.78);
+  backdrop-filter:blur(22px);
+  box-shadow:0 10px 30px rgba(2,8,24,.22);
 }
 
 .nav-wrap{
-  min-height:82px;
+  min-height:74px;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:18px;
+  gap:16px;
 }
 
 .brand{
@@ -152,7 +153,7 @@ button,input,select,textarea{font:inherit}
 }
 
 .brand img{
-  width:58px;
+  width:52px;
   height:auto;
   object-fit:contain;
 }
@@ -175,9 +176,9 @@ button,input,select,textarea{font:inherit}
 .nav-menu{
   display:flex;
   align-items:center;
-  gap:22px;
+  gap:18px;
   color:var(--muted);
-  font-size:.94rem;
+  font-size:.9rem;
 }
 
 .nav-menu a{
@@ -350,8 +351,8 @@ button,input,select,textarea{font:inherit}
   border-color:rgba(93,228,255,.32);
 }
 
-.section{padding:5.75rem 0;position:relative}
-.hero{padding:6.45rem 0 5.35rem;position:relative}
+.section{padding:5.35rem 0;position:relative}
+.hero{padding:5.4rem 0 4rem;position:relative}
 
 .hero-layout,
 .split-layout,
@@ -385,9 +386,9 @@ h1,h2,h3{
 
 h1{
   max-width:13ch;
-  margin-bottom:1.2rem;
-  font-size:clamp(2.85rem,5.3vw,5rem);
-  line-height:1.06;
+  margin-bottom:1rem;
+  font-size:clamp(3rem,4.9vw,5.15rem);
+  line-height:1.04;
 }
 
 .section-head h2,
@@ -413,21 +414,21 @@ h1{
 }
 
 .hero-subtitle{
-  max-width:42rem;
-  font-size:1.08rem;
-  line-height:1.82;
+  max-width:36rem;
+  font-size:1.02rem;
+  line-height:1.72;
 }
 
 .hero-copy{
-  max-width:39rem;
-  padding-top:.35rem;
+  max-width:36rem;
+  padding-top:0;
 }
 
 .hero-actions{
   display:flex;
   flex-wrap:wrap;
   gap:1rem;
-  margin:2rem 0 1.7rem;
+  margin:1.5rem 0 1.15rem;
 }
 
 .trust-badges,
@@ -441,6 +442,10 @@ h1{
 }
 
 .trust-badges{grid-template-columns:repeat(3,minmax(0,1fr))}
+.hero-stats{
+  margin-top:.15rem;
+  gap:.85rem;
+}
 
 .glass-3d{
   position:relative;
@@ -515,6 +520,13 @@ h1{
     radial-gradient(circle at top left,rgba(93,228,255,.09),transparent 32%),
     radial-gradient(circle at bottom right,rgba(125,82,255,.1),transparent 28%),
     linear-gradient(180deg,rgba(18,24,44,.88),rgba(8,12,24,.76));
+}
+
+.neon-surface{
+  background:
+    radial-gradient(circle at top left,rgba(93,228,255,.1),transparent 34%),
+    radial-gradient(circle at 88% 18%,rgba(236,119,255,.08),transparent 26%),
+    linear-gradient(180deg,rgba(18,25,46,.9),rgba(8,12,24,.78));
 }
 
 .neon-edge{
@@ -633,24 +645,28 @@ h1{
 }
 
 .trust-badges article{
-  padding:1.05rem 1.1rem;
+  padding:1rem 1rem;
+  background:
+    radial-gradient(circle at top left,rgba(93,228,255,.08),transparent 40%),
+    linear-gradient(180deg,rgba(20,27,48,.86),rgba(9,14,30,.74));
 }
 
 .trust-badges strong{
   display:block;
-  font-size:1rem;
+  font-size:.98rem;
 }
 
 .trust-badges span{
   display:block;
-  margin-top:.38rem;
-  font-size:.92rem;
+  margin-top:.32rem;
+  font-size:.85rem;
+  line-height:1.55;
 }
 
 .hero-showcase{
   display:grid;
-  gap:.95rem;
-  padding:1.08rem;
+  gap:.75rem;
+  padding:.82rem;
   box-shadow:
     0 0 0 1px rgba(93,228,255,.1),
     0 24px 70px rgba(2,8,24,.48),
@@ -659,11 +675,11 @@ h1{
 
 .hero-visual{
   position:relative;
-  padding:1rem 0;
+  padding:.35rem 0 0;
 }
 
 .hero-showcase.showcase-3d{
-  transform:translateY(4px) rotateX(4deg) rotateY(-7deg);
+  transform:translateY(0) rotateX(3deg) rotateY(-5deg);
 }
 
 .hero-showcase.showcase-3d:hover{
@@ -674,10 +690,10 @@ h1{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:1rem;
+  gap:.8rem;
   color:var(--muted);
-  font-size:.8rem;
-  letter-spacing:.12em;
+  font-size:.68rem;
+  letter-spacing:.14em;
   text-transform:uppercase;
 }
 
@@ -689,14 +705,14 @@ h1{
 .hero-points{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:1rem;
+  gap:.7rem;
 }
 
 .hero-points article{
-  padding:1rem;
-  border-radius:20px;
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.08);
+  padding:.72rem .82rem;
+  border-radius:18px;
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.07);
 }
 
 .hero-points small,
@@ -704,7 +720,7 @@ h1{
 .pkg-label{
   display:inline-block;
   color:var(--cyan);
-  font-size:.78rem;
+  font-size:.72rem;
   font-weight:800;
   letter-spacing:.12em;
   text-transform:uppercase;
@@ -712,7 +728,9 @@ h1{
 
 .hero-points strong{
   display:block;
-  margin-top:.45rem;
+  margin-top:.28rem;
+  font-size:.94rem;
+  line-height:1.4;
 }
 
 .visual-frame,
@@ -748,10 +766,25 @@ h1{
     inset 0 0 40px rgba(5,8,22,.28);
 }
 
+.premium-hero .hero-layout{
+  grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+  gap:1.9rem;
+  align-items:center;
+  min-height:min(82vh,820px);
+}
+
 .hero-image{
   object-fit:cover;
   object-position:center;
   transform:scale(1.03);
+}
+
+.hero-frame{
+  padding:.5rem;
+}
+
+.hero-dashboard{
+  border-radius:30px;
 }
 
 .service-visual,
@@ -783,7 +816,7 @@ h1{
 }
 
 .meta-strip-wrap{
-  min-height:68px;
+  min-height:58px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -798,11 +831,11 @@ h1{
 
 .section-head{
   max-width:52rem;
-  margin:0 auto 2.8rem;
+  margin:0 auto 2.25rem;
   text-align:center;
 }
 
-.services-layout{margin-bottom:2.35rem;align-items:center}
+.services-layout{margin-bottom:1.85rem;align-items:center}
 
 .services-visual{min-height:24rem}
 
@@ -1921,6 +1954,9 @@ h1{
   .contact-layout,
   .services-layout{grid-template-columns:1fr}
 
+  .premium-hero .hero-layout{min-height:auto}
+  .hero-copy{max-width:none}
+
   .service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .catalog-layout{grid-template-columns:1fr}
   .catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -1945,7 +1981,7 @@ h1{
     position:absolute;
     left:4%;
     right:4%;
-    top:82px;
+    top:74px;
     padding:1rem;
     border-radius:22px;
     border:1px solid rgba(162,176,255,.16);
@@ -2011,11 +2047,15 @@ h1{
   .hero,
   .section{padding:4.75rem 0}
 
+  .hero{padding-top:4.8rem}
+
   .hero-frame,
   .service-visual,
   .maya-visual .visual-frame,
   .sweldo-visual .visual-frame,
   .client-visual{aspect-ratio:16/10}
+  .hero-kicker,
+  .hero-points{width:100%}
   .prefooter-card{padding:1.4rem}
   .trust-pill-row{margin-top:1.2rem}
   .product-feature{grid-template-columns:repeat(2,minmax(0,1fr))}
