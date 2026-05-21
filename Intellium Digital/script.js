@@ -67,16 +67,34 @@ const cartCloseBtn = document.getElementById("cartCloseBtn");
 const customerNoteInput = document.getElementById("customerNote");
 
 if (menuBtn && navMenu) {
+  const closeMenu = () => {
+    navMenu.classList.remove("active");
+    menuBtn.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("menu-open");
+  };
+
   menuBtn.addEventListener("click", () => {
     const isOpen = navMenu.classList.toggle("active");
     menuBtn.setAttribute("aria-expanded", String(isOpen));
+    document.body.classList.toggle("menu-open", isOpen);
   });
 
   navMenu.querySelectorAll("a").forEach((link) => {
     link.addEventListener("click", () => {
-      navMenu.classList.remove("active");
-      menuBtn.setAttribute("aria-expanded", "false");
+      closeMenu();
     });
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeMenu();
+    }
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 920) {
+      closeMenu();
+    }
   });
 }
 
