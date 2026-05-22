@@ -572,25 +572,39 @@ renderCatalog();
 renderCart();
 
 (function initPremiumCursor() {
-  const finePointer = window.matchMedia("(pointer: fine) and (min-width: 900px)").matches;
-  if (!finePointer) return;
+  const supportsCursor = window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 900px)").matches;
+  if (!supportsCursor) return;
 
-  const cursor = document.querySelector(".premium-cursor");
-  const ring = document.querySelector(".premium-cursor-ring");
-  if (!cursor || !ring) return;
+  let cursor = document.querySelector(".premium-cursor");
+  let ring = document.querySelector(".premium-cursor-ring");
+
+  if (!cursor || !ring) {
+    cursor = document.createElement("div");
+    cursor.className = "premium-cursor";
+    cursor.setAttribute("aria-hidden", "true");
+
+    ring = document.createElement("div");
+    ring.className = "premium-cursor-ring";
+    ring.setAttribute("aria-hidden", "true");
+
+    document.body.appendChild(cursor);
+    document.body.appendChild(ring);
+  }
+
+  document.body.classList.add("custom-cursor-enabled");
 
   let mouseX = window.innerWidth / 2;
   let mouseY = window.innerHeight / 2;
   let ringX = mouseX;
   let ringY = mouseY;
 
-  window.addEventListener("mousemove", (event) => {
+  function moveCursor(event) {
     mouseX = event.clientX;
     mouseY = event.clientY;
-    document.body.classList.add("cursor-ready");
 
+    document.body.classList.add("cursor-ready");
     cursor.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%)`;
-  });
+  }
 
   function animateRing() {
     ringX += (mouseX - ringX) * 0.18;
@@ -598,23 +612,26 @@ renderCart();
     ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
     requestAnimationFrame(animateRing);
   }
+
+  window.addEventListener("mousemove", moveCursor, { passive: true });
   animateRing();
 
-  const hoverTargets = "a, button, .btn, .service-card, .package-card, .catalog-card, .product-card, .maya-card, .client-card, .filter-btn, [role='button']";
+  const hoverTargets = "a, button, .btn, .service-card, .package-card, .catalog-card, .product-card, .maya-card, .client-card, .contact-item, .filter-btn, [role='button']";
 
-  document.addEventListener("mouseover", (event) => {
+  document.addEventListener("mouseover", function (event) {
     if (event.target.closest(hoverTargets)) {
       document.body.classList.add("cursor-hover");
     }
   });
 
-  document.addEventListener("mouseout", (event) => {
+  document.addEventListener("mouseout", function (event) {
     if (event.target.closest(hoverTargets)) {
       document.body.classList.remove("cursor-hover");
     }
   });
 
-  document.addEventListener("mouseleave", () => {
+  document.addEventListener("mouseleave", function () {
     document.body.classList.remove("cursor-ready", "cursor-hover");
   });
 })();
+
