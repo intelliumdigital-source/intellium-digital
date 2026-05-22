@@ -570,3 +570,51 @@ if (customerNoteInput) {
 
 renderCatalog();
 renderCart();
+
+(function initPremiumCursor() {
+  const finePointer = window.matchMedia("(pointer: fine) and (min-width: 900px)").matches;
+  if (!finePointer) return;
+
+  const cursor = document.querySelector(".premium-cursor");
+  const ring = document.querySelector(".premium-cursor-ring");
+  if (!cursor || !ring) return;
+
+  let mouseX = window.innerWidth / 2;
+  let mouseY = window.innerHeight / 2;
+  let ringX = mouseX;
+  let ringY = mouseY;
+
+  window.addEventListener("mousemove", (event) => {
+    mouseX = event.clientX;
+    mouseY = event.clientY;
+    document.body.classList.add("cursor-ready");
+
+    cursor.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%)`;
+  });
+
+  function animateRing() {
+    ringX += (mouseX - ringX) * 0.18;
+    ringY += (mouseY - ringY) * 0.18;
+    ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  const hoverTargets = "a, button, .btn, .service-card, .package-card, .catalog-card, .product-card, .maya-card, .client-card, .filter-btn, [role='button']";
+
+  document.addEventListener("mouseover", (event) => {
+    if (event.target.closest(hoverTargets)) {
+      document.body.classList.add("cursor-hover");
+    }
+  });
+
+  document.addEventListener("mouseout", (event) => {
+    if (event.target.closest(hoverTargets)) {
+      document.body.classList.remove("cursor-hover");
+    }
+  });
+
+  document.addEventListener("mouseleave", () => {
+    document.body.classList.remove("cursor-ready", "cursor-hover");
+  });
+})();
