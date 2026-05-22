@@ -3108,3 +3108,98 @@ h3{
   }
 }
 
+
+html,
+body{
+  max-width:100%;
+  overflow-x:clip;
+}
+
+body{
+  position:relative;
+}
+
+img,
+video,
+svg{
+  max-width:100%;
+}
+
+.hero,
+.section,
+.site-footer,
+.site-header{
+  max-width:100vw;
+}
+
+.hero{
+  overflow:hidden !important;
+}
+
+.hero-visual,
+.hero-image-stage{
+  max-width:100%;
+}
+
+.hero-image-stage{
+  margin-right:0;
+}
+
+.hero-main-image,
+.hero-image{
+  width:min(112%,1080px);
+  max-width:100%;
+}
+
+#intellium-chatbot-v2,
+#id-chat-toggle-v2,
+#id-chat-window-v2{
+  max-width:calc(100vw - 32px);
+}
+
+#intellium-chatbot-v2{
+  right:max(18px,var(--safe-right))!important;
+}
+
+#id-chat-toggle-v2{
+  right:max(18px,env(safe-area-inset-right));
+  bottom:max(18px,env(safe-area-inset-bottom));
+}
+
+.premium-cursor,
+.premium-cursor-ring{
+  contain:layout paint;
+}
+
+@media (hover:hover) and (pointer:fine){
+  html{
+    scrollbar-width:thin;
+    scrollbar-color:rgba(126,232,255,.45) rgba(5,8,20,.9);
+  }
+
+  ::-webkit-scrollbar{
+    width:10px;
+  }
+
+  ::-webkit-scrollbar-track{
+    background:rgba(5,8,20,.95);
+  }
+
+  ::-webkit-scrollbar-thumb{
+    background:linear-gradient(180deg,rgba(71,218,255,.65),rgba(190,83,255,.55));
+    border-radius:999px;
+    border:2px solid rgba(5,8,20,.95);
+  }
+
+  ::-webkit-scrollbar-thumb:hover{
+    background:linear-gradient(180deg,rgba(126,232,255,.9),rgba(207,112,255,.8));
+  }
+}
+
+@media (max-width:640px){
+  .hero-main-image,
+  .hero-image{
+    width:100%;
+    margin-left:0;
+  }
+}
