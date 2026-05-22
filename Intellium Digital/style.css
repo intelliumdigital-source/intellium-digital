@@ -2574,3 +2574,43 @@ h1,h2,h3{
     rgba(202,91,255,.42)
   );
 }
+
+.service-card{
+  transition:
+    transform .3s cubic-bezier(.25,1,.5,1),
+    box-shadow .3s ease,
+    background .3s ease;
+  will-change:transform;
+}
+
+.service-card:hover{
+  transform:translateY(-4px);
+  box-shadow:
+    0 10px 30px -10px rgba(0,0,0,.7),
+    0 0 20px -5px rgba(71,218,255,.15);
+}
+
+.service-card .service-icon{
+  transition:
+    transform .3s cubic-bezier(.25,1,.5,1),
+    filter .3s ease;
+  will-change:transform;
+}
+
+.service-card:hover .service-icon{
+  transform:scale(1.05) rotate(2deg);
+  filter:drop-shadow(0 0 8px currentColor);
+}
+
+@media (prefers-reduced-motion:reduce){
+  .service-card,
+  .service-card .service-icon{
+    transition:none;
+    will-change:auto;
+  }
+
+  .service-card:hover,
+  .service-card:hover .service-icon{
+    transform:none;
+  }
+}
