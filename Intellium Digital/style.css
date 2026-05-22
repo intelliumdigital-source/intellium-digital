@@ -2458,3 +2458,119 @@ h1,h2,h3{
     grid-column:auto;
   }
 }
+
+.service-card,
+.package-card,
+.catalog-card,
+.product-card,
+.maya-card,
+.client-card,
+.process-card,
+.contact-panel,
+.contact-form,
+.cart-panel{
+  position:relative;
+  isolation:isolate;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.018)) !important;
+  border:none !important;
+  border-radius:18px;
+  overflow:hidden;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+
+.service-card::before,
+.package-card::before,
+.catalog-card::before,
+.product-card::before,
+.maya-card::before,
+.client-card::before,
+.process-card::before,
+.contact-panel::before,
+.contact-form::before,
+.cart-panel::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  padding:1px;
+  background:linear-gradient(
+    135deg,
+    rgba(255,255,255,.16) 0%,
+    rgba(93,228,255,.08) 35%,
+    rgba(255,255,255,.025) 55%,
+    rgba(147,51,234,.28) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  pointer-events:none;
+  opacity:.9;
+  transition:opacity .35s ease,filter .35s ease;
+  z-index:0;
+}
+
+.service-card > *,
+.package-card > *,
+.catalog-card > *,
+.product-card > *,
+.maya-card > *,
+.client-card > *,
+.process-card > *,
+.contact-panel > *,
+.contact-form > *,
+.cart-panel > *{
+  position:relative;
+  z-index:1;
+}
+
+.service-card:hover,
+.package-card:hover,
+.catalog-card:hover,
+.product-card:hover,
+.maya-card:hover,
+.client-card:hover,
+.process-card:hover{
+  transform:translateY(-6px);
+  box-shadow:
+    0 22px 54px rgba(0,0,0,.35),
+    0 0 28px rgba(93,228,255,.08);
+}
+
+.service-card:hover::before,
+.package-card:hover::before,
+.catalog-card:hover::before,
+.product-card:hover::before,
+.maya-card:hover::before,
+.client-card:hover::before,
+.process-card:hover::before{
+  opacity:1;
+  filter:drop-shadow(0 0 12px rgba(93,228,255,.22));
+}
+
+.package-card.featured,
+.catalog-card.featured,
+.product-card.featured,
+.maya-card.featured{
+  background:
+    radial-gradient(circle at top right,rgba(93,228,255,.11),transparent 34%),
+    linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)) !important;
+}
+
+.package-card.featured::before,
+.catalog-card.featured::before,
+.product-card.featured::before,
+.maya-card.featured::before{
+  background:linear-gradient(
+    135deg,
+    rgba(93,228,255,.38),
+    rgba(255,255,255,.08) 42%,
+    rgba(202,91,255,.42)
+  );
+}
