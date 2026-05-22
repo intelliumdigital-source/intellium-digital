@@ -2614,3 +2614,60 @@ h1,h2,h3{
     transform:none;
   }
 }
+
+.eyebrow{
+  font-size:.75rem;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  background:linear-gradient(90deg,#47daff,#be53ff);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.hero .eyebrow{
+  font-size:.75rem;
+  letter-spacing:.12em;
+}
+
+h1,
+h2,
+h3{
+  letter-spacing:-.025em;
+  font-family:"Inter","Plus Jakarta Sans",system-ui,sans-serif;
+}
+
+.hero h1{
+  line-height:1.02;
+}
+
+.section-head h2,
+.section-copy h2{
+  line-height:1.05;
+  letter-spacing:-.045em;
+}
+
+.service-card h3,
+.package-card h3,
+.catalog-card h3,
+.product-card h3,
+.maya-card h3,
+.client-card h3,
+.process-card h3{
+  line-height:1.12;
+  letter-spacing:-.025em;
+}
+
+.hero-subtitle,
+.section-head p,
+.section-copy p,
+.service-card p,
+.package-card p,
+.catalog-card p,
+.product-card p,
+.client-card p,
+.faq-list p,
+.contact-lead{
+  line-height:1.65;
+}
