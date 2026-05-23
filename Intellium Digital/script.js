@@ -575,20 +575,12 @@ renderCart();
   const supportsCursor = window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 900px)").matches;
   if (!supportsCursor) return;
 
-  let cursor = document.querySelector(".premium-cursor");
-  let ring = document.querySelector(".premium-cursor-ring");
+  const cursor = document.querySelector(".premium-cursor");
+  const ring = document.querySelector(".premium-cursor-ring");
 
   if (!cursor || !ring) {
-    cursor = document.createElement("div");
-    cursor.className = "premium-cursor";
-    cursor.setAttribute("aria-hidden", "true");
-
-    ring = document.createElement("div");
-    ring.className = "premium-cursor-ring";
-    ring.setAttribute("aria-hidden", "true");
-
-    document.body.appendChild(cursor);
-    document.body.appendChild(ring);
+    console.warn("Premium cursor elements missing.");
+    return;
   }
 
   document.body.classList.add("custom-cursor-enabled");
@@ -603,13 +595,18 @@ renderCart();
     mouseY = event.clientY;
 
     document.body.classList.add("cursor-ready");
-    cursor.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%)`;
+
+    cursor.style.left = mouseX + "px";
+    cursor.style.top = mouseY + "px";
   }
 
   function animateRing() {
     ringX += (mouseX - ringX) * 0.18;
     ringY += (mouseY - ringY) * 0.18;
-    ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
+
+    ring.style.left = ringX + "px";
+    ring.style.top = ringY + "px";
+
     requestAnimationFrame(animateRing);
   }
 
@@ -634,4 +631,5 @@ renderCart();
     document.body.classList.remove("cursor-ready", "cursor-hover");
   });
 })();
+
 
