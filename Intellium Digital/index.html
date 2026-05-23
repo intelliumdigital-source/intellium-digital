@@ -953,6 +953,83 @@
   <div class="premium-cursor-ring" aria-hidden="true"></div>
 
   <script>
+  (function () {
+    function startPremiumCursor() {
+      var isSmallScreen = window.innerWidth < 900;
+      var isCoarsePointer = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+
+      if (isSmallScreen || isCoarsePointer) {
+        console.info("Premium cursor disabled on mobile/touch.");
+        return;
+      }
+
+      var cursor = document.querySelector(".premium-cursor");
+      var ring = document.querySelector(".premium-cursor-ring");
+
+      if (!cursor || !ring) {
+        console.warn("Premium cursor elements missing.");
+        return;
+      }
+
+      document.body.classList.add("custom-cursor-enabled");
+      console.info("Premium cursor fallback initialized.");
+
+      var mouseX = window.innerWidth / 2;
+      var mouseY = window.innerHeight / 2;
+      var ringX = mouseX;
+      var ringY = mouseY;
+
+      function moveCursor(event) {
+        mouseX = event.clientX;
+        mouseY = event.clientY;
+
+        document.body.classList.add("cursor-ready");
+
+        cursor.style.left = mouseX + "px";
+        cursor.style.top = mouseY + "px";
+      }
+
+      function animateRing() {
+        ringX += (mouseX - ringX) * 0.18;
+        ringY += (mouseY - ringY) * 0.18;
+
+        ring.style.left = ringX + "px";
+        ring.style.top = ringY + "px";
+
+        window.requestAnimationFrame(animateRing);
+      }
+
+      window.addEventListener("mousemove", moveCursor, { passive: true });
+      animateRing();
+
+      var hoverTargets = "a, button, .btn, .service-card, .package-card, .catalog-card, .maya-card, .client-card, .contact-item, .filter-btn, [role='button']";
+
+      document.addEventListener("mouseover", function (event) {
+        if (event.target.closest(hoverTargets)) {
+          document.body.classList.add("cursor-hover");
+        }
+      });
+
+      document.addEventListener("mouseout", function (event) {
+        if (event.target.closest(hoverTargets)) {
+          document.body.classList.remove("cursor-hover");
+        }
+      });
+
+      document.addEventListener("mouseleave", function () {
+        document.body.classList.remove("cursor-ready", "cursor-hover");
+      });
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", startPremiumCursor);
+    } else {
+      startPremiumCursor();
+    }
+  })();
+  </script>
+
+  <script>
     window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
   </script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -963,6 +1040,9 @@
   <script src="script.js"></script>
 </body>
 </html>
+
+
+
 
 
 
