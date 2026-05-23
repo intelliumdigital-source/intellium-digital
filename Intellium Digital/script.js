@@ -573,7 +573,10 @@ renderCart();
 
 (function initPremiumCursor() {
   const supportsCursor = window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 900px)").matches;
-  if (!supportsCursor) return;
+  if (!supportsCursor) {
+    console.info("Premium cursor disabled: device does not support fine pointer.");
+    return;
+  }
 
   const cursor = document.querySelector(".premium-cursor");
   const ring = document.querySelector(".premium-cursor-ring");
@@ -613,7 +616,8 @@ renderCart();
   window.addEventListener("mousemove", moveCursor, { passive: true });
   animateRing();
 
-  const hoverTargets = "a, button, .btn, .service-card, .package-card, .catalog-card, .product-card, .maya-card, .client-card, .contact-item, .filter-btn, [role='button']";
+  const hoverTargets =
+    "a, button, .btn, .service-card, .package-card, .catalog-card, .maya-card, .client-card, .contact-item, .filter-btn, [role='button']";
 
   document.addEventListener("mouseover", function (event) {
     if (event.target.closest(hoverTargets)) {
@@ -630,6 +634,7 @@ renderCart();
   document.addEventListener("mouseleave", function () {
     document.body.classList.remove("cursor-ready", "cursor-hover");
   });
-})();
 
+  console.info("Premium cursor initialized.");
+})();
 
