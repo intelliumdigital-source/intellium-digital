@@ -3020,7 +3020,7 @@ h3{
   }
 }
 
-@media (hover: hover) and (pointer: fine) and (min-width: 900px) {
+@media (min-width: 900px) {
   body.custom-cursor-enabled {
     cursor: none;
   }
@@ -3031,7 +3031,6 @@ h3{
   body.custom-cursor-enabled .service-card,
   body.custom-cursor-enabled .package-card,
   body.custom-cursor-enabled .catalog-card,
-  body.custom-cursor-enabled .product-card,
   body.custom-cursor-enabled .maya-card,
   body.custom-cursor-enabled .client-card,
   body.custom-cursor-enabled .contact-item,
@@ -3049,8 +3048,7 @@ h3{
     z-index: 2147483647;
     transform: translate(-50%, -50%);
     opacity: 0;
-    will-change: left, top, opacity, width, height;
-    contain: layout paint;
+    display: block !important;
   }
 
   .premium-cursor {
@@ -3096,7 +3094,7 @@ h3{
   }
 }
 
-@media (hover: none), (pointer: coarse), (max-width: 899px) {
+@media (pointer: coarse), (max-width: 899px) {
   .premium-cursor,
   .premium-cursor-ring {
     display: none !important;
@@ -3198,4 +3196,6 @@ svg{
     margin-left:0;
   }
 }
+
+
 

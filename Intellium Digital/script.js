@@ -572,9 +572,14 @@ renderCatalog();
 renderCart();
 
 (function initPremiumCursor() {
-  const supportsCursor = window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 900px)").matches;
-  if (!supportsCursor) {
-    console.info("Premium cursor disabled: device does not support fine pointer.");
+  console.info("Premium cursor script loaded.");
+
+  const isDesktopWidth = window.innerWidth >= 900;
+  const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+  if (!isDesktopWidth || isCoarsePointer || isTouchDevice) {
+    console.info("Premium cursor disabled for touch/small device.");
     return;
   }
 
@@ -587,6 +592,7 @@ renderCart();
   }
 
   document.body.classList.add("custom-cursor-enabled");
+  console.info("Premium cursor initialized.");
 
   let mouseX = window.innerWidth / 2;
   let mouseY = window.innerHeight / 2;
@@ -634,7 +640,4 @@ renderCart();
   document.addEventListener("mouseleave", function () {
     document.body.classList.remove("cursor-ready", "cursor-hover");
   });
-
-  console.info("Premium cursor initialized.");
 })();
-
