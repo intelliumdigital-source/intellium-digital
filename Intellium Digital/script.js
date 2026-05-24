@@ -411,6 +411,35 @@ function openQuoteRequest(productId) {
   window.location.href = `mailto:intelliumdigital@gmail.com?subject=${subject}&body=${body}`;
 }
 
+const CHECKOUT_ERROR_MESSAGE = "We could not start the Maya Checkout session right now. Please try again or message Intellium Digital.";
+
+async function readJsonSafe(response) {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+}
+
+function showCheckoutError(message) {
+  alert(message || CHECKOUT_ERROR_MESSAGE);
+}
+
+async function requestMayaCheckout(payload) {
+  const response = await fetch("/api/create-maya-checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await readJsonSafe(response);
+  if (!response.ok || typeof data.checkoutUrl !== "string" || !data.checkoutUrl) {
+    throw new Error(data.error || CHECKOUT_ERROR_MESSAGE);
+  }
+
+  return data.checkoutUrl;
+}
+
 async function startCatalogCheckout() {
   const items = getCartDetailedItems();
   if (!items.length || !catalogCheckoutBtn) {
@@ -422,25 +451,16 @@ async function startCatalogCheckout() {
   catalogCheckoutBtn.textContent = "Creating secure Maya checkout...";
 
   try {
-    const response = await fetch("/api/create-maya-checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items: items.map((item) => ({ id: item.id, quantity: item.quantity })),
-        totalAmount: getCartSubtotalValue(),
-        customerNote: customerNoteInput ? customerNoteInput.value.trim() : ""
-      })
+    const checkoutUrl = await requestMayaCheckout({
+      items: items.map((item) => ({ id: item.id, quantity: item.quantity })),
+      totalAmount: getCartSubtotalValue(),
+      customerNote: customerNoteInput ? customerNoteInput.value.trim() : ""
     });
 
-    const data = await response.json();
-    if (!response.ok || !data.checkoutUrl) {
-      throw new Error(data.error || "Unable to create Maya Checkout session.");
-    }
-
-    window.location.href = data.checkoutUrl;
+    window.location.href = checkoutUrl;
   } catch (error) {
     console.error(error);
-    alert("We could not create the Maya Checkout link. Please message Intellium Digital first or try again later.");
+    showCheckoutError(error instanceof Error ? error.message : CHECKOUT_ERROR_MESSAGE);
     catalogCheckoutBtn.disabled = false;
     catalogCheckoutBtn.textContent = originalText;
   }
@@ -467,28 +487,16 @@ document.querySelectorAll(".maya-pay-btn").forEach((button) => {
     `;
 
     try {
-      const response = await fetch("/api/create-maya-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ packageName, amount })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.checkoutUrl) {
-        throw new Error(data.error || "Unable to create Maya Checkout session.");
-      }
-
-      window.location.href = data.checkoutUrl;
+      const checkoutUrl = await requestMayaCheckout({ packageName, amount });
+      window.location.href = checkoutUrl;
     } catch (error) {
       console.error(error);
-      alert("We could not create the Maya Checkout link. Please message Intellium Digital first or try again later.");
+      showCheckoutError(error instanceof Error ? error.message : CHECKOUT_ERROR_MESSAGE);
       button.disabled = false;
       button.innerHTML = originalHtml;
     }
   });
 });
-
 if (catalogFilters) {
   catalogFilters.addEventListener("click", (event) => {
     const target = event.target;
@@ -570,5 +578,8 @@ if (customerNoteInput) {
 
 renderCatalog();
 renderCart();
+
+
+
 
 

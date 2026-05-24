@@ -1,4 +1,5 @@
-const DEFAULT_MAYA_CHECKOUT_URL = "https://pg.maya.ph/checkout/v1/checkouts";
+const PROD_MAYA_CHECKOUT_URL = "https://pg.maya.ph/checkout/v1/checkouts";
+const SANDBOX_MAYA_CHECKOUT_URL = "https://pg-sandbox.paymaya.com/checkout/v1/checkouts";
 
 const ALLOWED_PRODUCTS = {
   "basic-logo-design": { name: "Basic Logo Design", price: 1500, type: "fixed" },
@@ -51,10 +52,13 @@ const LEGACY_PACKAGES = {
   "Full Digital Business Setup": { price: 25000 }
 };
 
+const MAX_CUSTOMER_NOTE_LENGTH = 300;
+const GENERIC_CHECKOUT_ERROR = "We could not start Maya Checkout right now. Please try again or message Intellium Digital.";
+
 function buildSiteUrl(req) {
   const host = req.headers["x-forwarded-host"] || req.headers.host;
   const protocol = req.headers["x-forwarded-proto"] || "https";
-  return process.env.SITE_URL || `${protocol}://${host}`;
+  return `${protocol}://${host}`;
 }
 
 function parseBody(body) {
@@ -69,8 +73,44 @@ function parseBody(body) {
   return body;
 }
 
+function sanitizeCustomerNote(note) {
+  if (typeof note !== "string") {
+    return "";
+  }
+
+  return note.replace(/\s+/g, " ").trim().slice(0, MAX_CUSTOMER_NOTE_LENGTH);
+}
+
+function getMayaConfig(req) {
+  const secretKey = process.env.MAYA_SECRET_KEY;
+  if (!secretKey) {
+    throw new Error("MAYA_SECRET_KEY is missing in Vercel Environment Variables.");
+  }
+
+  const mode = String(process.env.MAYA_ENV || "sandbox").toLowerCase() === "production"
+    ? "production"
+    : "sandbox";
+
+  const checkoutUrl = mode === "production"
+    ? PROD_MAYA_CHECKOUT_URL
+    : SANDBOX_MAYA_CHECKOUT_URL;
+
+  const siteUrl = buildSiteUrl(req);
+
+  return {
+    secretKey,
+    mode,
+    checkoutUrl,
+    successUrl: process.env.MAYA_SUCCESS_URL || `${siteUrl}/success.html`,
+    failedUrl: process.env.MAYA_FAILED_URL || `${siteUrl}/failed.html`,
+    cancelUrl: process.env.MAYA_CANCEL_URL || process.env.MAYA_FAILED_URL || `${siteUrl}/failed.html`,
+    webhookUrl: process.env.MAYA_WEBHOOK_URL || ""
+  };
+}
+
 function buildMayaItem(name, unitPrice, quantity) {
-  const lineTotal = unitPrice * quantity;
+  const total = unitPrice * quantity;
+
   return {
     name,
     quantity,
@@ -79,79 +119,158 @@ function buildMayaItem(name, unitPrice, quantity) {
       currency: "PHP"
     },
     totalAmount: {
-      value: lineTotal,
+      value: total,
       currency: "PHP"
     }
   };
 }
 
-function isValidQuantity(quantity) {
-  return Number.isInteger(quantity) && quantity > 0 && quantity <= 99;
+function isValidQuantity(value) {
+  return Number.isInteger(value) && value > 0 && value <= 99;
 }
 
-function buildCartCheckout(body) {
+function normalizeCartCheckout(body) {
   if (!Array.isArray(body.items) || body.items.length === 0) {
-    throw new Error("Cart is empty.");
+    throw new Error("Your cart is empty.");
   }
 
   const normalizedItems = body.items.map((item) => {
     const product = ALLOWED_PRODUCTS[item.id];
     if (!product) {
-      throw new Error(`Invalid cart item id: ${item.id}`);
+      throw new Error("One of the selected cart items is invalid.");
     }
 
     if (product.type === "quote") {
-      throw new Error(`Quote-only item cannot be checked out directly: ${product.name}`);
+      throw new Error(`${product.name} requires a custom quote and cannot be paid online yet.`);
     }
 
     const quantity = Number(item.quantity);
     if (!isValidQuantity(quantity)) {
-      throw new Error(`Invalid quantity for item: ${product.name}`);
+      throw new Error(`Invalid quantity for ${product.name}.`);
     }
 
     return {
       id: item.id,
       name: product.name,
-      price: product.price,
-      quantity
+      quantity,
+      unitPrice: product.price
     };
   });
 
-  const computedTotal = normalizedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const computedTotal = normalizedItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
   const requestedTotal = Number(body.totalAmount);
 
-  if (!computedTotal) {
-    throw new Error("Cart is empty.");
-  }
-
   if (!Number.isFinite(requestedTotal) || requestedTotal !== computedTotal) {
-    throw new Error("Cart total mismatch.");
+    throw new Error("Cart total mismatch. Please refresh the page and try again.");
   }
 
   return {
-    source: "service-catalog-cart",
-    checkoutItems: normalizedItems.map((item) => buildMayaItem(item.name, item.price, item.quantity)),
+    source: "catalog-cart",
+    descriptor: `${normalizedItems.length} cart item${normalizedItems.length === 1 ? "" : "s"}`,
+    items: normalizedItems,
     totalAmount: computedTotal,
-    itemCount: normalizedItems.reduce((sum, item) => sum + item.quantity, 0),
-    customerNote: typeof body.customerNote === "string" ? body.customerNote.trim() : ""
+    customerNote: sanitizeCustomerNote(body.customerNote)
   };
 }
 
-function buildLegacyCheckout(body) {
-  const packageName = body.packageName;
+function normalizeLegacyCheckout(body) {
+  const packageName = typeof body.packageName === "string" ? body.packageName.trim() : "";
   const amount = Number(body.amount);
-  const legacy = LEGACY_PACKAGES[packageName];
+  const selectedPackage = LEGACY_PACKAGES[packageName];
 
-  if (!legacy || legacy.price !== amount) {
-    throw new Error("Invalid package or amount.");
+  if (!packageName || !selectedPackage || !Number.isFinite(amount) || amount !== selectedPackage.price) {
+    throw new Error("Invalid package or amount. Please refresh the page and try again.");
   }
 
   return {
-    source: "direct-package",
-    checkoutItems: [buildMayaItem(packageName, legacy.price, 1)],
-    totalAmount: legacy.price,
-    itemCount: 1,
+    source: "maya-package-button",
+    descriptor: packageName,
+    items: [{ id: packageName, name: packageName, quantity: 1, unitPrice: selectedPackage.price }],
+    totalAmount: selectedPackage.price,
     customerNote: ""
+  };
+}
+
+function normalizeCheckoutRequest(body) {
+  return Array.isArray(body.items)
+    ? normalizeCartCheckout(body)
+    : normalizeLegacyCheckout(body);
+}
+
+function buildCheckoutPayload(checkoutRequest, config) {
+  const reference = `intellium-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  return {
+    requestReferenceNumber: reference,
+    totalAmount: {
+      value: checkoutRequest.totalAmount,
+      currency: "PHP"
+    },
+    redirectUrl: {
+      success: config.successUrl,
+      failure: config.failedUrl,
+      cancel: config.cancelUrl
+    },
+    items: checkoutRequest.items.map((item) => buildMayaItem(item.name, item.unitPrice, item.quantity)),
+    metadata: {
+      brand: "Intellium Digital",
+      source: checkoutRequest.source,
+      descriptor: checkoutRequest.descriptor,
+      itemCount: checkoutRequest.items.reduce((sum, item) => sum + item.quantity, 0),
+      customerNote: checkoutRequest.customerNote || null,
+      mayaEnv: config.mode,
+      webhookConfigured: Boolean(config.webhookUrl)
+    }
+  };
+}
+
+async function createMayaSession(payload, config) {
+  const auth = Buffer.from(`${config.secretKey}:`).toString("base64");
+  const response = await fetch(config.checkoutUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Basic ${auth}`
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const rawText = await response.text();
+  let data = {};
+
+  if (rawText) {
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = { rawText };
+    }
+  }
+
+  if (!response.ok) {
+    console.error("Maya create checkout failed", JSON.stringify({
+      status: response.status,
+      payloadReference: payload.requestReferenceNumber,
+      error: data?.message || data?.error || data?.code || rawText || "Unknown Maya error"
+    }));
+
+    throw new Error(GENERIC_CHECKOUT_ERROR);
+  }
+
+  const checkoutUrl = data.redirectUrl || data.checkoutUrl || data.url;
+  if (typeof checkoutUrl !== "string" || !checkoutUrl) {
+    console.error("Maya create checkout missing redirect URL", JSON.stringify({
+      payloadReference: payload.requestReferenceNumber,
+      responseKeys: Object.keys(data || {})
+    }));
+
+    throw new Error(GENERIC_CHECKOUT_ERROR);
+  }
+
+  return {
+    checkoutId: data.id || data.checkoutId || null,
+    checkoutUrl,
+    requestReferenceNumber: payload.requestReferenceNumber
   };
 }
 
@@ -159,90 +278,33 @@ export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
 
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed. Use POST from the website payment buttons." });
+    return res.status(405).json({ error: "Method not allowed. Use POST." });
   }
 
   try {
-    const publicKey = process.env.MAYA_CHECKOUT_PUBLIC_KEY;
-    if (!publicKey) {
-      return res.status(500).json({ error: "MAYA_CHECKOUT_PUBLIC_KEY is missing in Vercel Environment Variables." });
-    }
-
-    const mayaCheckoutUrl = process.env.MAYA_CHECKOUT_BASE_URL || DEFAULT_MAYA_CHECKOUT_URL;
-    const baseUrl = buildSiteUrl(req);
     const body = parseBody(req.body);
-
-    const checkoutRequest = Array.isArray(body.items)
-      ? buildCartCheckout(body)
-      : buildLegacyCheckout(body);
-
-    const requestReferenceNumber = `intellium-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-    const payload = {
-      totalAmount: {
-        value: checkoutRequest.totalAmount,
-        currency: "PHP"
-      },
-      requestReferenceNumber,
-      redirectUrl: {
-        success: `${baseUrl}/success.html`,
-        failure: `${baseUrl}/failed.html`,
-        cancel: `${baseUrl}/failed.html`
-      },
-      items: checkoutRequest.checkoutItems,
-      metadata: {
-        brand: "Intellium Digital",
-        source: checkoutRequest.source,
-        itemCount: checkoutRequest.itemCount,
-        customerNote: checkoutRequest.customerNote || null
-      }
-    };
-
-    const auth = Buffer.from(`${publicKey}:`).toString("base64");
-    const mayaResponse = await fetch(mayaCheckoutUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${auth}`
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const rawResponse = await mayaResponse.text();
-    let data;
-
-    try {
-      data = rawResponse ? JSON.parse(rawResponse) : {};
-    } catch {
-      data = { raw: rawResponse };
-    }
-
-    if (!mayaResponse.ok) {
-      console.error("Maya Checkout API error:", JSON.stringify(data));
-      return res.status(mayaResponse.status || 500).json({
-        error: data.message || data.error || "Maya Checkout rejected the checkout request.",
-        mayaResponse: data
-      });
-    }
-
-    const checkoutUrl = data.redirectUrl || data.checkoutUrl || data.url;
-    if (!checkoutUrl) {
-      return res.status(500).json({
-        error: "Maya Checkout did not return a checkout URL.",
-        mayaResponse: data
-      });
-    }
+    const config = getMayaConfig(req);
+    const checkoutRequest = normalizeCheckoutRequest(body);
+    const payload = buildCheckoutPayload(checkoutRequest, config);
+    const session = await createMayaSession(payload, config);
 
     return res.status(200).json({
-      checkoutId: data.id || data.checkoutId || null,
-      requestReferenceNumber,
-      checkoutUrl,
-      totalAmount: checkoutRequest.totalAmount
+      checkoutUrl: session.checkoutUrl,
+      checkoutId: session.checkoutId,
+      requestReferenceNumber: session.requestReferenceNumber
     });
   } catch (error) {
-    console.error("Create Maya Checkout function crashed:", error);
-    return res.status(400).json({
-      error: error && error.message ? error.message : "Server error creating Maya Checkout link."
+    const message = error instanceof Error ? error.message : GENERIC_CHECKOUT_ERROR;
+    const statusCode = message.includes("missing in Vercel") ? 500 : 400;
+
+    if (statusCode === 500) {
+      console.error("Create Maya Checkout configuration error:", message);
+    } else {
+      console.error("Create Maya Checkout request failed:", message);
+    }
+
+    return res.status(statusCode).json({
+      error: message || GENERIC_CHECKOUT_ERROR
     });
   }
 }
