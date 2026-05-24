@@ -56,6 +56,10 @@ const MAX_CUSTOMER_NOTE_LENGTH = 300;
 const GENERIC_CHECKOUT_ERROR = "We could not start Maya Checkout right now. Please try again or message Intellium Digital.";
 
 function buildSiteUrl(req) {
+  if (process.env.SITE_URL) {
+    return process.env.SITE_URL.replace(/\/$/, "");
+  }
+
   const host = req.headers["x-forwarded-host"] || req.headers.host;
   const protocol = req.headers["x-forwarded-proto"] || "https";
   return `${protocol}://${host}`;
@@ -308,3 +312,4 @@ export default async function handler(req, res) {
     });
   }
 }
+
