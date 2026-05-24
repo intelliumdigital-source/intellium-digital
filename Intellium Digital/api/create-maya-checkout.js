@@ -42,7 +42,7 @@ function normalizeItems(items, fallbackName, fallbackAmount) {
       {
         name: fallbackName,
         quantity: 1,
-        unitPrice: fallbackAmount
+        lineAmount: fallbackAmount
       }
     ];
   }
@@ -56,39 +56,46 @@ function normalizeItems(items, fallbackName, fallbackAmount) {
       {
         name: fallbackName,
         quantity: 1,
-        unitPrice: fallbackAmount
+        lineAmount: fallbackAmount
       }
     ];
   }
 
   return items.map((item, index) => {
     const name = sanitizeText(item?.name, 120);
-    const unitPrice = parseAmount(item?.amount ?? item?.price);
     const quantity = Number(item?.quantity ?? 1);
+    const baseAmount = parseAmount(item?.amount ?? item?.price);
 
     if (!name) {
       throw new Error(`Item ${index + 1} is missing a valid name.`);
-    }
-
-    if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
-      throw new Error(`Item ${index + 1} has an invalid amount.`);
     }
 
     if (!Number.isInteger(quantity) || quantity <= 0) {
       throw new Error(`Item ${index + 1} has an invalid quantity.`);
     }
 
-    return { name, quantity, unitPrice };
+    if (!Number.isFinite(baseAmount) || baseAmount <= 0) {
+      throw new Error(`Item ${index + 1} has an invalid amount.`);
+    }
+
+    const lineAmount = Math.round(baseAmount * quantity * 100) / 100;
+
+    return {
+      name,
+      quantity,
+      lineAmount
+    };
   });
 }
 
-function buildDebug(cleanMayaCheckoutKey, mayaCheckoutEndpoint) {
+function buildDebug(mayaCheckoutKey, mayaCheckoutEndpoint) {
   return {
     env: process.env.MAYA_ENV || "missing",
     endpoint: mayaCheckoutEndpoint,
-    publicKeyPrefix: cleanMayaCheckoutKey.slice(0, 8),
-    publicKeyLength: cleanMayaCheckoutKey.length,
-    hasSecretKey: Boolean(process.env.MAYA_SECRET_KEY)
+    publicKeyPrefix: mayaCheckoutKey.slice(0, 8),
+    publicKeyLength: mayaCheckoutKey.length,
+    hasSecretKey: Boolean(process.env.MAYA_SECRET_KEY),
+    siteUrl: process.env.SITE_URL || "missing"
   };
 }
 
@@ -106,7 +113,7 @@ function buildPayload(body, redirectUrl) {
   }
 
   const normalizedItems = normalizeItems(body?.items, name, amount);
-  const itemsTotal = normalizedItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
+  const itemsTotal = normalizedItems.reduce((sum, item) => sum + item.lineAmount, 0);
 
   if (Math.abs(itemsTotal - amount) > 0.01) {
     throw new Error("amount does not match the provided items total.");
@@ -115,28 +122,32 @@ function buildPayload(body, redirectUrl) {
   const requestReferenceNumber = `intellium-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   return {
-    requestReferenceNumber,
     totalAmount: {
       value: amount,
       currency: "PHP"
     },
     buyer: {
       firstName: "Intellium",
-      lastName: "Digital"
+      lastName: "Digital",
+      contact: {
+        email: "intelliumdigital@gmail.com",
+        phone: "09929988439"
+      }
     },
     items: normalizedItems.map((item) => ({
       name: item.name,
       quantity: item.quantity,
-      amount: {
-        value: item.unitPrice,
-        currency: "PHP"
-      },
       totalAmount: {
-        value: Math.round(item.unitPrice * item.quantity * 100) / 100,
+        value: item.lineAmount,
         currency: "PHP"
       }
     })),
-    redirectUrl,
+    redirectUrl: {
+      success: redirectUrl.success,
+      failure: redirectUrl.failure,
+      cancel: redirectUrl.cancel
+    },
+    requestReferenceNumber,
     metadata: {
       note: note || null,
       source: normalizedItems.length > 1 ? "catalog-cart" : "maya-button"
@@ -151,12 +162,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed.", details: "Use POST only." });
   }
 
-  const mayaCheckoutKey = process.env.MAYA_PUBLIC_KEY;
+  const mayaCheckoutKey = process.env.MAYA_PUBLIC_KEY?.trim();
   if (!mayaCheckoutKey) {
-    return res.status(500).json({ error: "Missing MAYA_PUBLIC_KEY" });
+    return res.status(500).json({
+      error: "Missing MAYA_PUBLIC_KEY"
+    });
   }
 
-  const cleanMayaCheckoutKey = mayaCheckoutKey.trim();
   const isProduction = process.env.MAYA_ENV === "production";
   const mayaCheckoutEndpoint = isProduction
     ? PROD_MAYA_CHECKOUT_URL
@@ -167,25 +179,27 @@ export default async function handler(req, res) {
     failure: process.env.MAYA_FAILED_URL || `${siteUrl}/failed.html`,
     cancel: process.env.MAYA_CANCEL_URL || `${siteUrl}/failed.html`
   };
-  const debug = buildDebug(cleanMayaCheckoutKey, mayaCheckoutEndpoint);
+  const debug = buildDebug(mayaCheckoutKey, mayaCheckoutEndpoint);
 
   console.info("Maya checkout config", {
-    env: isProduction ? "production" : "sandbox",
-    publicKeyExists: Boolean(cleanMayaCheckoutKey),
-    publicKeyPreview: `${cleanMayaCheckoutKey.slice(0, 5)}...`
+    env: process.env.MAYA_ENV || "missing",
+    endpoint: mayaCheckoutEndpoint,
+    publicKeyPrefix: `${mayaCheckoutKey.slice(0, 5)}...`,
+    publicKeyLength: mayaCheckoutKey.length,
+    hasSecretKey: Boolean(process.env.MAYA_SECRET_KEY)
   });
 
   try {
     const body = parseBody(req.body);
     const payload = buildPayload(body, redirectUrl);
-    const authorization = "Basic " + Buffer.from(`${cleanMayaCheckoutKey}:`).toString("base64");
+    const authHeader = "Basic " + Buffer.from(`${mayaCheckoutKey}:`).toString("base64");
 
     const response = await fetch(mayaCheckoutEndpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        Authorization: authorization
+        Authorization: authHeader
       },
       body: JSON.stringify(payload)
     });

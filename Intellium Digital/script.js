@@ -412,6 +412,7 @@ function openQuoteRequest(productId) {
 }
 
 const CHECKOUT_ERROR_MESSAGE = "We could not start Maya Checkout right now. Please try again or message Intellium Digital.";
+const MAYA_PAYMENT_LINK = "https://paymaya.me/jssmmph";
 
 async function readJsonSafe(response) {
   try {
@@ -421,8 +422,21 @@ async function readJsonSafe(response) {
   }
 }
 
-function showCheckoutError() {
-  alert(CHECKOUT_ERROR_MESSAGE);
+function formatPaymentAmount(amount) {
+  return `PHP ${Number(amount || 0).toLocaleString("en-PH", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  })}`;
+}
+
+function offerMayaPaymentLinkFallback(amount, isCart = false) {
+  const prompt = isCart
+    ? `We could not start the automatic Maya Checkout right now. You can still pay securely through our active Maya payment link. Please enter the exact cart total: ${formatPaymentAmount(amount)}. Continue?`
+    : `We could not start the automatic Maya Checkout right now. You can still pay securely through our active Maya payment link. Please enter the exact amount: ${formatPaymentAmount(amount)}. Continue?`;
+
+  if (window.confirm(prompt)) {
+    window.location.href = MAYA_PAYMENT_LINK;
+  }
 }
 
 async function requestMayaCheckout(payload) {
@@ -454,7 +468,7 @@ async function startCatalogCheckout() {
   const subtotal = getCartSubtotalValue();
   const originalText = catalogCheckoutBtn.textContent;
   catalogCheckoutBtn.disabled = true;
-  catalogCheckoutBtn.textContent = "Creating secure Maya checkout...";
+  catalogCheckoutBtn.textContent = "Preparing Maya payment...";
 
   try {
     const checkoutUrl = await requestMayaCheckout({
@@ -471,7 +485,7 @@ async function startCatalogCheckout() {
     window.location.href = checkoutUrl;
   } catch (error) {
     console.error(error);
-    showCheckoutError();
+    offerMayaPaymentLinkFallback(subtotal, true);
     catalogCheckoutBtn.disabled = false;
     catalogCheckoutBtn.textContent = originalText;
   }
@@ -493,7 +507,7 @@ document.querySelectorAll(".maya-pay-btn").forEach((button) => {
             <path d="m12 13.5 2 2 4-4"></path>
           </svg>
         </span>
-        <span>Creating secure Maya checkout...</span>
+        <span>Preparing Maya payment...</span>
       </span>
     `;
 
@@ -508,12 +522,21 @@ document.querySelectorAll(".maya-pay-btn").forEach((button) => {
       window.location.href = checkoutUrl;
     } catch (error) {
       console.error(error);
-      showCheckoutError();
+      offerMayaPaymentLinkFallback(amount, false);
       button.disabled = false;
       button.innerHTML = originalHtml;
     }
   });
 });
+
+const mayaPaymentNote = document.querySelector("#maya-payments .maya-note");
+if (mayaPaymentNote && !document.getElementById("maya-payment-link-helper")) {
+  const helper = document.createElement("p");
+  helper.id = "maya-payment-link-helper";
+  helper.className = "cart-note-text";
+  helper.textContent = "If automatic checkout is unavailable, you may also pay through our official Maya payment link. Please enter the exact agreed amount.";
+  mayaPaymentNote.appendChild(helper);
+}
 if (catalogFilters) {
   catalogFilters.addEventListener("click", (event) => {
     const target = event.target;
@@ -595,6 +618,7 @@ if (customerNoteInput) {
 
 renderCatalog();
 renderCart();
+
 
 
 

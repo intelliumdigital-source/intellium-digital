@@ -1,6 +1,13 @@
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
 
+  if (req.method === "GET") {
+    return res.status(200).json({
+      ok: true,
+      message: "Maya webhook endpoint is active. Maya will send POST events here."
+    });
+  }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed." });
   }
@@ -21,9 +28,15 @@ export default async function handler(req, res) {
     // TODO: Verify webhook authenticity before processing orders.
     // TODO: Persist verified payment events and reconcile them against project records.
 
-    return res.status(200).json({ received: true });
+    return res.status(200).json({
+      ok: true,
+      received: true
+    });
   } catch (error) {
     console.error("Maya webhook error", error instanceof Error ? error.message : String(error));
-    return res.status(200).json({ received: true });
+    return res.status(200).json({
+      ok: true,
+      received: true
+    });
   }
 }
