@@ -24,9 +24,9 @@ function buildSiteUrl(req) {
 }
 
 function getConfig(req) {
-  const secretKey = process.env.MAYA_SECRET_KEY;
-  if (!secretKey) {
-    throw new Error("MAYA_SECRET_KEY is missing.");
+  const mayaCheckoutKey = process.env.MAYA_PUBLIC_KEY;
+  if (!mayaCheckoutKey) {
+    throw new Error("Missing MAYA_PUBLIC_KEY");
   }
 
   const mode = String(process.env.MAYA_ENV || "sandbox").toLowerCase() === "production"
@@ -36,7 +36,8 @@ function getConfig(req) {
   const siteUrl = buildSiteUrl(req);
 
   return {
-    secretKey,
+    mayaCheckoutKey,
+    environment: mode,
     checkoutUrl: mode === "production" ? PROD_MAYA_CHECKOUT_URL : SANDBOX_MAYA_CHECKOUT_URL,
     successUrl: process.env.MAYA_SUCCESS_URL || `${siteUrl}/success.html`,
     failedUrl: process.env.MAYA_FAILED_URL || `${siteUrl}/failed.html`,
@@ -160,7 +161,14 @@ function buildPayload(body, config) {
 }
 
 async function createCheckout(payload, config) {
-  const auth = Buffer.from(`${config.secretKey}:`).toString("base64");
+  const auth = Buffer.from(`${config.mayaCheckoutKey}:`).toString("base64");
+
+  console.info("Maya checkout config", {
+    environment: config.environment,
+    publicKeyPresent: Boolean(config.mayaCheckoutKey),
+    publicKeyPreview: `${String(config.mayaCheckoutKey).slice(0, 5)}...`
+  });
+
   const response = await fetch(config.checkoutUrl, {
     method: "POST",
     headers: {
