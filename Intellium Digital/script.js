@@ -411,7 +411,7 @@ function openQuoteRequest(productId) {
   window.location.href = `mailto:intelliumdigital@gmail.com?subject=${subject}&body=${body}`;
 }
 
-const CHECKOUT_ERROR_MESSAGE = "We could not start the Maya Checkout session right now. Please try again or message Intellium Digital.";
+const CHECKOUT_ERROR_MESSAGE = "We could not start Maya Checkout right now. Please try again or message Intellium Digital.";
 
 async function readJsonSafe(response) {
   try {
@@ -421,8 +421,8 @@ async function readJsonSafe(response) {
   }
 }
 
-function showCheckoutError(message) {
-  alert(message || CHECKOUT_ERROR_MESSAGE);
+function showCheckoutError() {
+  alert(CHECKOUT_ERROR_MESSAGE);
 }
 
 async function requestMayaCheckout(payload) {
@@ -433,8 +433,13 @@ async function requestMayaCheckout(payload) {
   });
 
   const data = await readJsonSafe(response);
+
   if (!response.ok || typeof data.checkoutUrl !== "string" || !data.checkoutUrl) {
-    throw new Error(data.error || CHECKOUT_ERROR_MESSAGE);
+    console.error("Maya checkout request failed", {
+      status: response.status,
+      data
+    });
+    throw new Error(data?.details || data?.error || CHECKOUT_ERROR_MESSAGE);
   }
 
   return data.checkoutUrl;
@@ -446,21 +451,27 @@ async function startCatalogCheckout() {
     return;
   }
 
+  const subtotal = getCartSubtotalValue();
   const originalText = catalogCheckoutBtn.textContent;
   catalogCheckoutBtn.disabled = true;
   catalogCheckoutBtn.textContent = "Creating secure Maya checkout...";
 
   try {
     const checkoutUrl = await requestMayaCheckout({
-      items: items.map((item) => ({ id: item.id, quantity: item.quantity })),
-      totalAmount: getCartSubtotalValue(),
-      customerNote: customerNoteInput ? customerNoteInput.value.trim() : ""
+      name: "Intellium Digital Service Catalog Checkout",
+      amount: subtotal,
+      items: items.map((item) => ({
+        name: item.name,
+        amount: item.price,
+        quantity: item.quantity
+      })),
+      note: customerNoteInput ? customerNoteInput.value.trim() : ""
     });
 
     window.location.href = checkoutUrl;
   } catch (error) {
     console.error(error);
-    showCheckoutError(error instanceof Error ? error.message : CHECKOUT_ERROR_MESSAGE);
+    showCheckoutError();
     catalogCheckoutBtn.disabled = false;
     catalogCheckoutBtn.textContent = originalText;
   }
@@ -469,7 +480,7 @@ async function startCatalogCheckout() {
 document.querySelectorAll(".maya-pay-btn").forEach((button) => {
   button.addEventListener("click", async () => {
     const originalHtml = button.innerHTML;
-    const packageName = button.dataset.name;
+    const name = button.dataset.name || "";
     const amount = Number(button.dataset.amount);
 
     button.disabled = true;
@@ -487,11 +498,17 @@ document.querySelectorAll(".maya-pay-btn").forEach((button) => {
     `;
 
     try {
-      const checkoutUrl = await requestMayaCheckout({ packageName, amount });
+      const checkoutUrl = await requestMayaCheckout({
+        name,
+        amount,
+        items: [{ name, amount, quantity: 1 }],
+        note: "Direct Maya payment button"
+      });
+
       window.location.href = checkoutUrl;
     } catch (error) {
       console.error(error);
-      showCheckoutError(error instanceof Error ? error.message : CHECKOUT_ERROR_MESSAGE);
+      showCheckoutError();
       button.disabled = false;
       button.innerHTML = originalHtml;
     }
@@ -578,6 +595,7 @@ if (customerNoteInput) {
 
 renderCatalog();
 renderCart();
+
 
 
 

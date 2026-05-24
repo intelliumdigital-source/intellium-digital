@@ -1,69 +1,5 @@
-const PROD_MAYA_CHECKOUT_URL = "https://pg.maya.ph/checkout/v1/checkouts";
+const PROD_MAYA_CHECKOUT_URL = "https://pg.paymaya.com/checkout/v1/checkouts";
 const SANDBOX_MAYA_CHECKOUT_URL = "https://pg-sandbox.paymaya.com/checkout/v1/checkouts";
-
-const ALLOWED_PRODUCTS = {
-  "basic-logo-design": { name: "Basic Logo Design", price: 1500, type: "fixed" },
-  "premium-logo-design": { name: "Premium Logo Design", price: 2500, type: "fixed" },
-  "facebook-profile-cover": { name: "Facebook Profile + Cover Photo", price: 1500, type: "fixed" },
-  "brand-color-font-guide": { name: "Brand Color + Font Guide", price: 1000, type: "fixed" },
-  "branding-kit-bundle": { name: "Branding Kit Bundle", price: 3500, type: "fixed" },
-
-  "starter-website-5-pages": { name: "Starter Website, up to 5 pages", price: 5000, type: "fixed" },
-  "business-website-10-pages": { name: "Business Website, up to 10 pages", price: 10000, type: "fixed" },
-  "premium-website-redesign": { name: "Premium Website Redesign", price: 12000, type: "fixed" },
-  "booking-inquiry-form-setup": { name: "Booking / Inquiry Form Setup", price: 2000, type: "fixed" },
-  "website-copywriting-setup": { name: "Website Copywriting Setup", price: 2500, type: "fixed" },
-  "extra-page": { name: "Extra Page", price: 1000, type: "fixed" },
-
-  "maya-checkout-button-setup": { name: "Maya Checkout Button Setup", price: 4000, type: "fixed" },
-  "product-service-checkout-flow": { name: "Product / Service Checkout Flow", price: 6000, type: "fixed" },
-  "maya-webhook-payment-status-setup": { name: "Maya Webhook / Payment Status Setup", price: 5000, type: "fixed" },
-  "success-failed-payment-pages": { name: "Success / Failed Payment Pages", price: 2000, type: "fixed" },
-  "website-maya-integration-promo": { name: "Website + Maya Integration Promo", price: 18000, type: "featured" },
-
-  "basic-seo-setup": { name: "Basic SEO Setup", price: 2500, type: "fixed" },
-  "google-search-console-setup": { name: "Google Search Console Setup", price: 1500, type: "fixed" },
-  "seo-page-titles-meta-descriptions": { name: "SEO Page Titles + Meta Descriptions", price: 2000, type: "fixed" },
-  "local-business-seo-setup": { name: "Local Business SEO Setup", price: 3500, type: "fixed" },
-  "basic-sem-ads-launch-setup": { name: "Basic SEM / Ads Launch Setup", price: 4000, type: "fixed" },
-
-  "auto-reply-faq-setup": { name: "Auto-reply / FAQ Setup", price: 2500, type: "fixed" },
-  "lead-capture-form-google-sheet": { name: "Lead Capture Form + Google Sheet", price: 3000, type: "fixed" },
-  "booking-request-flow": { name: "Booking Request Flow", price: 3500, type: "fixed" },
-  "email-notification-automation": { name: "Email Notification Automation", price: 2500, type: "fixed" },
-  "basic-business-automation-bundle": { name: "Basic Business Automation Bundle", price: 8000, type: "fixed" },
-
-  "app-ui-mockup-prototype": { name: "App UI Mockup / Prototype", price: 8000, type: "fixed" },
-  "simple-web-app": { name: "Simple Web App", price: 20000, type: "quote" },
-  "business-mobile-app": { name: "Business Mobile App", price: 35000, type: "quote" },
-  "admin-dashboard": { name: "Admin Dashboard", price: 15000, type: "quote" },
-  "custom-app-quotation": { name: "Custom App Quotation", price: 35000, type: "quote" },
-
-  "starter-digital-presence-bundle": { name: "Starter Digital Presence", price: 5000, type: "fixed" },
-  "business-website-package-bundle": { name: "Business Website Package", price: 10000, type: "fixed" },
-  "full-digital-business-setup-bundle": { name: "Full Digital Business Setup", price: 25000, type: "fixed" },
-  "business-app-starter-bundle": { name: "Business App Starter", price: 35000, type: "quote" }
-};
-
-const LEGACY_PACKAGES = {
-  "Project Reservation Fee": { price: 1000 },
-  "Starter Website Package": { price: 5000 },
-  "Website + Maya Integration Promo": { price: 18000 },
-  "Full Digital Business Setup": { price: 25000 }
-};
-
-const MAX_CUSTOMER_NOTE_LENGTH = 300;
-const GENERIC_CHECKOUT_ERROR = "We could not start Maya Checkout right now. Please try again or message Intellium Digital.";
-
-function buildSiteUrl(req) {
-  if (process.env.SITE_URL) {
-    return process.env.SITE_URL.replace(/\/$/, "");
-  }
-
-  const host = req.headers["x-forwarded-host"] || req.headers.host;
-  const protocol = req.headers["x-forwarded-proto"] || "https";
-  return `${protocol}://${host}`;
-}
 
 function parseBody(body) {
   if (!body) {
@@ -77,158 +13,153 @@ function parseBody(body) {
   return body;
 }
 
-function sanitizeCustomerNote(note) {
-  if (typeof note !== "string") {
-    return "";
+function buildSiteUrl(req) {
+  if (process.env.SITE_URL) {
+    return process.env.SITE_URL.replace(/\/$/, "");
   }
 
-  return note.replace(/\s+/g, " ").trim().slice(0, MAX_CUSTOMER_NOTE_LENGTH);
+  const host = req.headers["x-forwarded-host"] || req.headers.host;
+  const protocol = req.headers["x-forwarded-proto"] || "https";
+  return `${protocol}://${host}`;
 }
 
-function getMayaConfig(req) {
+function getConfig(req) {
   const secretKey = process.env.MAYA_SECRET_KEY;
   if (!secretKey) {
-    throw new Error("MAYA_SECRET_KEY is missing in Vercel Environment Variables.");
+    throw new Error("MAYA_SECRET_KEY is missing.");
   }
 
   const mode = String(process.env.MAYA_ENV || "sandbox").toLowerCase() === "production"
     ? "production"
     : "sandbox";
 
-  const checkoutUrl = mode === "production"
-    ? PROD_MAYA_CHECKOUT_URL
-    : SANDBOX_MAYA_CHECKOUT_URL;
-
   const siteUrl = buildSiteUrl(req);
 
   return {
     secretKey,
-    mode,
-    checkoutUrl,
+    checkoutUrl: mode === "production" ? PROD_MAYA_CHECKOUT_URL : SANDBOX_MAYA_CHECKOUT_URL,
     successUrl: process.env.MAYA_SUCCESS_URL || `${siteUrl}/success.html`,
     failedUrl: process.env.MAYA_FAILED_URL || `${siteUrl}/failed.html`,
-    cancelUrl: process.env.MAYA_CANCEL_URL || process.env.MAYA_FAILED_URL || `${siteUrl}/failed.html`,
-    webhookUrl: process.env.MAYA_WEBHOOK_URL || ""
+    cancelUrl: process.env.MAYA_CANCEL_URL || `${siteUrl}/failed.html`
   };
 }
 
-function buildMayaItem(name, unitPrice, quantity) {
-  const total = unitPrice * quantity;
-
-  return {
-    name,
-    quantity,
-    amount: {
-      value: unitPrice,
-      currency: "PHP"
-    },
-    totalAmount: {
-      value: total,
-      currency: "PHP"
-    }
-  };
-}
-
-function isValidQuantity(value) {
-  return Number.isInteger(value) && value > 0 && value <= 99;
-}
-
-function normalizeCartCheckout(body) {
-  if (!Array.isArray(body.items) || body.items.length === 0) {
-    throw new Error("Your cart is empty.");
+function sanitizeText(value, maxLength = 200) {
+  if (typeof value !== "string") {
+    return "";
   }
 
-  const normalizedItems = body.items.map((item) => {
-    const product = ALLOWED_PRODUCTS[item.id];
-    if (!product) {
-      throw new Error("One of the selected cart items is invalid.");
+  return value.replace(/\s+/g, " ").trim().slice(0, maxLength);
+}
+
+function parseAmount(value) {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? Math.round(amount * 100) / 100 : NaN;
+}
+
+function normalizeItems(items, fallbackName, fallbackAmount) {
+  if (typeof items === "undefined") {
+    return [
+      {
+        name: fallbackName,
+        quantity: 1,
+        unitPrice: fallbackAmount
+      }
+    ];
+  }
+
+  if (!Array.isArray(items)) {
+    throw new Error("items must be an array when provided.");
+  }
+
+  if (items.length === 0) {
+    return [
+      {
+        name: fallbackName,
+        quantity: 1,
+        unitPrice: fallbackAmount
+      }
+    ];
+  }
+
+  return items.map((item, index) => {
+    const name = sanitizeText(item?.name, 120);
+    const unitPrice = parseAmount(item?.amount ?? item?.price);
+    const quantity = Number(item?.quantity ?? 1);
+
+    if (!name) {
+      throw new Error(`Item ${index + 1} is missing a valid name.`);
     }
 
-    if (product.type === "quote") {
-      throw new Error(`${product.name} requires a custom quote and cannot be paid online yet.`);
+    if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+      throw new Error(`Item ${index + 1} has an invalid amount.`);
     }
 
-    const quantity = Number(item.quantity);
-    if (!isValidQuantity(quantity)) {
-      throw new Error(`Invalid quantity for ${product.name}.`);
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      throw new Error(`Item ${index + 1} has an invalid quantity.`);
     }
 
-    return {
-      id: item.id,
-      name: product.name,
-      quantity,
-      unitPrice: product.price
-    };
+    return { name, quantity, unitPrice };
   });
+}
 
-  const computedTotal = normalizedItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
-  const requestedTotal = Number(body.totalAmount);
+function buildPayload(body, config) {
+  const name = sanitizeText(body?.name, 120);
+  const amount = parseAmount(body?.amount);
+  const note = sanitizeText(body?.note, 300);
 
-  if (!Number.isFinite(requestedTotal) || requestedTotal !== computedTotal) {
-    throw new Error("Cart total mismatch. Please refresh the page and try again.");
+  if (!name) {
+    throw new Error("name is required.");
   }
 
-  return {
-    source: "catalog-cart",
-    descriptor: `${normalizedItems.length} cart item${normalizedItems.length === 1 ? "" : "s"}`,
-    items: normalizedItems,
-    totalAmount: computedTotal,
-    customerNote: sanitizeCustomerNote(body.customerNote)
-  };
-}
-
-function normalizeLegacyCheckout(body) {
-  const packageName = typeof body.packageName === "string" ? body.packageName.trim() : "";
-  const amount = Number(body.amount);
-  const selectedPackage = LEGACY_PACKAGES[packageName];
-
-  if (!packageName || !selectedPackage || !Number.isFinite(amount) || amount !== selectedPackage.price) {
-    throw new Error("Invalid package or amount. Please refresh the page and try again.");
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("amount must be a positive number.");
   }
 
-  return {
-    source: "maya-package-button",
-    descriptor: packageName,
-    items: [{ id: packageName, name: packageName, quantity: 1, unitPrice: selectedPackage.price }],
-    totalAmount: selectedPackage.price,
-    customerNote: ""
-  };
-}
+  const normalizedItems = normalizeItems(body?.items, name, amount);
+  const itemsTotal = normalizedItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
 
-function normalizeCheckoutRequest(body) {
-  return Array.isArray(body.items)
-    ? normalizeCartCheckout(body)
-    : normalizeLegacyCheckout(body);
-}
+  if (Math.abs(itemsTotal - amount) > 0.01) {
+    throw new Error("amount does not match the provided items total.");
+  }
 
-function buildCheckoutPayload(checkoutRequest, config) {
-  const reference = `intellium-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const requestReferenceNumber = `intellium-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   return {
-    requestReferenceNumber: reference,
+    requestReferenceNumber,
     totalAmount: {
-      value: checkoutRequest.totalAmount,
+      value: amount,
       currency: "PHP"
     },
+    buyer: {
+      firstName: "Intellium",
+      lastName: "Digital"
+    },
+    items: normalizedItems.map((item) => ({
+      name: item.name,
+      quantity: item.quantity,
+      amount: {
+        value: item.unitPrice,
+        currency: "PHP"
+      },
+      totalAmount: {
+        value: Math.round(item.unitPrice * item.quantity * 100) / 100,
+        currency: "PHP"
+      }
+    })),
     redirectUrl: {
       success: config.successUrl,
       failure: config.failedUrl,
       cancel: config.cancelUrl
     },
-    items: checkoutRequest.items.map((item) => buildMayaItem(item.name, item.unitPrice, item.quantity)),
     metadata: {
-      brand: "Intellium Digital",
-      source: checkoutRequest.source,
-      descriptor: checkoutRequest.descriptor,
-      itemCount: checkoutRequest.items.reduce((sum, item) => sum + item.quantity, 0),
-      customerNote: checkoutRequest.customerNote || null,
-      mayaEnv: config.mode,
-      webhookConfigured: Boolean(config.webhookUrl)
+      note: note || null,
+      source: normalizedItems.length > 1 ? "catalog-cart" : "maya-button"
     }
   };
 }
 
-async function createMayaSession(payload, config) {
+async function createCheckout(payload, config) {
   const auth = Buffer.from(`${config.secretKey}:`).toString("base64");
   const response = await fetch(config.checkoutUrl, {
     method: "POST",
@@ -241,40 +172,57 @@ async function createMayaSession(payload, config) {
   });
 
   const rawText = await response.text();
-  let data = {};
+  let mayaData = {};
 
   if (rawText) {
     try {
-      data = JSON.parse(rawText);
+      mayaData = JSON.parse(rawText);
     } catch {
-      data = { rawText };
+      mayaData = { rawText };
     }
   }
 
   if (!response.ok) {
-    console.error("Maya create checkout failed", JSON.stringify({
+    console.error("Maya checkout failed", {
       status: response.status,
-      payloadReference: payload.requestReferenceNumber,
-      error: data?.message || data?.error || data?.code || rawText || "Unknown Maya error"
-    }));
+      details: mayaData?.message || mayaData?.error || mayaData?.code || "Unknown Maya error"
+    });
 
-    throw new Error(GENERIC_CHECKOUT_ERROR);
+    return {
+      ok: false,
+      status: response.status,
+      body: {
+        error: "Maya checkout failed",
+        details: mayaData?.message || mayaData?.error || "The checkout provider rejected the request."
+      }
+    };
   }
 
-  const checkoutUrl = data.redirectUrl || data.checkoutUrl || data.url;
-  if (typeof checkoutUrl !== "string" || !checkoutUrl) {
-    console.error("Maya create checkout missing redirect URL", JSON.stringify({
-      payloadReference: payload.requestReferenceNumber,
-      responseKeys: Object.keys(data || {})
-    }));
+  const checkoutUrl = mayaData.redirectUrl || mayaData.checkoutUrl || mayaData.paymentUrl;
+  if (!checkoutUrl) {
+    console.error("Maya checkout missing redirect URL", {
+      requestReferenceNumber: payload.requestReferenceNumber,
+      responseKeys: Object.keys(mayaData || {})
+    });
 
-    throw new Error(GENERIC_CHECKOUT_ERROR);
+    return {
+      ok: false,
+      status: 502,
+      body: {
+        error: "Maya checkout failed",
+        details: "Maya did not return a checkout URL."
+      }
+    };
   }
 
   return {
-    checkoutId: data.id || data.checkoutId || null,
-    checkoutUrl,
-    requestReferenceNumber: payload.requestReferenceNumber
+    ok: true,
+    status: 200,
+    body: {
+      checkoutUrl,
+      checkoutId: mayaData.id || mayaData.checkoutId || null,
+      requestReferenceNumber: mayaData.requestReferenceNumber || payload.requestReferenceNumber
+    }
   };
 }
 
@@ -282,34 +230,20 @@ export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
 
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed. Use POST." });
+    return res.status(405).json({ error: "Method not allowed.", details: "Use POST only." });
   }
 
   try {
     const body = parseBody(req.body);
-    const config = getMayaConfig(req);
-    const checkoutRequest = normalizeCheckoutRequest(body);
-    const payload = buildCheckoutPayload(checkoutRequest, config);
-    const session = await createMayaSession(payload, config);
-
-    return res.status(200).json({
-      checkoutUrl: session.checkoutUrl,
-      checkoutId: session.checkoutId,
-      requestReferenceNumber: session.requestReferenceNumber
-    });
+    const config = getConfig(req);
+    const payload = buildPayload(body, config);
+    const result = await createCheckout(payload, config);
+    return res.status(result.status).json(result.body);
   } catch (error) {
-    const message = error instanceof Error ? error.message : GENERIC_CHECKOUT_ERROR;
-    const statusCode = message.includes("missing in Vercel") ? 500 : 400;
-
-    if (statusCode === 500) {
-      console.error("Create Maya Checkout configuration error:", message);
-    } else {
-      console.error("Create Maya Checkout request failed:", message);
-    }
-
-    return res.status(statusCode).json({
-      error: message || GENERIC_CHECKOUT_ERROR
+    console.error("Create Maya Checkout error", error instanceof Error ? error.message : String(error));
+    return res.status(400).json({
+      error: "Maya checkout failed",
+      details: error instanceof Error ? error.message : "Unable to build the checkout request."
     });
   }
 }
-
