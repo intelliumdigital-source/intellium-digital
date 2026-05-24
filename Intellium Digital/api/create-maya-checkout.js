@@ -23,28 +23,6 @@ function buildSiteUrl(req) {
   return `${protocol}://${host}`;
 }
 
-function getConfig(req) {
-  const mayaCheckoutKey = process.env.MAYA_PUBLIC_KEY;
-  if (!mayaCheckoutKey) {
-    throw new Error("Missing MAYA_PUBLIC_KEY");
-  }
-
-  const mode = String(process.env.MAYA_ENV || "sandbox").toLowerCase() === "production"
-    ? "production"
-    : "sandbox";
-
-  const siteUrl = buildSiteUrl(req);
-
-  return {
-    mayaCheckoutKey,
-    environment: mode,
-    checkoutUrl: mode === "production" ? PROD_MAYA_CHECKOUT_URL : SANDBOX_MAYA_CHECKOUT_URL,
-    successUrl: process.env.MAYA_SUCCESS_URL || `${siteUrl}/success.html`,
-    failedUrl: process.env.MAYA_FAILED_URL || `${siteUrl}/failed.html`,
-    cancelUrl: process.env.MAYA_CANCEL_URL || `${siteUrl}/failed.html`
-  };
-}
-
 function sanitizeText(value, maxLength = 200) {
   if (typeof value !== "string") {
     return "";
@@ -104,7 +82,17 @@ function normalizeItems(items, fallbackName, fallbackAmount) {
   });
 }
 
-function buildPayload(body, config) {
+function buildDebug(cleanMayaCheckoutKey, mayaCheckoutEndpoint) {
+  return {
+    env: process.env.MAYA_ENV || "missing",
+    endpoint: mayaCheckoutEndpoint,
+    publicKeyPrefix: cleanMayaCheckoutKey.slice(0, 8),
+    publicKeyLength: cleanMayaCheckoutKey.length,
+    hasSecretKey: Boolean(process.env.MAYA_SECRET_KEY)
+  };
+}
+
+function buildPayload(body, redirectUrl) {
   const name = sanitizeText(body?.name, 120);
   const amount = parseAmount(body?.amount);
   const note = sanitizeText(body?.note, 300);
@@ -148,88 +136,10 @@ function buildPayload(body, config) {
         currency: "PHP"
       }
     })),
-    redirectUrl: {
-      success: config.successUrl,
-      failure: config.failedUrl,
-      cancel: config.cancelUrl
-    },
+    redirectUrl,
     metadata: {
       note: note || null,
       source: normalizedItems.length > 1 ? "catalog-cart" : "maya-button"
-    }
-  };
-}
-
-async function createCheckout(payload, config) {
-  const auth = Buffer.from(`${config.mayaCheckoutKey}:`).toString("base64");
-
-  console.info("Maya checkout config", {
-    environment: config.environment,
-    publicKeyPresent: Boolean(config.mayaCheckoutKey),
-    publicKeyPreview: `${String(config.mayaCheckoutKey).slice(0, 5)}...`
-  });
-
-  const response = await fetch(config.checkoutUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Authorization: `Basic ${auth}`
-    },
-    body: JSON.stringify(payload)
-  });
-
-  const rawText = await response.text();
-  let mayaData = {};
-
-  if (rawText) {
-    try {
-      mayaData = JSON.parse(rawText);
-    } catch {
-      mayaData = { rawText };
-    }
-  }
-
-  if (!response.ok) {
-    console.error("Maya checkout failed", {
-      status: response.status,
-      details: mayaData?.message || mayaData?.error || mayaData?.code || "Unknown Maya error"
-    });
-
-    return {
-      ok: false,
-      status: response.status,
-      body: {
-        error: "Maya checkout failed",
-        details: mayaData?.message || mayaData?.error || "The checkout provider rejected the request."
-      }
-    };
-  }
-
-  const checkoutUrl = mayaData.redirectUrl || mayaData.checkoutUrl || mayaData.paymentUrl;
-  if (!checkoutUrl) {
-    console.error("Maya checkout missing redirect URL", {
-      requestReferenceNumber: payload.requestReferenceNumber,
-      responseKeys: Object.keys(mayaData || {})
-    });
-
-    return {
-      ok: false,
-      status: 502,
-      body: {
-        error: "Maya checkout failed",
-        details: "Maya did not return a checkout URL."
-      }
-    };
-  }
-
-  return {
-    ok: true,
-    status: 200,
-    body: {
-      checkoutUrl,
-      checkoutId: mayaData.id || mayaData.checkoutId || null,
-      requestReferenceNumber: mayaData.requestReferenceNumber || payload.requestReferenceNumber
     }
   };
 }
@@ -241,17 +151,102 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed.", details: "Use POST only." });
   }
 
+  const mayaCheckoutKey = process.env.MAYA_PUBLIC_KEY;
+  if (!mayaCheckoutKey) {
+    return res.status(500).json({ error: "Missing MAYA_PUBLIC_KEY" });
+  }
+
+  const cleanMayaCheckoutKey = mayaCheckoutKey.trim();
+  const isProduction = process.env.MAYA_ENV === "production";
+  const mayaCheckoutEndpoint = isProduction
+    ? PROD_MAYA_CHECKOUT_URL
+    : SANDBOX_MAYA_CHECKOUT_URL;
+  const siteUrl = buildSiteUrl(req);
+  const redirectUrl = {
+    success: process.env.MAYA_SUCCESS_URL || `${siteUrl}/success.html`,
+    failure: process.env.MAYA_FAILED_URL || `${siteUrl}/failed.html`,
+    cancel: process.env.MAYA_CANCEL_URL || `${siteUrl}/failed.html`
+  };
+  const debug = buildDebug(cleanMayaCheckoutKey, mayaCheckoutEndpoint);
+
+  console.info("Maya checkout config", {
+    env: isProduction ? "production" : "sandbox",
+    publicKeyExists: Boolean(cleanMayaCheckoutKey),
+    publicKeyPreview: `${cleanMayaCheckoutKey.slice(0, 5)}...`
+  });
+
   try {
     const body = parseBody(req.body);
-    const config = getConfig(req);
-    const payload = buildPayload(body, config);
-    const result = await createCheckout(payload, config);
-    return res.status(result.status).json(result.body);
+    const payload = buildPayload(body, redirectUrl);
+    const authorization = "Basic " + Buffer.from(`${cleanMayaCheckoutKey}:`).toString("base64");
+
+    const response = await fetch(mayaCheckoutEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: authorization
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const rawText = await response.text();
+    let mayaData = {};
+
+    if (rawText) {
+      try {
+        mayaData = JSON.parse(rawText);
+      } catch {
+        mayaData = { rawText };
+      }
+    }
+
+    if (!response.ok) {
+      const mayaErrorMessage = mayaData?.message || mayaData?.error || mayaData?.code || "The checkout provider rejected the request.";
+      console.error("Maya checkout failed", {
+        status: response.status,
+        details: mayaErrorMessage,
+        debug
+      });
+
+      return res.status(response.status).json({
+        error: "Maya checkout failed",
+        details: mayaErrorMessage,
+        debug
+      });
+    }
+
+    const checkoutUrl = mayaData.redirectUrl || mayaData.checkoutUrl || mayaData.paymentUrl;
+    if (!checkoutUrl) {
+      console.error("Maya checkout missing redirect URL", {
+        requestReferenceNumber: payload.requestReferenceNumber,
+        debug,
+        responseKeys: Object.keys(mayaData || {})
+      });
+
+      return res.status(502).json({
+        error: "Maya checkout failed",
+        details: "Maya did not return a checkout URL.",
+        debug
+      });
+    }
+
+    return res.status(200).json({
+      checkoutUrl,
+      checkoutId: mayaData.id || mayaData.checkoutId || null,
+      requestReferenceNumber: mayaData.requestReferenceNumber || payload.requestReferenceNumber
+    });
   } catch (error) {
-    console.error("Create Maya Checkout error", error instanceof Error ? error.message : String(error));
+    const safeMessage = error instanceof Error ? error.message : "Unable to build the checkout request.";
+    console.error("Create Maya Checkout error", {
+      details: safeMessage,
+      debug
+    });
+
     return res.status(400).json({
       error: "Maya checkout failed",
-      details: error instanceof Error ? error.message : "Unable to build the checkout request."
+      details: safeMessage,
+      debug
     });
   }
 }
